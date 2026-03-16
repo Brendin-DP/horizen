@@ -8,6 +8,7 @@ export default function RootLayout() {
       <AuthGate>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="workout/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />
         </Stack>

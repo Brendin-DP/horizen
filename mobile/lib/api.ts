@@ -15,6 +15,8 @@ export interface Member {
   name: string;
   email: string;
   role: 'member' | 'instructor' | 'admin';
+  plan?: 'free' | 'pro' | 'elite';
+  planExpiresAt?: string | null;
   avatarUrl: string | null;
   createdAt: string;
 }
@@ -83,4 +85,153 @@ export async function getLeaderboard(token?: string | null): Promise<Leaderboard
   });
   if (!res.ok) throw new Error('Failed to fetch leaderboard');
   return res.json();
+}
+
+async function fetchApi(
+  path: string,
+  options: RequestInit & { token?: string | null } = {}
+): Promise<Response> {
+  const { token, ...rest } = options;
+  return fetch(`${BASE_URL}${path}`, {
+    ...rest,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(rest.headers as Record<string, string>),
+    },
+  });
+}
+
+export async function getExercises(category?: string): Promise<import('../types').Exercise[]> {
+  const q = category ? `?category=${encodeURIComponent(category)}` : '';
+  const res = await fetch(`${BASE_URL}/exercises${q}`);
+  if (!res.ok) throw new Error('Failed to fetch exercises');
+  return res.json();
+}
+
+export async function getExercise(id: string): Promise<import('../types').Exercise> {
+  const res = await fetch(`${BASE_URL}/exercises/${id}`);
+  if (!res.ok) throw new Error('Exercise not found');
+  return res.json();
+}
+
+export async function getWorkouts(userId: string, token?: string | null): Promise<import('../types').Workout[]> {
+  const res = await fetchApi(`/workouts?userId=${encodeURIComponent(userId)}`, { token });
+  if (!res.ok) throw new Error('Failed to fetch workouts');
+  return res.json();
+}
+
+export async function createWorkout(
+  userId: string,
+  name?: string | null,
+  token?: string | null
+): Promise<import('../types').Workout> {
+  const res = await fetchApi('/workouts', {
+    method: 'POST',
+    body: JSON.stringify({ userId, name }),
+    token,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to create workout');
+  }
+  return res.json();
+}
+
+export async function getWorkout(
+  id: string,
+  token?: string | null
+): Promise<import('../types').WorkoutWithDetails> {
+  const res = await fetchApi(`/workouts/${id}`, { token });
+  if (!res.ok) throw new Error('Workout not found');
+  return res.json();
+}
+
+export async function updateWorkout(
+  id: string,
+  body: { name?: string; status?: string; completedAt?: string | null; notes?: string | null },
+  token?: string | null
+): Promise<import('../types').Workout> {
+  const res = await fetchApi(`/workouts/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+    token,
+  });
+  if (!res.ok) throw new Error('Failed to update workout');
+  return res.json();
+}
+
+export async function deleteWorkout(id: string, token?: string | null): Promise<void> {
+  const res = await fetchApi(`/workouts/${id}`, { method: 'DELETE', token });
+  if (!res.ok) throw new Error('Failed to delete workout');
+}
+
+export async function addWorkoutExercise(
+  workoutId: string,
+  exerciseId: string,
+  order?: number,
+  token?: string | null
+): Promise<import('../types').WorkoutExercise> {
+  const res = await fetchApi(`/workouts/${workoutId}/exercises`, {
+    method: 'POST',
+    body: JSON.stringify({ exerciseId, order }),
+    token,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to add exercise');
+  }
+  return res.json();
+}
+
+export async function removeWorkoutExercise(
+  workoutId: string,
+  workoutExerciseId: string,
+  token?: string | null
+): Promise<void> {
+  const res = await fetchApi(`/workouts/${workoutId}/exercises/${workoutExerciseId}`, {
+    method: 'DELETE',
+    token,
+  });
+  if (!res.ok) throw new Error('Failed to remove exercise');
+}
+
+export async function addSet(
+  workoutExerciseId: string,
+  body: {
+    setNumber?: number;
+    reps?: number;
+    weightKg?: number;
+    durationSeconds?: number;
+    distanceMeters?: number;
+    completed?: boolean;
+  },
+  token?: string | null
+): Promise<import('../types').Set> {
+  const res = await fetchApi(`/workout-exercises/${workoutExerciseId}/sets`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    token,
+  });
+  if (!res.ok) throw new Error('Failed to add set');
+  return res.json();
+}
+
+export async function updateSet(
+  id: string,
+  body: Partial<import('../types').Set>,
+  token?: string | null
+): Promise<import('../types').Set> {
+  const res = await fetchApi(`/sets/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+    token,
+  });
+  if (!res.ok) throw new Error('Failed to update set');
+  return res.json();
+}
+
+export async function deleteSet(id: string, token?: string | null): Promise<void> {
+  const res = await fetchApi(`/sets/${id}`, { method: 'DELETE', token });
+  if (!res.ok) throw new Error('Failed to delete set');
 }

@@ -6,6 +6,8 @@
       "email": "sarah@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
       "role": "member",
+      "plan": "free",
+      "planExpiresAt": null,
       "avatarUrl": null,
       "createdAt": "2025-01-01T00:00:00Z"
     },
@@ -15,6 +17,8 @@
       "email": "james@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
       "role": "member",
+      "plan": "pro",
+      "planExpiresAt": "2026-01-01T00:00:00Z",
       "avatarUrl": null,
       "createdAt": "2025-01-01T00:00:00Z"
     },
@@ -24,6 +28,8 @@
       "email": "aisha@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
       "role": "member",
+      "plan": "free",
+      "planExpiresAt": null,
       "avatarUrl": null,
       "createdAt": "2025-01-01T00:00:00Z"
     },
@@ -33,6 +39,8 @@
       "email": "neal@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
       "role": "instructor",
+      "plan": "elite",
+      "planExpiresAt": null,
       "avatarUrl": null,
       "createdAt": "2025-01-01T00:00:00Z"
     },
@@ -42,6 +50,8 @@
       "email": "admin@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
       "role": "admin",
+      "plan": "elite",
+      "planExpiresAt": null,
       "avatarUrl": null,
       "createdAt": "2025-01-01T00:00:00Z"
     },
@@ -51,6 +61,8 @@
       "email": "admin2@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
       "role": "admin",
+      "plan": "elite",
+      "planExpiresAt": null,
       "avatarUrl": null,
       "createdAt": "2025-01-01T00:00:00Z"
     },
@@ -60,6 +72,8 @@
       "email": "newuser@test.com",
       "passwordHash": "$2b$10$ujJPGbv3lJAFk0coGQTpk.gX86z8.GOtlx3Wr89gcNM9mzwBFlZFO",
       "role": "member",
+      "plan": "free",
+      "planExpiresAt": null,
       "avatarUrl": null,
       "createdAt": "2026-03-16T06:23:46.185Z"
     }
@@ -87,6 +101,282 @@
       "createdAt": "2025-01-11T09:00:00Z"
     }
   ],
-  "exercises": [],
-  "exerciseLogs": []
+  "exerciseLibrary": [
+    {
+      "id": "ex1",
+      "name": "Back Squat",
+      "category": "Legs",
+      "muscleGroups": [
+        "Quads",
+        "Glutes",
+        "Hamstrings"
+      ],
+      "equipment": "Barbell",
+      "unit": "weight_reps",
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "ex2",
+      "name": "Bench Press",
+      "category": "Push",
+      "muscleGroups": [
+        "Chest",
+        "Triceps",
+        "Shoulders"
+      ],
+      "equipment": "Barbell",
+      "unit": "weight_reps",
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "ex3",
+      "name": "Deadlift",
+      "category": "Pull",
+      "muscleGroups": [
+        "Hamstrings",
+        "Glutes",
+        "Back"
+      ],
+      "equipment": "Barbell",
+      "unit": "weight_reps",
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "ex4",
+      "name": "Overhead Press",
+      "category": "Push",
+      "muscleGroups": [
+        "Shoulders",
+        "Triceps"
+      ],
+      "equipment": "Barbell",
+      "unit": "weight_reps",
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "ex5",
+      "name": "Barbell Row",
+      "category": "Pull",
+      "muscleGroups": [
+        "Lats",
+        "Rhomboids",
+        "Biceps"
+      ],
+      "equipment": "Barbell",
+      "unit": "weight_reps",
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "ex6",
+      "name": "Pull Up",
+      "category": "Pull",
+      "muscleGroups": [
+        "Lats",
+        "Biceps"
+      ],
+      "equipment": "Bodyweight",
+      "unit": "weight_reps",
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "ex7",
+      "name": "Dumbbell Curl",
+      "category": "Pull",
+      "muscleGroups": [
+        "Biceps"
+      ],
+      "equipment": "Dumbbell",
+      "unit": "weight_reps",
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "ex8",
+      "name": "Tricep Pushdown",
+      "category": "Push",
+      "muscleGroups": [
+        "Triceps"
+      ],
+      "equipment": "Cable",
+      "unit": "weight_reps",
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "ex9",
+      "name": "Leg Press",
+      "category": "Legs",
+      "muscleGroups": [
+        "Quads",
+        "Glutes"
+      ],
+      "equipment": "Machine",
+      "unit": "weight_reps",
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "ex10",
+      "name": "Plank",
+      "category": "Core",
+      "muscleGroups": [
+        "Core"
+      ],
+      "equipment": "Bodyweight",
+      "unit": "time",
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "ex11",
+      "name": "Treadmill Run",
+      "category": "Cardio",
+      "muscleGroups": [],
+      "equipment": "Machine",
+      "unit": "distance",
+      "createdAt": "2025-01-01T00:00:00Z"
+    }
+  ],
+  "workouts": [
+    {
+      "id": "59ce306b-d52c-4b32-8378-886542efcfe3",
+      "userId": "m3",
+      "name": null,
+      "status": "completed",
+      "startedAt": "2026-03-16T06:46:05.322Z",
+      "completedAt": "2026-03-16T06:46:31.297Z",
+      "notes": null,
+      "createdAt": "2026-03-16T06:46:05.322Z"
+    },
+    {
+      "id": "bcdeb278-ffd1-4499-866c-cd4dedef7146",
+      "userId": "m2",
+      "name": null,
+      "status": "in_progress",
+      "startedAt": "2026-03-16T06:47:08.801Z",
+      "completedAt": null,
+      "notes": null,
+      "createdAt": "2026-03-16T06:47:08.801Z"
+    },
+    {
+      "id": "4f859f83-88d7-447a-8e57-499034f1f71a",
+      "userId": "m2",
+      "name": null,
+      "status": "completed",
+      "startedAt": "2026-03-16T06:49:23.852Z",
+      "completedAt": "2026-03-16T06:49:45.082Z",
+      "notes": null,
+      "createdAt": "2026-03-16T06:49:23.852Z"
+    },
+    {
+      "id": "cca9bab5-d504-44eb-856d-2224df286742",
+      "userId": "m2",
+      "name": null,
+      "status": "completed",
+      "startedAt": "2026-03-16T06:49:53.003Z",
+      "completedAt": "2026-03-16T06:49:57.731Z",
+      "notes": null,
+      "createdAt": "2026-03-16T06:49:53.003Z"
+    }
+  ],
+  "workoutExercises": [
+    {
+      "id": "7089c37d-caba-49e2-8a3c-40654680d969",
+      "workoutId": "59ce306b-d52c-4b32-8378-886542efcfe3",
+      "exerciseId": "ex1",
+      "order": 1,
+      "notes": null,
+      "createdAt": "2026-03-16T06:46:10.023Z"
+    },
+    {
+      "id": "c3b9d29f-aca9-4fea-91df-0c8a5699c5dc",
+      "workoutId": "59ce306b-d52c-4b32-8378-886542efcfe3",
+      "exerciseId": "ex4",
+      "order": 2,
+      "notes": null,
+      "createdAt": "2026-03-16T06:46:12.559Z"
+    },
+    {
+      "id": "258b95f7-bcc9-4cb3-81a1-498bf1f2d614",
+      "workoutId": "59ce306b-d52c-4b32-8378-886542efcfe3",
+      "exerciseId": "ex7",
+      "order": 3,
+      "notes": null,
+      "createdAt": "2026-03-16T06:46:14.271Z"
+    },
+    {
+      "id": "1ab7d767-834d-495b-9971-375c0e929211",
+      "workoutId": "4f859f83-88d7-447a-8e57-499034f1f71a",
+      "exerciseId": "ex1",
+      "order": 1,
+      "notes": null,
+      "createdAt": "2026-03-16T06:49:26.628Z"
+    },
+    {
+      "id": "e9237906-f7a2-43a6-b03a-73fee0ba25e5",
+      "workoutId": "4f859f83-88d7-447a-8e57-499034f1f71a",
+      "exerciseId": "ex5",
+      "order": 2,
+      "notes": null,
+      "createdAt": "2026-03-16T06:49:39.365Z"
+    },
+    {
+      "id": "994ef296-e232-49aa-9c4b-cc51d5763e14",
+      "workoutId": "4f859f83-88d7-447a-8e57-499034f1f71a",
+      "exerciseId": "ex10",
+      "order": 3,
+      "notes": null,
+      "createdAt": "2026-03-16T06:49:42.887Z"
+    },
+    {
+      "id": "0d820e22-1b92-4b4a-b6b6-fb1842906344",
+      "workoutId": "cca9bab5-d504-44eb-856d-2224df286742",
+      "exerciseId": "ex1",
+      "order": 1,
+      "notes": null,
+      "createdAt": "2026-03-16T06:49:55.638Z"
+    }
+  ],
+  "sets": [
+    {
+      "id": "3827b5d3-4bc4-4479-b82e-fb90451a12b6",
+      "workoutExerciseId": "7089c37d-caba-49e2-8a3c-40654680d969",
+      "setNumber": 1,
+      "reps": 25,
+      "weightKg": 100,
+      "durationSeconds": null,
+      "distanceMeters": null,
+      "completed": true,
+      "createdAt": "2026-03-16T06:46:21.342Z"
+    },
+    {
+      "id": "57c8d462-fa2e-4803-a93d-2e600b56edc2",
+      "workoutExerciseId": "7089c37d-caba-49e2-8a3c-40654680d969",
+      "setNumber": 2,
+      "reps": 20,
+      "weightKg": 40,
+      "durationSeconds": null,
+      "distanceMeters": null,
+      "completed": true,
+      "createdAt": "2026-03-16T06:46:29.399Z"
+    },
+    {
+      "id": "6139154e-7094-46d5-9522-2839fd739365",
+      "workoutExerciseId": "1ab7d767-834d-495b-9971-375c0e929211",
+      "setNumber": 1,
+      "reps": 10,
+      "weightKg": 15,
+      "durationSeconds": null,
+      "distanceMeters": null,
+      "completed": true,
+      "createdAt": "2026-03-16T06:49:32.562Z"
+    },
+    {
+      "id": "59624583-a54f-4b3b-a594-017dd8001d3e",
+      "workoutExerciseId": "1ab7d767-834d-495b-9971-375c0e929211",
+      "setNumber": 2,
+      "reps": 20,
+      "weightKg": 5,
+      "durationSeconds": null,
+      "distanceMeters": null,
+      "completed": true,
+      "createdAt": "2026-03-16T06:49:36.992Z"
+    }
+  ]
 }

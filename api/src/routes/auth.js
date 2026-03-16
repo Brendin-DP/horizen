@@ -32,6 +32,8 @@ router.post('/register', async (req, res) => {
     email: email.trim().toLowerCase(),
     passwordHash,
     role: 'member',
+    plan: 'free',
+    planExpiresAt: null,
     avatarUrl: null,
     createdAt: new Date().toISOString(),
   };
