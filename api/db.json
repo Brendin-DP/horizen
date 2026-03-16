@@ -1,0 +1,61 @@
+{
+  "members": [
+    {
+      "id": "m1",
+      "name": "Sarah Jacobs",
+      "email": "sarah@gym.com",
+      "role": "member",
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "m2",
+      "name": "James Fortuin",
+      "email": "james@gym.com",
+      "role": "member",
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "m3",
+      "name": "Aisha Davids",
+      "email": "aisha@gym.com",
+      "role": "member",
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "i1",
+      "name": "Neal Oberholster",
+      "email": "neal@gym.com",
+      "role": "instructor",
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    }
+  ],
+  "starAwards": [
+    {
+      "id": "s1",
+      "memberId": "m1",
+      "awardedBy": "i1",
+      "reason": "Best form this week",
+      "createdAt": "2025-01-10T09:00:00Z"
+    },
+    {
+      "id": "s2",
+      "memberId": "m1",
+      "awardedBy": "i1",
+      "reason": "Most improved",
+      "createdAt": "2025-01-12T09:00:00Z"
+    },
+    {
+      "id": "s3",
+      "memberId": "m2",
+      "awardedBy": "i1",
+      "reason": "100% attendance",
+      "createdAt": "2025-01-11T09:00:00Z"
+    }
+  ],
+  "exercises": [],
+  "exerciseLogs": []
+}

@@ -1,0 +1,9 @@
+{
+  "expo": {
+    "name": "GymApp",
+    "slug": "gymapp",
+    "scheme": "gymapp",
+    "platforms": ["ios", "android"],
+    "newArchEnabled": true
+  }
+}
