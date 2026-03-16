@@ -4,6 +4,7 @@
       "id": "m1",
       "name": "Sarah Jacobs",
       "email": "sarah@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
       "role": "member",
       "avatarUrl": null,
       "createdAt": "2025-01-01T00:00:00Z"
@@ -12,6 +13,7 @@
       "id": "m2",
       "name": "James Fortuin",
       "email": "james@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
       "role": "member",
       "avatarUrl": null,
       "createdAt": "2025-01-01T00:00:00Z"
@@ -20,6 +22,7 @@
       "id": "m3",
       "name": "Aisha Davids",
       "email": "aisha@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
       "role": "member",
       "avatarUrl": null,
       "createdAt": "2025-01-01T00:00:00Z"
@@ -28,9 +31,37 @@
       "id": "i1",
       "name": "Neal Oberholster",
       "email": "neal@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
       "role": "instructor",
       "avatarUrl": null,
       "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "a1",
+      "name": "Admin User",
+      "email": "admin@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "admin",
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "a2",
+      "name": "Admin Two",
+      "email": "admin2@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "admin",
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "9a279901-7a38-4556-a533-192c892f4b33",
+      "name": "New User",
+      "email": "newuser@test.com",
+      "passwordHash": "$2b$10$ujJPGbv3lJAFk0coGQTpk.gX86z8.GOtlx3Wr89gcNM9mzwBFlZFO",
+      "role": "member",
+      "avatarUrl": null,
+      "createdAt": "2026-03-16T06:23:46.185Z"
     }
   ],
   "starAwards": [

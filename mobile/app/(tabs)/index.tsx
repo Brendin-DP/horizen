@@ -1,11 +1,18 @@
 import { Link } from 'expo-router';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function HomeScreen() {
+  const { member, logout } = useAuth();
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to GymApp</Text>
-      <Text style={styles.subtitle}>Logged in as Neal Oberholster</Text>
+      <Text style={styles.subtitle}>Logged in as {member?.name ?? 'Unknown'}</Text>
+      <Text style={styles.role}>Role: {member?.role ?? 'member'}</Text>
+      <Pressable onPress={logout} style={styles.logout}>
+        <Text style={styles.logoutText}>Log out</Text>
+      </Pressable>
       <Link href="/(tabs)/leaderboard" asChild>
         <Pressable style={styles.card}>
           <Text style={styles.cardTitle}>View Leaderboard</Text>
@@ -50,5 +57,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#94a3b8',
     marginTop: 4,
+  },
+  role: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 4,
+  },
+  logout: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignSelf: 'flex-start',
+  },
+  logoutText: {
+    color: '#94a3b8',
+    fontSize: 14,
   },
 });

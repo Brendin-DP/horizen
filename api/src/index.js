@@ -3,6 +3,7 @@ const cors = require('cors');
 const membersRouter = require('./routes/members.js');
 const starsRouter = require('./routes/stars.js');
 const leaderboardRouter = require('./routes/leaderboard.js');
+const authRouter = require('./routes/auth.js');
 
 const app = express();
 app.use(cors());
@@ -12,6 +13,8 @@ app.get('/', (req, res) => {
   res.json({
     message: 'GymApp API',
     endpoints: {
+      register: 'POST /auth/register',
+      login: 'POST /auth/login',
       members: 'GET /members',
       member: 'GET /members/:id',
       memberStars: 'GET /members/:id/stars',
@@ -21,6 +24,7 @@ app.get('/', (req, res) => {
   });
 });
 
+app.use('/auth', authRouter);
 app.use('/members', membersRouter);
 app.use('/stars', starsRouter);
 app.use('/leaderboard', leaderboardRouter);

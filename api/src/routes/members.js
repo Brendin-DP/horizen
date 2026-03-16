@@ -1,5 +1,6 @@
 const express = require('express');
 const { getDb } = require('../db.js');
+const { toPublicMember } = require('../utils/members.js');
 
 const router = express.Router();
 
@@ -7,7 +8,7 @@ router.get('/', (req, res) => {
   const db = getDb();
   db.read();
   const members = db.get('members').value();
-  res.json(members);
+  res.json(members.map(toPublicMember));
 });
 
 router.get('/:id', (req, res) => {
@@ -17,7 +18,7 @@ router.get('/:id', (req, res) => {
   if (!member) {
     return res.status(404).json({ error: 'Member not found' });
   }
-  res.json(member);
+  res.json(toPublicMember(member));
 });
 
 router.get('/:id/stars', (req, res) => {
