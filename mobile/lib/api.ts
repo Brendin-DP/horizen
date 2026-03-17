@@ -79,6 +79,22 @@ export async function login({
   return res.json();
 }
 
+export async function updateProfile(
+  updates: { name?: string; email?: string; avatarUrl?: string | null },
+  token?: string | null
+): Promise<Member> {
+  const res = await fetchApi('/members/me', {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+    token,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to update profile');
+  }
+  return res.json();
+}
+
 export async function getLeaderboard(token?: string | null): Promise<LeaderboardEntry[]> {
   const res = await fetch(`${BASE_URL}/leaderboard`, {
     headers: headersWithAuth(token ?? null),

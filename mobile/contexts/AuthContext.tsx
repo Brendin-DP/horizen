@@ -29,6 +29,7 @@ interface AuthContextValue extends AuthState {
   executeAuthRequest: (req: AuthRequest) => Promise<void>;
   clearAuthError: () => void;
   completeWelcome: () => void;
+  updateMember: (member: Member) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -130,6 +131,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, hasCompletedWelcome: true }));
   };
 
+  const updateMember = async (member: Member) => {
+    await AsyncStorage.setItem(MEMBER_KEY, JSON.stringify(member));
+    setState((s) => ({ ...s, member }));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -141,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         executeAuthRequest,
         clearAuthError,
         completeWelcome,
+        updateMember,
       }}
     >
       {children}

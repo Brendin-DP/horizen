@@ -20,6 +20,36 @@ router.get('/', (req, res) => {
   res.json(members.map(toPublicMember));
 });
 
+router.patch('/me', requireAuth, (req, res) => {
+  const db = getDb();
+  db.read();
+  const member = db.get('members').find({ id: req.member.id }).value();
+  if (!member) {
+    return res.status(404).json({ error: 'Member not found' });
+  }
+  const { name, email, avatarUrl } = req.body;
+  const updates = {};
+  if (name !== undefined) updates.name = name.trim();
+  if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl === '' ? null : avatarUrl;
+  if (email !== undefined) {
+    const trimmed = email.trim().toLowerCase();
+    const existing = db.get('members').find({ email: trimmed }).value();
+    if (existing && existing.id !== member.id) {
+      return res.status(409).json({ error: 'Email already in use' });
+    }
+    updates.email = trimmed;
+  }
+  if (Object.keys(updates).length === 0) {
+    return res.json(toPublicMember(member));
+  }
+  db.get('members')
+    .find({ id: req.member.id })
+    .assign(updates)
+    .write();
+  const updated = db.get('members').find({ id: req.member.id }).value();
+  res.json(toPublicMember(updated));
+});
+
 router.patch('/:id', requireAuth, requireRole('admin'), (req, res) => {
   const db = getDb();
   db.read();
