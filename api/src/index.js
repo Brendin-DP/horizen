@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const membersRouter = require('./routes/members.js');
@@ -51,7 +52,7 @@ app.use('/workouts', workoutsRouter);
 app.use('/workout-exercises', workoutExercisesRouter);
 app.use('/sets', setsIdRouter);
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log('API running on http://localhost:' + PORT);
 });

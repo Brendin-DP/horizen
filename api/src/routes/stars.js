@@ -1,14 +1,12 @@
 const express = require('express');
-const { getDb } = require('../db.js');
 const { randomUUID } = require('crypto');
+const { supabase } = require('../db.js');
+const { mapStarAward, toDbStarAward } = require('../utils/mappers.js');
 const { requireAuth, requireRole } = require('../middleware/auth.js');
 
 const router = express.Router();
 
-router.post('/', requireAuth, requireRole('admin', 'instructor'), (req, res) => {
-  const db = getDb();
-  db.read();
-
+router.post('/', requireAuth, requireRole('admin', 'instructor'), async (req, res) => {
   const { memberId, reason } = req.body;
   const awardedBy = req.member.id;
 
@@ -16,8 +14,12 @@ router.post('/', requireAuth, requireRole('admin', 'instructor'), (req, res) => 
     return res.status(400).json({ error: 'memberId is required' });
   }
 
-  const member = db.get('members').find({ id: memberId }).value();
-  if (!member) {
+  const { data: member, error: memberErr } = await supabase
+    .from('members')
+    .select('id')
+    .eq('id', memberId)
+    .single();
+  if (memberErr || !member) {
     return res.status(404).json({ error: 'Member not found' });
   }
 
@@ -28,9 +30,18 @@ router.post('/', requireAuth, requireRole('admin', 'instructor'), (req, res) => 
     reason: reason || null,
     createdAt: new Date().toISOString(),
   };
+  const toDb = toDbStarAward(award);
 
-  db.get('starAwards').push(award).write();
-  res.status(201).json(award);
+  const { data: inserted, error } = await supabase
+    .from('star_awards')
+    .insert(toDb)
+    .select()
+    .single();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  res.status(201).json(mapStarAward(inserted));
 });
 
 module.exports = router;

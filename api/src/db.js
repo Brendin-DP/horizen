@@ -1,15 +1,13 @@
-const low = require('lowdb');
-const FileSync = require('lowdb/adapters/FileSync');
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
-const adapter = new FileSync(path.join(__dirname, '..', 'db.json'));
-const db = low(adapter);
+// Use service_role for backend API — bypasses RLS, full DB access.
+// The API handles auth at the route level (JWT, bcrypt).
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
-/**
- * Get the database instance. Always call db.read() before reads and db.write() after writes.
- */
-function getDb() {
-  return db;
-}
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  supabaseKey
+);
 
-module.exports = { getDb };
+module.exports = { supabase };

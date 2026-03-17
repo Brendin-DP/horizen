@@ -1,31 +1,29 @@
 const express = require('express');
 const { randomUUID } = require('crypto');
-const { getDb } = require('../db.js');
+const { supabase } = require('../db.js');
+const { mapWorkout, mapWorkoutExercise, mapExercise, mapSet, toDbWorkout, toDbWorkoutExercise } = require('../utils/mappers.js');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  const db = getDb();
-  db.read();
-
+router.get('/', async (req, res) => {
   const userId = req.query.userId;
   if (!userId) {
     return res.status(400).json({ error: 'userId query is required' });
   }
 
-  const workouts = db
-    .get('workouts')
-    .filter({ userId })
-    .orderBy(['startedAt'], ['desc'])
-    .value();
-
-  res.json(workouts);
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('user_id', userId)
+    .order('started_at', { ascending: false });
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  res.json((data || []).map(mapWorkout));
 });
 
-router.post('/', (req, res) => {
-  const db = getDb();
-  db.read();
-
+router.post('/', async (req, res) => {
   const { userId, name } = req.body;
 
   if (!userId) {
@@ -43,186 +41,236 @@ router.post('/', (req, res) => {
     createdAt: new Date().toISOString(),
   };
 
-  db.get('workouts').push(workout).write();
-
-  res.status(201).json(workout);
+  const toDb = toDbWorkout(workout);
+  const { data: inserted, error } = await supabase
+    .from('workouts')
+    .insert(toDb)
+    .select()
+    .single();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  res.status(201).json(mapWorkout(inserted));
 });
 
-router.get('/:id', (req, res) => {
-  const db = getDb();
-  db.read();
-
-  const workout = db.get('workouts').find({ id: req.params.id }).value();
-  if (!workout) {
+router.get('/:id', async (req, res) => {
+  const { data: workout, error: workoutErr } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('id', req.params.id)
+    .single();
+  if (workoutErr || !workout) {
     return res.status(404).json({ error: 'Workout not found' });
   }
 
-  const workoutExercises = db
-    .get('workoutExercises')
-    .filter({ workoutId: workout.id })
-    .orderBy(['order'], ['asc'])
-    .value();
+  const { data: workoutExercises } = await supabase
+    .from('workout_exercises')
+    .select('*')
+    .eq('workout_id', workout.id)
+    .order('order_index', { ascending: true });
 
-  const exercises = db.get('exerciseLibrary').value();
+  const { data: exercises } = await supabase.from('exercise_library').select('*');
+  const exerciseMap = {};
+  for (const e of exercises || []) {
+    exerciseMap[e.id] = mapExercise(e);
+  }
 
-  const workoutExercisesWithDetails = workoutExercises.map((we) => {
-    const exercise = exercises.find((e) => e.id === we.exerciseId);
-    const sets = db
-      .get('sets')
-      .filter({ workoutExerciseId: we.id })
-      .orderBy(['setNumber'], ['asc'])
-      .value();
-
-    return {
-      ...we,
-      exercise,
-      sets,
-    };
-  });
+  const workoutExercisesWithDetails = [];
+  for (const we of workoutExercises || []) {
+    const { data: sets } = await supabase
+      .from('sets')
+      .select('*')
+      .eq('workout_exercise_id', we.id)
+      .order('set_number', { ascending: true });
+    workoutExercisesWithDetails.push({
+      ...mapWorkoutExercise(we),
+      exercise: exerciseMap[we.exercise_id] ?? null,
+      sets: (sets || []).map(mapSet),
+    });
+  }
 
   res.json({
-    ...workout,
+    ...mapWorkout(workout),
     workoutExercises: workoutExercisesWithDetails,
   });
 });
 
-router.patch('/:id', (req, res) => {
-  const db = getDb();
-  db.read();
-
-  const workout = db.get('workouts').find({ id: req.params.id }).value();
-  if (!workout) {
-    return res.status(404).json({ error: 'Workout not found' });
-  }
-
+router.patch('/:id', async (req, res) => {
   const { name, status, completedAt, notes } = req.body;
   const updates = {};
-
   if (name !== undefined) updates.name = name;
   if (status !== undefined) updates.status = status;
   if (completedAt !== undefined) updates.completedAt = completedAt;
   if (notes !== undefined) updates.notes = notes;
 
-  Object.assign(workout, updates);
-  db.write();
+  if (Object.keys(updates).length === 0) {
+    const { data: workout } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+    if (!workout) return res.status(404).json({ error: 'Workout not found' });
+    return res.json(mapWorkout(workout));
+  }
 
-  res.json(workout);
+  const toDb = toDbWorkout(updates);
+  const { data: updated, error } = await supabase
+    .from('workouts')
+    .update(toDb)
+    .eq('id', req.params.id)
+    .select()
+    .single();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  if (!updated) return res.status(404).json({ error: 'Workout not found' });
+  res.json(mapWorkout(updated));
 });
 
-router.delete('/:id', (req, res) => {
-  const db = getDb();
-  db.read();
-
-  const workout = db.get('workouts').find({ id: req.params.id }).value();
+router.delete('/:id', async (req, res) => {
+  const { data: workout } = await supabase
+    .from('workouts')
+    .select('id')
+    .eq('id', req.params.id)
+    .single();
   if (!workout) {
     return res.status(404).json({ error: 'Workout not found' });
   }
 
-  const workoutExercises = db.get('workoutExercises').filter({ workoutId: workout.id }).value();
+  const { data: workoutExercises } = await supabase
+    .from('workout_exercises')
+    .select('id')
+    .eq('workout_id', req.params.id);
+  const weIds = (workoutExercises || []).map((we) => we.id);
 
-  for (const we of workoutExercises) {
-    db.get('sets').remove({ workoutExerciseId: we.id }).write();
+  if (weIds.length > 0) {
+    await supabase.from('sets').delete().in('workout_exercise_id', weIds);
   }
-
-  db.get('workoutExercises').remove({ workoutId: workout.id }).write();
-  db.get('workouts').remove({ id: workout.id }).write();
-
+  await supabase.from('workout_exercises').delete().eq('workout_id', req.params.id);
+  const { error } = await supabase.from('workouts').delete().eq('id', req.params.id);
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
   res.status(204).send();
 });
 
-router.post('/:id/exercises', (req, res) => {
-  const db = getDb();
-  db.read();
-
-  const workout = db.get('workouts').find({ id: req.params.id }).value();
+router.post('/:id/exercises', async (req, res) => {
+  const { data: workout } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('id', req.params.id)
+    .single();
   if (!workout) {
     return res.status(404).json({ error: 'Workout not found' });
   }
 
   const { exerciseId, order } = req.body;
-
   if (!exerciseId) {
     return res.status(400).json({ error: 'exerciseId is required' });
   }
 
-  const exercise = db.get('exerciseLibrary').find({ id: exerciseId }).value();
+  const { data: exercise } = await supabase
+    .from('exercise_library')
+    .select('id')
+    .eq('id', exerciseId)
+    .single();
   if (!exercise) {
     return res.status(404).json({ error: 'Exercise not found' });
   }
 
-  const existing = db
-    .get('workoutExercises')
-    .filter({ workoutId: workout.id, exerciseId })
-    .value();
-  if (existing.length > 0) {
+  const { data: existing } = await supabase
+    .from('workout_exercises')
+    .select('id')
+    .eq('workout_id', req.params.id)
+    .eq('exercise_id', exerciseId);
+  if (existing && existing.length > 0) {
     return res.status(409).json({ error: 'Exercise already added to workout' });
   }
 
-  const maxOrder = db
-    .get('workoutExercises')
-    .filter({ workoutId: workout.id })
-    .map('order')
-    .max()
-    .value() ?? 0;
+  const { data: maxRows } = await supabase
+    .from('workout_exercises')
+    .select('order_index')
+    .eq('workout_id', req.params.id)
+    .order('order_index', { ascending: false })
+    .limit(1);
+  const maxOrderVal = maxRows?.[0]?.order_index ?? -1;
+  const nextOrder = order !== undefined ? order : maxOrderVal + 1;
 
   const workoutExercise = {
     id: randomUUID(),
-    workoutId: workout.id,
+    workoutId: req.params.id,
     exerciseId,
-    order: order !== undefined ? order : maxOrder + 1,
+    order: nextOrder,
     notes: null,
     createdAt: new Date().toISOString(),
   };
 
-  db.get('workoutExercises').push(workoutExercise).write();
-
-  res.status(201).json(workoutExercise);
+  const toDb = toDbWorkoutExercise(workoutExercise);
+  const { data: inserted, error } = await supabase
+    .from('workout_exercises')
+    .insert(toDb)
+    .select()
+    .single();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  res.status(201).json(mapWorkoutExercise(inserted));
 });
 
-router.patch('/:workoutId/exercises/:id', (req, res) => {
-  const db = getDb();
-  db.read();
-
-  const we = db
-    .get('workoutExercises')
-    .find({
-      id: req.params.id,
-      workoutId: req.params.workoutId,
-    })
-    .value();
-
-  if (!we) {
+router.patch('/:workoutId/exercises/:id', async (req, res) => {
+  const { data: we, error: fetchErr } = await supabase
+    .from('workout_exercises')
+    .select('*')
+    .eq('id', req.params.id)
+    .eq('workout_id', req.params.workoutId)
+    .single();
+  if (fetchErr || !we) {
     return res.status(404).json({ error: 'Workout exercise not found' });
   }
 
   const { order, notes } = req.body;
-  if (order !== undefined) we.order = order;
-  if (notes !== undefined) we.notes = notes;
+  const updates = {};
+  if (order !== undefined) updates.order_index = order;
+  if (notes !== undefined) updates.notes = notes;
 
-  db.write();
+  if (Object.keys(updates).length === 0) {
+    return res.json(mapWorkoutExercise(we));
+  }
 
-  res.json(we);
+  const { data: updated, error } = await supabase
+    .from('workout_exercises')
+    .update(updates)
+    .eq('id', req.params.id)
+    .select()
+    .single();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  res.json(mapWorkoutExercise(updated));
 });
 
-router.delete('/:workoutId/exercises/:id', (req, res) => {
-  const db = getDb();
-  db.read();
-
-  const we = db
-    .get('workoutExercises')
-    .find({
-      id: req.params.id,
-      workoutId: req.params.workoutId,
-    })
-    .value();
-
+router.delete('/:workoutId/exercises/:id', async (req, res) => {
+  const { data: we } = await supabase
+    .from('workout_exercises')
+    .select('id')
+    .eq('id', req.params.id)
+    .eq('workout_id', req.params.workoutId)
+    .single();
   if (!we) {
     return res.status(404).json({ error: 'Workout exercise not found' });
   }
 
-  db.get('sets').remove({ workoutExerciseId: we.id }).write();
-  db.get('workoutExercises').remove({ id: we.id }).write();
-
+  await supabase.from('sets').delete().eq('workout_exercise_id', we.id);
+  const { error } = await supabase.from('workout_exercises').delete().eq('id', we.id);
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
   res.status(204).send();
 });
 

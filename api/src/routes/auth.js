@@ -2,8 +2,8 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { randomUUID } = require('crypto');
-const { getDb } = require('../db.js');
-const { toPublicMember } = require('../utils/members.js');
+const { supabase } = require('../db.js');
+const { mapMember, toDbMember } = require('../utils/mappers.js');
 const { JWT_SECRET } = require('../middleware/auth.js');
 
 const router = express.Router();
@@ -11,16 +11,17 @@ const SALT_ROUNDS = 10;
 const TOKEN_EXPIRY = '7d';
 
 router.post('/register', async (req, res) => {
-  const db = getDb();
-  db.read();
-
   const { email, password, name } = req.body;
 
   if (!email || !password || !name) {
     return res.status(400).json({ error: 'Email, password, and name are required' });
   }
 
-  const existing = db.get('members').find({ email: email.trim().toLowerCase() }).value();
+  const { data: existing } = await supabase
+    .from('members')
+    .select('id')
+    .eq('email', email.trim().toLowerCase())
+    .maybeSingle();
   if (existing) {
     return res.status(409).json({ error: 'Email already registered' });
   }
@@ -38,7 +39,16 @@ router.post('/register', async (req, res) => {
     createdAt: new Date().toISOString(),
   };
 
-  db.get('members').push(member).write();
+  const toDb = toDbMember(member);
+  const { data: inserted, error } = await supabase
+    .from('members')
+    .insert(toDb)
+    .select()
+    .single();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
 
   const token = jwt.sign(
     { memberId: member.id, role: member.role },
@@ -47,27 +57,37 @@ router.post('/register', async (req, res) => {
   );
 
   res.status(201).json({
-    member: toPublicMember(member),
+    member: mapMember(inserted),
     token,
   });
 });
 
 router.post('/login', async (req, res) => {
-  const db = getDb();
-  db.read();
-
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  const member = db.get('members').find({ email: email.trim().toLowerCase() }).value();
-  if (!member || !member.passwordHash) {
+  const { data: member, error } = await supabase
+    .from('members')
+    .select('*')
+    .eq('email', email.trim().toLowerCase())
+    .single();
+
+  if (error) {
+    console.error('Login DB error:', error);
+    return res.status(500).json({
+      error: 'Database error',
+      detail: error.message,
+      hint: error.code === 'PGRST301' ? 'Check RLS policies or use SUPABASE_SERVICE_ROLE_KEY' : undefined,
+    });
+  }
+  if (!member || !member.password_hash) {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
-  const valid = await bcrypt.compare(password, member.passwordHash);
+  const valid = await bcrypt.compare(password, member.password_hash);
   if (!valid) {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
@@ -79,7 +99,7 @@ router.post('/login', async (req, res) => {
   );
 
   res.json({
-    member: toPublicMember(member),
+    member: mapMember(member),
     token,
   });
 });

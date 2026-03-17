@@ -1,62 +1,73 @@
 const express = require('express');
-const { getDb } = require('../db.js');
+const { supabase } = require('../db.js');
 const { toPublicMember } = require('../utils/members.js');
+const { mapMember, mapStarAward } = require('../utils/mappers.js');
+const { toDbMember } = require('../utils/mappers.js');
 const { requireAuth, requireRole } = require('../middleware/auth.js');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  const db = getDb();
-  db.read();
-  let members = db.get('members').value();
+router.get('/', async (req, res) => {
+  let query = supabase.from('members').select('*');
   const roleFilter = req.query.role;
   if (roleFilter) {
-    members = members.filter((m) => m.role === roleFilter);
+    query = query.eq('role', roleFilter);
   }
   const planFilter = req.query.plan;
   if (planFilter) {
-    members = members.filter((m) => (m.plan || 'free') === planFilter);
+    query = query.eq('plan', planFilter);
   }
-  res.json(members.map(toPublicMember));
+  const { data, error } = await query;
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  res.json((data || []).map((m) => mapMember(m)));
 });
 
-router.patch('/me', requireAuth, (req, res) => {
-  const db = getDb();
-  db.read();
-  const member = db.get('members').find({ id: req.member.id }).value();
-  if (!member) {
-    return res.status(404).json({ error: 'Member not found' });
-  }
+router.patch('/me', requireAuth, async (req, res) => {
   const { name, email, avatarUrl } = req.body;
   const updates = {};
   if (name !== undefined) updates.name = name.trim();
   if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl === '' ? null : avatarUrl;
   if (email !== undefined) {
     const trimmed = email.trim().toLowerCase();
-    const existing = db.get('members').find({ email: trimmed }).value();
-    if (existing && existing.id !== member.id) {
+    const { data: existing } = await supabase
+      .from('members')
+      .select('id')
+      .eq('email', trimmed)
+      .neq('id', req.member.id)
+      .maybeSingle();
+    if (existing) {
       return res.status(409).json({ error: 'Email already in use' });
     }
     updates.email = trimmed;
   }
   if (Object.keys(updates).length === 0) {
-    return res.json(toPublicMember(member));
+    const { data: member } = await supabase
+      .from('members')
+      .select('*')
+      .eq('id', req.member.id)
+      .single();
+    if (!member) return res.status(404).json({ error: 'Member not found' });
+    return res.json(toPublicMember(mapMember(member)));
   }
-  db.get('members')
-    .find({ id: req.member.id })
-    .assign(updates)
-    .write();
-  const updated = db.get('members').find({ id: req.member.id }).value();
-  res.json(toPublicMember(updated));
+  const toDb = toDbMember(updates);
+  const { data: updated, error } = await supabase
+    .from('members')
+    .update(toDb)
+    .eq('id', req.member.id)
+    .select()
+    .single();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  if (!updated) return res.status(404).json({ error: 'Member not found' });
+  res.json(toPublicMember(mapMember(updated)));
 });
 
-router.patch('/:id', requireAuth, requireRole('admin'), (req, res) => {
-  const db = getDb();
-  db.read();
-  const member = db.get('members').find({ id: req.params.id }).value();
-  if (!member) {
-    return res.status(404).json({ error: 'Member not found' });
-  }
+router.patch('/:id', requireAuth, requireRole('admin'), async (req, res) => {
   const { plan, planExpiresAt, role } = req.body;
   const updates = {};
   if (plan !== undefined) updates.plan = plan;
@@ -68,75 +79,113 @@ router.patch('/:id', requireAuth, requireRole('admin'), (req, res) => {
     updates.role = role;
   }
   if (Object.keys(updates).length === 0) {
-    return res.json(toPublicMember(member));
+    const { data: member } = await supabase
+      .from('members')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+    if (!member) return res.status(404).json({ error: 'Member not found' });
+    return res.json(toPublicMember(mapMember(member)));
   }
-  db.get('members')
-    .find({ id: req.params.id })
-    .assign(updates)
-    .write();
-  const updated = db.get('members').find({ id: req.params.id }).value();
-  res.json(toPublicMember(updated));
+  const toDb = toDbMember(updates);
+  const { data: updated, error } = await supabase
+    .from('members')
+    .update(toDb)
+    .eq('id', req.params.id)
+    .select()
+    .single();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  if (!updated) return res.status(404).json({ error: 'Member not found' });
+  res.json(toPublicMember(mapMember(updated)));
 });
 
-router.get('/:id', (req, res) => {
-  const db = getDb();
-  db.read();
-  const member = db.get('members').find({ id: req.params.id }).value();
-  if (!member) {
-    return res.status(404).json({ error: 'Member not found' });
+router.get('/:id', async (req, res) => {
+  const { data, error } = await supabase
+    .from('members')
+    .select('*')
+    .eq('id', req.params.id)
+    .single();
+  if (error) {
+    if (error.code === 'PGRST116') return res.status(404).json({ error: 'Member not found' });
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
   }
-  res.json(toPublicMember(member));
+  if (!data) return res.status(404).json({ error: 'Member not found' });
+  res.json(toPublicMember(mapMember(data)));
 });
 
-router.get('/:id/stars', (req, res) => {
-  const db = getDb();
-  db.read();
-
+router.get('/:id/stars', async (req, res) => {
   const memberId = req.params.id;
-  const awards = db
-    .get('starAwards')
-    .filter({ memberId })
-    .orderBy(['createdAt'], ['desc'])
-    .value();
-
+  const { data, error } = await supabase
+    .from('star_awards')
+    .select('*')
+    .eq('member_id', memberId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  const awards = (data || []).map(mapStarAward);
   res.json(awards);
 });
 
-router.get('/:id/progress/:exerciseId', (req, res) => {
-  const db = getDb();
-  db.read();
-
+router.get('/:id/progress/:exerciseId', async (req, res) => {
   const memberId = req.params.id;
   const exerciseId = req.params.exerciseId;
 
-  const exercise = db.get('exerciseLibrary').find({ id: exerciseId }).value();
-  if (!exercise) {
+  const { data: exercise, error: exErr } = await supabase
+    .from('exercise_library')
+    .select('*')
+    .eq('id', exerciseId)
+    .single();
+  if (exErr || !exercise) {
     return res.status(404).json({ error: 'Exercise not found' });
   }
 
-  const memberWorkouts = db.get('workouts').filter({ userId: memberId }).value();
-  const workoutExercises = db
-    .get('workoutExercises')
-    .filter({ exerciseId })
-    .value()
-    .filter((we) => memberWorkouts.some((w) => w.id === we.workoutId));
+  const { data: memberWorkouts } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('user_id', memberId);
+  const workoutIds = (memberWorkouts || []).map((w) => w.id);
+  if (workoutIds.length === 0) {
+    return res.json([]);
+  }
+
+  const { data: workoutExercises } = await supabase
+    .from('workout_exercises')
+    .select('*')
+    .eq('exercise_id', exerciseId)
+    .in('workout_id', workoutIds);
 
   const history = [];
-
-  for (const we of workoutExercises) {
-    const workout = memberWorkouts.find((w) => w.id === we.workoutId);
+  for (const we of workoutExercises || []) {
+    const workout = memberWorkouts.find((w) => w.id === we.workout_id);
     if (!workout) continue;
 
-    const sets = db
-      .get('sets')
-      .filter({ workoutExerciseId: we.id })
-      .orderBy(['setNumber'], ['asc'])
-      .value();
+    const { data: sets } = await supabase
+      .from('sets')
+      .select('*')
+      .eq('workout_exercise_id', we.id)
+      .order('set_number', { ascending: true });
 
     let bestSet = null;
     let totalVolume = 0;
+    const mappedSets = (sets || []).map((s) => ({
+      id: s.id,
+      workoutExerciseId: s.workout_exercise_id,
+      setNumber: s.set_number,
+      reps: s.reps,
+      weightKg: s.weight_kg,
+      durationSeconds: s.duration_seconds,
+      distanceMeters: s.distance_meters,
+      completed: s.completed,
+      createdAt: s.created_at,
+    }));
 
-    for (const s of sets) {
+    for (const s of mappedSets) {
       if (s.reps != null && s.weightKg != null) {
         const volume = s.reps * s.weightKg;
         totalVolume += volume;
@@ -149,50 +198,61 @@ router.get('/:id/progress/:exerciseId', (req, res) => {
     history.push({
       workoutId: workout.id,
       workoutName: workout.name,
-      workoutDate: workout.startedAt,
-      sets,
+      workoutDate: workout.started_at,
+      sets: mappedSets,
       bestSet,
       totalVolume,
     });
   }
 
   history.sort((a, b) => new Date(a.workoutDate) - new Date(b.workoutDate));
-
   res.json(history);
 });
 
-router.get('/:id/stats', (req, res) => {
-  const db = getDb();
-  db.read();
-
+router.get('/:id/stats', async (req, res) => {
   const memberId = req.params.id;
 
-  const workouts = db.get('workouts').filter({ userId: memberId }).value();
-  const totalWorkouts = workouts.length;
+  const { data: workouts } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('user_id', memberId);
+  const totalWorkouts = (workouts || []).length;
+  const workoutIds = (workouts || []).map((w) => w.id);
 
-  const workoutExercises = db
-    .get('workoutExercises')
-    .value()
-    .filter((we) => workouts.some((w) => w.id === we.workoutId));
+  if (workoutIds.length === 0) {
+    return res.json({ totalWorkouts: 0, totalSets: 0, personalBests: [] });
+  }
+
+  const { data: workoutExercises } = await supabase
+    .from('workout_exercises')
+    .select('*')
+    .in('workout_id', workoutIds);
 
   let totalSets = 0;
   const exerciseBest = {};
 
-  for (const we of workoutExercises) {
-    const sets = db.get('sets').filter({ workoutExerciseId: we.id }).value();
-    totalSets += sets.length;
+  for (const we of workoutExercises || []) {
+    const { data: sets } = await supabase
+      .from('sets')
+      .select('*')
+      .eq('workout_exercise_id', we.id);
+    totalSets += (sets || []).length;
 
-    const exercise = db.get('exerciseLibrary').find({ id: we.exerciseId }).value();
+    const { data: exercise } = await supabase
+      .from('exercise_library')
+      .select('*')
+      .eq('id', we.exercise_id)
+      .single();
     if (!exercise) continue;
 
-    for (const s of sets) {
-      if (s.reps != null && s.weightKg != null) {
-        const key = we.exerciseId;
-        if (!exerciseBest[key] || s.weightKg > exerciseBest[key].bestWeightKg) {
+    for (const s of sets || []) {
+      if (s.reps != null && s.weight_kg != null) {
+        const key = we.exercise_id;
+        if (!exerciseBest[key] || s.weight_kg > exerciseBest[key].bestWeightKg) {
           exerciseBest[key] = {
-            exerciseId: we.exerciseId,
+            exerciseId: we.exercise_id,
             name: exercise.name,
-            bestWeightKg: s.weightKg,
+            bestWeightKg: s.weight_kg,
             bestReps: s.reps,
           };
         }
@@ -201,12 +261,7 @@ router.get('/:id/stats', (req, res) => {
   }
 
   const personalBests = Object.values(exerciseBest);
-
-  res.json({
-    totalWorkouts,
-    totalSets,
-    personalBests,
-  });
+  res.json({ totalWorkouts, totalSets, personalBests });
 });
 
 module.exports = router;
