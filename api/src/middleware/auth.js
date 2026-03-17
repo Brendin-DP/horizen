@@ -31,4 +31,20 @@ function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { requireAuth, JWT_SECRET };
+/**
+ * Requires req.member.role to be one of the given roles.
+ * Must be used after requireAuth.
+ */
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.member) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    if (!roles.includes(req.member.role)) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    next();
+  };
+}
+
+module.exports = { requireAuth, requireRole, JWT_SECRET };

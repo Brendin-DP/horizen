@@ -7,7 +7,11 @@ const router = express.Router();
 router.get('/', (req, res) => {
   const db = getDb();
   db.read();
-  const members = db.get('members').value();
+  let members = db.get('members').value();
+  const roleFilter = req.query.role;
+  if (roleFilter) {
+    members = members.filter((m) => m.role === roleFilter);
+  }
   res.json(members.map(toPublicMember));
 });
 

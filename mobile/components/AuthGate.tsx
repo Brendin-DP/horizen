@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { colors } from '../constants/theme';
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  const { token, isLoading, hasCompletedWelcome } = useAuth();
+  const { token, isLoading, hasCompletedWelcome, member } = useAuth();
   const router = useRouter();
   const segments = useSegments();
 
@@ -15,6 +15,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     const inAuth = segments[0] === 'login' || segments[0] === 'register';
     const inLoading = segments[0] === 'loading';
     const inWelcome = segments[0] === 'welcome';
+    const inAdmin = segments[0] === 'admin';
+    const inTabs = segments[0] === 'tabs';
 
     if (!token) {
       if (!inAuth && !inLoading) {
@@ -25,8 +27,18 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     if (token && !hasCompletedWelcome && !inWelcome) {
       router.replace('/welcome');
+      return;
     }
-  }, [token, isLoading, hasCompletedWelcome, segments]);
+
+    if (token && hasCompletedWelcome && member) {
+      const isAdminOrInstructor = member.role === 'admin' || member.role === 'instructor';
+      if (isAdminOrInstructor && inTabs) {
+        router.replace('/(admin)/members');
+      } else if (!isAdminOrInstructor && inAdmin) {
+        router.replace('/(tabs)');
+      }
+    }
+  }, [token, isLoading, hasCompletedWelcome, member, segments]);
 
   if (isLoading) {
     return (

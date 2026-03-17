@@ -1,5 +1,5 @@
 import { LeaderboardView } from '../../components/LeaderboardView';
 
-export default function LeaderboardScreen() {
+export default function AdminLeaderboardScreen() {
   return <LeaderboardView />;
 }

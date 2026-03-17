@@ -21,7 +21,12 @@ export default function WelcomeScreen() {
 
   function handleLetsGo() {
     completeWelcome();
-    router.replace('/(tabs)');
+    const role = member?.role;
+    if (role === 'admin' || role === 'instructor') {
+      router.replace('/(admin)/members');
+    } else {
+      router.replace('/(tabs)');
+    }
   }
 
   return (

@@ -1,17 +1,19 @@
 const express = require('express');
 const { getDb } = require('../db.js');
 const { randomUUID } = require('crypto');
+const { requireAuth, requireRole } = require('../middleware/auth.js');
 
 const router = express.Router();
 
-router.post('/', (req, res) => {
+router.post('/', requireAuth, requireRole('admin', 'instructor'), (req, res) => {
   const db = getDb();
   db.read();
 
-  const { memberId, awardedBy, reason } = req.body;
+  const { memberId, reason } = req.body;
+  const awardedBy = req.member.id;
 
-  if (!memberId || !awardedBy) {
-    return res.status(400).json({ error: 'memberId and awardedBy are required' });
+  if (!memberId) {
+    return res.status(400).json({ error: 'memberId is required' });
   }
 
   const member = db.get('members').find({ id: memberId }).value();

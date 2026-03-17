@@ -87,6 +87,32 @@ export async function getLeaderboard(token?: string | null): Promise<Leaderboard
   return res.json();
 }
 
+export async function getMembers(
+  options?: { role?: string; token?: string | null }
+): Promise<Member[]> {
+  const q = options?.role ? `?role=${encodeURIComponent(options.role)}` : '';
+  const res = await fetchApi(`/members${q}`, { token: options?.token });
+  if (!res.ok) throw new Error('Failed to fetch members');
+  return res.json();
+}
+
+export async function awardStar(
+  memberId: string,
+  reason?: string | null,
+  token?: string | null
+): Promise<{ id: string; memberId: string; awardedBy: string; reason: string | null; createdAt: string }> {
+  const res = await fetchApi('/stars', {
+    method: 'POST',
+    body: JSON.stringify({ memberId, reason: reason || null }),
+    token,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to award star');
+  }
+  return res.json();
+}
+
 async function fetchApi(
   path: string,
   options: RequestInit & { token?: string | null } = {}

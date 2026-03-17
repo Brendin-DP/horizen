@@ -77,16 +77,116 @@
       "avatarUrl": null,
       "createdAt": "2026-03-16T06:23:46.185Z"
     },
-    {"id": "m4", "name": "Bryan Wolf", "email": "bryan@gym.com", "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm", "role": "member", "plan": "pro", "planExpiresAt": "2026-01-01T00:00:00Z", "avatarUrl": null, "createdAt": "2025-01-01T00:00:00Z"},
-    {"id": "m5", "name": "Meghan Jespersen", "email": "meghan@gym.com", "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm", "role": "member", "plan": "pro", "planExpiresAt": "2026-01-01T00:00:00Z", "avatarUrl": null, "createdAt": "2025-01-01T00:00:00Z"},
-    {"id": "m6", "name": "Alex Turner", "email": "alex@gym.com", "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm", "role": "member", "plan": "pro", "planExpiresAt": "2026-01-01T00:00:00Z", "avatarUrl": null, "createdAt": "2025-01-01T00:00:00Z"},
-    {"id": "m7", "name": "Marsha Fisher", "email": "marsha@gym.com", "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm", "role": "member", "plan": "free", "planExpiresAt": null, "avatarUrl": null, "createdAt": "2025-01-01T00:00:00Z"},
-    {"id": "m8", "name": "Juanita Cormier", "email": "juanita@gym.com", "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm", "role": "member", "plan": "free", "planExpiresAt": null, "avatarUrl": null, "createdAt": "2025-01-01T00:00:00Z"},
-    {"id": "m9", "name": "Jenna Venter", "email": "jenna@gym.com", "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm", "role": "member", "plan": "free", "planExpiresAt": null, "avatarUrl": null, "createdAt": "2025-01-01T00:00:00Z"},
-    {"id": "m10", "name": "David Chen", "email": "david@gym.com", "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm", "role": "member", "plan": "free", "planExpiresAt": null, "avatarUrl": null, "createdAt": "2025-01-01T00:00:00Z"},
-    {"id": "m11", "name": "Emma Wilson", "email": "emma@gym.com", "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm", "role": "member", "plan": "free", "planExpiresAt": null, "avatarUrl": null, "createdAt": "2025-01-01T00:00:00Z"},
-    {"id": "m12", "name": "Marcus Lee", "email": "marcus@gym.com", "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm", "role": "member", "plan": "free", "planExpiresAt": null, "avatarUrl": null, "createdAt": "2025-01-01T00:00:00Z"},
-    {"id": "m13", "name": "Becky Bartell", "email": "becky@gym.com", "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm", "role": "member", "plan": "free", "planExpiresAt": null, "avatarUrl": null, "createdAt": "2025-01-01T00:00:00Z"}
+    {
+      "id": "m4",
+      "name": "Bryan Wolf",
+      "email": "bryan@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "member",
+      "plan": "pro",
+      "planExpiresAt": "2026-01-01T00:00:00Z",
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "m5",
+      "name": "Meghan Jespersen",
+      "email": "meghan@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "member",
+      "plan": "pro",
+      "planExpiresAt": "2026-01-01T00:00:00Z",
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "m6",
+      "name": "Alex Turner",
+      "email": "alex@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "member",
+      "plan": "pro",
+      "planExpiresAt": "2026-01-01T00:00:00Z",
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "m7",
+      "name": "Marsha Fisher",
+      "email": "marsha@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "member",
+      "plan": "free",
+      "planExpiresAt": null,
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "m8",
+      "name": "Juanita Cormier",
+      "email": "juanita@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "member",
+      "plan": "free",
+      "planExpiresAt": null,
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "m9",
+      "name": "Jenna Venter",
+      "email": "jenna@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "member",
+      "plan": "free",
+      "planExpiresAt": null,
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "m10",
+      "name": "David Chen",
+      "email": "david@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "member",
+      "plan": "free",
+      "planExpiresAt": null,
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "m11",
+      "name": "Emma Wilson",
+      "email": "emma@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "member",
+      "plan": "free",
+      "planExpiresAt": null,
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "m12",
+      "name": "Marcus Lee",
+      "email": "marcus@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "member",
+      "plan": "free",
+      "planExpiresAt": null,
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "m13",
+      "name": "Becky Bartell",
+      "email": "becky@gym.com",
+      "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
+      "role": "member",
+      "plan": "free",
+      "planExpiresAt": null,
+      "avatarUrl": null,
+      "createdAt": "2025-01-01T00:00:00Z"
+    }
   ],
   "starAwards": [
     {
@@ -110,39 +210,321 @@
       "reason": "100% attendance",
       "createdAt": "2025-01-11T09:00:00Z"
     },
-    {"id": "s4", "memberId": "m4", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-01T10:00:00Z"},
-    {"id": "s5", "memberId": "m4", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-02T10:00:00Z"},
-    {"id": "s6", "memberId": "m4", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-03T10:00:00Z"},
-    {"id": "s7", "memberId": "m4", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-04T10:00:00Z"},
-    {"id": "s8", "memberId": "m4", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-05T10:00:00Z"},
-    {"id": "s9", "memberId": "m4", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-06T10:00:00Z"},
-    {"id": "s10", "memberId": "m5", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-01T11:00:00Z"},
-    {"id": "s11", "memberId": "m5", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-02T11:00:00Z"},
-    {"id": "s12", "memberId": "m5", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-03T11:00:00Z"},
-    {"id": "s13", "memberId": "m5", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-04T11:00:00Z"},
-    {"id": "s14", "memberId": "m5", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-05T11:00:00Z"},
-    {"id": "s15", "memberId": "m6", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-01T12:00:00Z"},
-    {"id": "s16", "memberId": "m6", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-02T12:00:00Z"},
-    {"id": "s17", "memberId": "m6", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-03T12:00:00Z"},
-    {"id": "s18", "memberId": "m6", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-04T12:00:00Z"},
-    {"id": "s19", "memberId": "m7", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-01T13:00:00Z"},
-    {"id": "s20", "memberId": "m7", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-02T13:00:00Z"},
-    {"id": "s21", "memberId": "m7", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-03T13:00:00Z"},
-    {"id": "s22", "memberId": "m7", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-04T13:00:00Z"},
-    {"id": "s23", "memberId": "m8", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-01T14:00:00Z"},
-    {"id": "s24", "memberId": "m8", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-02T14:00:00Z"},
-    {"id": "s25", "memberId": "m8", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-03T14:00:00Z"},
-    {"id": "s26", "memberId": "m9", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-01T15:00:00Z"},
-    {"id": "s27", "memberId": "m9", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-02T15:00:00Z"},
-    {"id": "s28", "memberId": "m9", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-03T15:00:00Z"},
-    {"id": "s29", "memberId": "m10", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-01T16:00:00Z"},
-    {"id": "s30", "memberId": "m10", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-02T16:00:00Z"},
-    {"id": "s31", "memberId": "m10", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-03T16:00:00Z"},
-    {"id": "s32", "memberId": "m11", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-01T17:00:00Z"},
-    {"id": "s33", "memberId": "m11", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-02T17:00:00Z"},
-    {"id": "s34", "memberId": "m12", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-01T18:00:00Z"},
-    {"id": "s35", "memberId": "m12", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-02T18:00:00Z"},
-    {"id": "s36", "memberId": "m13", "awardedBy": "i1", "reason": "Session", "createdAt": "2025-01-01T19:00:00Z"}
+    {
+      "id": "s4",
+      "memberId": "m4",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-01T10:00:00Z"
+    },
+    {
+      "id": "s5",
+      "memberId": "m4",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-02T10:00:00Z"
+    },
+    {
+      "id": "s6",
+      "memberId": "m4",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-03T10:00:00Z"
+    },
+    {
+      "id": "s7",
+      "memberId": "m4",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-04T10:00:00Z"
+    },
+    {
+      "id": "s8",
+      "memberId": "m4",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-05T10:00:00Z"
+    },
+    {
+      "id": "s9",
+      "memberId": "m4",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-06T10:00:00Z"
+    },
+    {
+      "id": "s10",
+      "memberId": "m5",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-01T11:00:00Z"
+    },
+    {
+      "id": "s11",
+      "memberId": "m5",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-02T11:00:00Z"
+    },
+    {
+      "id": "s12",
+      "memberId": "m5",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-03T11:00:00Z"
+    },
+    {
+      "id": "s13",
+      "memberId": "m5",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-04T11:00:00Z"
+    },
+    {
+      "id": "s14",
+      "memberId": "m5",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-05T11:00:00Z"
+    },
+    {
+      "id": "s15",
+      "memberId": "m6",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-01T12:00:00Z"
+    },
+    {
+      "id": "s16",
+      "memberId": "m6",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-02T12:00:00Z"
+    },
+    {
+      "id": "s17",
+      "memberId": "m6",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-03T12:00:00Z"
+    },
+    {
+      "id": "s18",
+      "memberId": "m6",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-04T12:00:00Z"
+    },
+    {
+      "id": "s19",
+      "memberId": "m7",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-01T13:00:00Z"
+    },
+    {
+      "id": "s20",
+      "memberId": "m7",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-02T13:00:00Z"
+    },
+    {
+      "id": "s21",
+      "memberId": "m7",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-03T13:00:00Z"
+    },
+    {
+      "id": "s22",
+      "memberId": "m7",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-04T13:00:00Z"
+    },
+    {
+      "id": "s23",
+      "memberId": "m8",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-01T14:00:00Z"
+    },
+    {
+      "id": "s24",
+      "memberId": "m8",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-02T14:00:00Z"
+    },
+    {
+      "id": "s25",
+      "memberId": "m8",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-03T14:00:00Z"
+    },
+    {
+      "id": "s26",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-01T15:00:00Z"
+    },
+    {
+      "id": "s27",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-02T15:00:00Z"
+    },
+    {
+      "id": "s28",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-03T15:00:00Z"
+    },
+    {
+      "id": "s29",
+      "memberId": "m10",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-01T16:00:00Z"
+    },
+    {
+      "id": "s30",
+      "memberId": "m10",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-02T16:00:00Z"
+    },
+    {
+      "id": "s31",
+      "memberId": "m10",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-03T16:00:00Z"
+    },
+    {
+      "id": "s32",
+      "memberId": "m11",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-01T17:00:00Z"
+    },
+    {
+      "id": "s33",
+      "memberId": "m11",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-02T17:00:00Z"
+    },
+    {
+      "id": "s34",
+      "memberId": "m12",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-01T18:00:00Z"
+    },
+    {
+      "id": "s35",
+      "memberId": "m12",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-02T18:00:00Z"
+    },
+    {
+      "id": "s36",
+      "memberId": "m13",
+      "awardedBy": "i1",
+      "reason": "Session",
+      "createdAt": "2025-01-01T19:00:00Z"
+    },
+    {
+      "id": "151342d5-9619-413f-9e61-9b21d49c284f",
+      "memberId": "m1",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:41:35.467Z"
+    },
+    {
+      "id": "771f83fa-ea3f-471b-9943-762c0be80b7c",
+      "memberId": "m2",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:41:43.383Z"
+    },
+    {
+      "id": "d9a75b70-f157-44f0-ad6f-1b8d3ed920ac",
+      "memberId": "m2",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:41:45.329Z"
+    },
+    {
+      "id": "f194b955-8f50-4671-aaba-55f6538a0ef8",
+      "memberId": "m2",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:41:47.176Z"
+    },
+    {
+      "id": "56a9f811-cc47-4ab9-8304-f385575f9741",
+      "memberId": "m1",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:41:49.528Z"
+    },
+    {
+      "id": "70d8282a-6c90-441a-8626-06cee493a283",
+      "memberId": "m1",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:41:51.755Z"
+    },
+    {
+      "id": "202ba731-2dbd-45a1-a85a-7ac858790ada",
+      "memberId": "m1",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:41:53.837Z"
+    },
+    {
+      "id": "e1b15835-089c-4676-8d10-f543374adf15",
+      "memberId": "m1",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:46:55.015Z"
+    },
+    {
+      "id": "8be7b4c2-c90e-4784-8cee-ee2774690cc7",
+      "memberId": "m1",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:46:59.998Z"
+    },
+    {
+      "id": "7f34e7f4-a626-4045-9b9c-ba0446706f93",
+      "memberId": "m1",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:48:29.051Z"
+    },
+    {
+      "id": "5baa80b3-add3-444a-a06b-6ab1f772484e",
+      "memberId": "m1",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:48:33.396Z"
+    },
+    {
+      "id": "f9368529-9c24-488a-87de-e983a83d51ad",
+      "memberId": "m1",
+      "awardedBy": "a1",
+      "reason": null,
+      "createdAt": "2026-03-17T07:48:36.488Z"
+    }
   ],
   "exerciseLibrary": [
     {
@@ -336,6 +718,16 @@
       "completedAt": "2026-03-17T07:09:08.113Z",
       "notes": null,
       "createdAt": "2026-03-17T07:08:51.605Z"
+    },
+    {
+      "id": "133131b5-3c8c-4436-b59c-5a2f0697df78",
+      "userId": "m1",
+      "name": "My new workout",
+      "status": "in_progress",
+      "startedAt": "2026-03-17T07:45:43.111Z",
+      "completedAt": null,
+      "notes": null,
+      "createdAt": "2026-03-17T07:45:43.111Z"
     }
   ],
   "workoutExercises": [
@@ -410,6 +802,14 @@
       "order": 1,
       "notes": null,
       "createdAt": "2026-03-17T07:08:54.219Z"
+    },
+    {
+      "id": "273e170b-6235-421f-9e41-5d663bee736b",
+      "workoutId": "133131b5-3c8c-4436-b59c-5a2f0697df78",
+      "exerciseId": "ex1",
+      "order": 1,
+      "notes": null,
+      "createdAt": "2026-03-17T07:45:45.672Z"
     }
   ],
   "sets": [
