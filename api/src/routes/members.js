@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb } = require('../db.js');
 const { toPublicMember } = require('../utils/members.js');
+const { requireAuth, requireRole } = require('../middleware/auth.js');
 
 const router = express.Router();
 
@@ -12,7 +13,33 @@ router.get('/', (req, res) => {
   if (roleFilter) {
     members = members.filter((m) => m.role === roleFilter);
   }
+  const planFilter = req.query.plan;
+  if (planFilter) {
+    members = members.filter((m) => (m.plan || 'free') === planFilter);
+  }
   res.json(members.map(toPublicMember));
+});
+
+router.patch('/:id', requireAuth, requireRole('admin'), (req, res) => {
+  const db = getDb();
+  db.read();
+  const member = db.get('members').find({ id: req.params.id }).value();
+  if (!member) {
+    return res.status(404).json({ error: 'Member not found' });
+  }
+  const { plan, planExpiresAt } = req.body;
+  const updates = {};
+  if (plan !== undefined) updates.plan = plan;
+  if (planExpiresAt !== undefined) updates.planExpiresAt = planExpiresAt === '' ? null : planExpiresAt;
+  if (Object.keys(updates).length === 0) {
+    return res.json(toPublicMember(member));
+  }
+  db.get('members')
+    .find({ id: req.params.id })
+    .assign(updates)
+    .write();
+  const updated = db.get('members').find({ id: req.params.id }).value();
+  res.json(toPublicMember(updated));
 });
 
 router.get('/:id', (req, res) => {

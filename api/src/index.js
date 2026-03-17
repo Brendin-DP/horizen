@@ -4,6 +4,7 @@ const membersRouter = require('./routes/members.js');
 const starsRouter = require('./routes/stars.js');
 const leaderboardRouter = require('./routes/leaderboard.js');
 const authRouter = require('./routes/auth.js');
+const adminRouter = require('./routes/admin.js');
 const exercisesRouter = require('./routes/exercises.js');
 const workoutsRouter = require('./routes/workouts.js');
 const { workoutExercisesRouter, setsIdRouter } = require('./routes/sets.js');
@@ -41,6 +42,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/auth', authRouter);
+app.use('/admin', adminRouter);
 app.use('/members', membersRouter);
 app.use('/stars', starsRouter);
 app.use('/leaderboard', leaderboardRouter);
