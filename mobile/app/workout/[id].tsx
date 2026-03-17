@@ -10,6 +10,7 @@ import {
   Modal,
   FlatList,
   Alert,
+  Switch,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,6 +23,8 @@ import {
   getExercises,
 } from '../../lib/api';
 import type { WorkoutWithDetails, Exercise } from '../../types';
+import { colors } from '../../constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,6 +42,7 @@ export default function WorkoutDetailScreen() {
   const [weight, setWeight] = useState('');
   const [duration, setDuration] = useState('');
   const [distance, setDistance] = useState('');
+  const [bodyweight, setBodyweight] = useState(false);
   const [savingSet, setSavingSet] = useState(false);
 
   const fetchWorkout = useCallback(async () => {
@@ -78,6 +82,7 @@ export default function WorkoutDetailScreen() {
     setWeight('');
     setDuration('');
     setDistance('');
+    setBodyweight(false);
     setSetModalVisible(true);
   }
 
@@ -92,14 +97,18 @@ export default function WorkoutDetailScreen() {
       const body: Record<string, number | boolean> = { completed: true };
       if (exercise.unit === 'weight_reps') {
         const r = parseInt(reps, 10);
-        const w = parseFloat(weight);
-        if (isNaN(r) || isNaN(w)) {
-          setError('Enter valid reps and weight');
+        if (isNaN(r)) {
+          setError('Enter valid reps');
           setSavingSet(false);
           return;
         }
         body.reps = r;
-        body.weightKg = w;
+        body.weightKg = bodyweight ? 0 : parseFloat(weight);
+        if (!bodyweight && (isNaN(body.weightKg as number) || (body.weightKg as number) < 0)) {
+          setError('Enter valid weight');
+          setSavingSet(false);
+          return;
+        }
       } else if (exercise.unit === 'time') {
         const d = parseInt(duration, 10);
         if (isNaN(d) || d < 0) {
@@ -185,7 +194,7 @@ export default function WorkoutDetailScreen() {
   const availableExercises = exercises.filter((e) => !existingExerciseIds.has(e.id));
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.backText}>← Back</Text>
@@ -281,50 +290,71 @@ export default function WorkoutDetailScreen() {
             </Text>
             {selectedWe?.exercise?.unit === 'weight_reps' && (
               <>
+                <Text style={styles.label}>Reps</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Reps"
+                  placeholder="Add reps"
                   value={reps}
                   onChangeText={setReps}
                   keyboardType="number-pad"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textMuted}
                 />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Weight (kg)"
-                  value={weight}
-                  onChangeText={setWeight}
-                  keyboardType="decimal-pad"
-                  placeholderTextColor="#64748b"
-                />
+                <View style={styles.weightRow}>
+                  <Text style={styles.label}>Weight</Text>
+                  <View style={styles.bodyweightToggle}>
+                    <Text style={styles.bodyweightLabel}>Bodyweight</Text>
+                    <Switch
+                      value={bodyweight}
+                      onValueChange={setBodyweight}
+                      trackColor={{ false: colors.border, true: colors.accent }}
+                      thumbColor={bodyweight ? colors.primary : colors.white}
+                    />
+                  </View>
+                </View>
+                {!bodyweight && (
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Add weight (kg)"
+                    value={weight}
+                    onChangeText={setWeight}
+                    keyboardType="decimal-pad"
+                    placeholderTextColor={colors.textMuted}
+                  />
+                )}
               </>
             )}
             {selectedWe?.exercise?.unit === 'time' && (
-              <TextInput
-                style={styles.input}
-                placeholder="Duration (seconds)"
-                value={duration}
-                onChangeText={setDuration}
-                keyboardType="number-pad"
-                placeholderTextColor="#64748b"
-              />
+              <>
+                <Text style={styles.label}>Duration (seconds)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Add duration"
+                  value={duration}
+                  onChangeText={setDuration}
+                  keyboardType="number-pad"
+                  placeholderTextColor={colors.textMuted}
+                />
+              </>
             )}
             {selectedWe?.exercise?.unit === 'distance' && (
-              <TextInput
-                style={styles.input}
-                placeholder="Distance (meters)"
-                value={distance}
-                onChangeText={setDistance}
-                keyboardType="decimal-pad"
-                placeholderTextColor="#64748b"
-              />
+              <>
+                <Text style={styles.label}>Distance (meters)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Add distance"
+                  value={distance}
+                  onChangeText={setDistance}
+                  keyboardType="decimal-pad"
+                  placeholderTextColor={colors.textMuted}
+                />
+              </>
             )}
             <Pressable
               style={[styles.saveSetBtn, savingSet && styles.buttonDisabled]}
               onPress={handleSaveSet}
               disabled={savingSet}
             >
-              <Text style={styles.saveSetText}>{savingSet ? 'Saving...' : 'Save Set'}</Text>
+              <Text style={styles.saveSetText}>{savingSet ? 'Saving...' : 'Save Exercise'} →</Text>
             </Pressable>
             <Pressable style={styles.closeBtn} onPress={() => setSetModalVisible(false)}>
               <Text style={styles.closeText}>Cancel</Text>
@@ -332,73 +362,73 @@ export default function WorkoutDetailScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  header: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 48, paddingBottom: 8 },
+  container: { flex: 1, backgroundColor: colors.background },
+  header: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12 },
   backBtn: { paddingVertical: 8, paddingRight: 16 },
-  backText: { color: '#fbbf24', fontSize: 16 },
+  backText: { color: colors.primary, fontSize: 16 },
   center: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
-  loadingText: { color: '#94a3b8', marginTop: 12 },
+  loadingText: { color: colors.textMuted, marginTop: 12 },
   scroll: { flex: 1 },
   scrollContent: { padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#f8fafc' },
-  status: { fontSize: 14, color: '#94a3b8', marginTop: 4 },
-  error: { color: '#f87171', marginTop: 12 },
+  title: { fontSize: 24, fontWeight: 'bold', color: colors.textPrimary },
+  status: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
+  error: { color: colors.primary, marginTop: 12 },
   exerciseBlock: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.white,
     padding: 16,
     marginTop: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
-  exerciseName: { fontSize: 18, fontWeight: '600', color: '#f8fafc' },
+  exerciseName: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
   setRow: { flexDirection: 'row', marginTop: 8, gap: 12 },
-  setNum: { color: '#94a3b8', width: 60 },
-  setDetail: { color: '#f8fafc' },
+  setNum: { color: colors.textMuted, width: 60 },
+  setDetail: { color: colors.textPrimary },
   addSetBtn: {
     marginTop: 12,
     padding: 10,
-    backgroundColor: '#334155',
-    borderRadius: 6,
+    backgroundColor: colors.accent,
+    borderRadius: 8,
     alignSelf: 'flex-start',
   },
-  addSetText: { color: '#fbbf24', fontWeight: '500' },
+  addSetText: { color: colors.primary, fontWeight: '500' },
   addExerciseBtn: {
     marginTop: 24,
     padding: 14,
-    backgroundColor: '#334155',
-    borderRadius: 8,
+    backgroundColor: colors.white,
+    borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#475569',
+    borderColor: colors.border,
     borderStyle: 'dashed',
   },
-  addExerciseText: { color: '#94a3b8' },
+  addExerciseText: { color: colors.textMuted },
   completeBtn: {
     marginTop: 16,
     padding: 14,
     backgroundColor: '#22c55e',
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  completeText: { color: '#fff', fontWeight: '600' },
+  completeText: { color: colors.white, fontWeight: '600' },
   deleteBtn: {
     marginTop: 24,
     padding: 14,
     alignItems: 'center',
   },
-  deleteText: { color: '#f87171', fontSize: 14 },
+  deleteText: { color: colors.primary, fontSize: 14 },
   buttonDisabled: { opacity: 0.6 },
   modalOverlay: {
     flex: 1,
@@ -406,38 +436,42 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.white,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 24,
     maxHeight: '80%',
   },
-  modalTitle: { fontSize: 18, fontWeight: '600', color: '#f8fafc', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, marginBottom: 16 },
+  label: { fontSize: 14, fontWeight: '500', color: colors.textPrimary, marginBottom: 8 },
+  weightRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  bodyweightToggle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  bodyweightLabel: { fontSize: 14, color: colors.textSecondary },
   pickerItem: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: colors.border,
   },
-  pickerName: { fontSize: 16, color: '#f8fafc' },
-  pickerMeta: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
-  pickerEmpty: { color: '#94a3b8', textAlign: 'center', padding: 24 },
+  pickerName: { fontSize: 16, color: colors.textPrimary },
+  pickerMeta: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
+  pickerEmpty: { color: colors.textMuted, textAlign: 'center', padding: 24 },
   closeBtn: { marginTop: 16, padding: 12, alignItems: 'center' },
-  closeText: { color: '#94a3b8' },
+  closeText: { color: colors.textMuted },
   input: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.backgroundDark,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 14,
-    color: '#f8fafc',
+    color: colors.textPrimary,
     marginBottom: 12,
   },
   saveSetBtn: {
     padding: 14,
-    backgroundColor: '#3b82f6',
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 16,
   },
-  saveSetText: { color: '#fff', fontWeight: '600' },
+  saveSetText: { color: colors.white, fontWeight: '600' },
 });

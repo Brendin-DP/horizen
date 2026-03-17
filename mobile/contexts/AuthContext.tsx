@@ -5,16 +5,30 @@ import { login as apiLogin, register as apiRegister, Member } from '../lib/api';
 const TOKEN_KEY = 'gymapp_token';
 const MEMBER_KEY = 'gymapp_member';
 
+export interface AuthRequest {
+  email: string;
+  password: string;
+  type: 'login' | 'register';
+  name?: string;
+}
+
 interface AuthState {
   member: Member | null;
   token: string | null;
   isLoading: boolean;
+  authRequest: AuthRequest | null;
+  authError: string | null;
+  hasCompletedWelcome: boolean;
 }
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
+  setAuthRequest: (req: AuthRequest | null) => void;
+  executeAuthRequest: (req: AuthRequest) => Promise<void>;
+  clearAuthError: () => void;
+  completeWelcome: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -24,6 +38,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     member: null,
     token: null,
     isLoading: true,
+    authRequest: null,
+    authError: null,
+    hasCompletedWelcome: false,
   });
 
   useEffect(() => {
@@ -76,6 +93,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     await clearAuth();
+    setState((s) => ({ ...s, hasCompletedWelcome: false }));
+  };
+
+  const setAuthRequest = (authRequest: AuthRequest | null) => {
+    setState((s) => ({ ...s, authRequest }));
+  };
+
+  const executeAuthRequest = async (req: AuthRequest) => {
+    setState((s) => ({ ...s, authError: null }));
+    try {
+      if (req.type === 'login') {
+        const { member, token } = await apiLogin({ email: req.email, password: req.password });
+        await persistAuth(member, token);
+      } else {
+        const { member, token } = await apiRegister({
+          email: req.email,
+          password: req.password,
+          name: req.name ?? '',
+        });
+        await persistAuth(member, token);
+      }
+      setState((s) => ({ ...s, authRequest: null, authError: null }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Authentication failed';
+      setState((s) => ({ ...s, authError: message, authRequest: null }));
+      throw err;
+    }
+  };
+
+  const clearAuthError = () => {
+    setState((s) => ({ ...s, authError: null }));
+  };
+
+  const completeWelcome = () => {
+    setState((s) => ({ ...s, hasCompletedWelcome: true }));
   };
 
   return (
@@ -85,6 +137,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         register,
         logout,
+        setAuthRequest,
+        executeAuthRequest,
+        clearAuthError,
+        completeWelcome,
       }}
     >
       {children}

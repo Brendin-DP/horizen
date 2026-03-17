@@ -3,6 +3,8 @@ import { Link, useRouter } from 'expo-router';
 import { View, Text, StyleSheet, Pressable, Modal, TextInput } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { createWorkout } from '../../lib/api';
+import { colors } from '../../constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { member, token, logout } = useAuth();
@@ -30,23 +32,35 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to GymApp</Text>
-      <Text style={styles.subtitle}>Logged in as {member?.name ?? 'Unknown'}</Text>
-      <Text style={styles.role}>Role: {member?.role ?? 'member'}</Text>
-      <Pressable onPress={logout} style={styles.logout}>
-        <Text style={styles.logoutText}>Log out</Text>
-      </Pressable>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Horizen Gym</Text>
+          <Pressable onPress={logout} style={styles.logout}>
+            <Text style={styles.logoutText}>Log out</Text>
+          </Pressable>
+        </View>
 
-      <Pressable
-        style={[styles.startWorkoutBtn, creating && styles.buttonDisabled]}
-        onPress={openCreateModal}
-        disabled={creating}
-      >
-        <Text style={styles.startWorkoutText}>
-          {creating ? 'Creating...' : 'Start New Workout'}
-        </Text>
-      </Pressable>
+        <Text style={styles.greeting}>Hey, {member?.name ?? 'there'}!</Text>
+        <Text style={styles.sub}>Ready to train?</Text>
+
+        <Pressable
+          style={[styles.startWorkoutBtn, creating && styles.buttonDisabled]}
+          onPress={openCreateModal}
+          disabled={creating}
+        >
+          <Text style={styles.startWorkoutText}>
+            {creating ? 'Creating...' : 'Start New Workout'}
+          </Text>
+        </Pressable>
+
+        <Link href="/(tabs)/leaderboard" asChild>
+          <Pressable style={styles.card}>
+            <Text style={styles.cardTitle}>View Leaderboard</Text>
+            <Text style={styles.cardDesc}>See who's leading the star rankings</Text>
+          </Pressable>
+        </Link>
+      </View>
 
       <Modal visible={nameModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -57,7 +71,7 @@ export default function HomeScreen() {
               placeholder="Workout name (optional)"
               value={workoutName}
               onChangeText={setWorkoutName}
-              placeholderTextColor="#64748b"
+              placeholderTextColor={colors.textMuted}
               autoFocus
             />
             <View style={styles.modalRow}>
@@ -75,76 +89,73 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-
-      <Link href="/(tabs)/leaderboard" asChild>
-        <Pressable style={styles.card}>
-          <Text style={styles.cardTitle}>View Leaderboard</Text>
-          <Text style={styles.cardDesc}>See who's leading the star rankings</Text>
-        </Pressable>
-      </Link>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
     padding: 24,
-    paddingTop: 48,
+    paddingTop: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   title: {
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#f8fafc',
+    color: colors.textPrimary,
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#94a3b8',
+  greeting: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+  },
+  sub: {
+    fontSize: 16,
+    color: colors.textMuted,
     marginTop: 8,
   },
   card: {
-    marginTop: 32,
-    backgroundColor: '#1e293b',
+    marginTop: 24,
+    backgroundColor: colors.white,
     padding: 20,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#f8fafc',
+    color: colors.textPrimary,
   },
   cardDesc: {
     fontSize: 14,
-    color: '#94a3b8',
-    marginTop: 4,
-  },
-  role: {
-    fontSize: 12,
-    color: '#64748b',
+    color: colors.textMuted,
     marginTop: 4,
   },
   logout: {
-    marginTop: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   logoutText: {
-    color: '#94a3b8',
+    color: colors.primary,
     fontSize: 14,
   },
   startWorkoutBtn: {
     marginTop: 24,
     padding: 16,
-    backgroundColor: '#3b82f6',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     alignItems: 'center',
   },
   startWorkoutText: {
-    color: '#fff',
+    color: colors.white,
     fontWeight: '600',
     fontSize: 16,
   },
@@ -156,31 +167,31 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalContent: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 24,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
-  modalTitle: { fontSize: 18, fontWeight: '600', color: '#f8fafc', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, marginBottom: 16 },
   modalInput: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.backgroundDark,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 14,
-    color: '#f8fafc',
+    color: colors.textPrimary,
     fontSize: 16,
     marginBottom: 20,
   },
   modalRow: { flexDirection: 'row', gap: 12, justifyContent: 'flex-end' },
   modalCancel: { paddingVertical: 12, paddingHorizontal: 20 },
-  modalCancelText: { color: '#94a3b8' },
+  modalCancelText: { color: colors.textMuted },
   modalCreate: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: '#3b82f6',
+    backgroundColor: colors.primary,
     borderRadius: 8,
   },
-  modalCreateText: { color: '#fff', fontWeight: '600' },
+  modalCreateText: { color: colors.white, fontWeight: '600' },
 });

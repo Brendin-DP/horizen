@@ -1,9 +1,19 @@
 {
   "expo": {
-    "name": "GymApp",
+    "name": "Horizen Gym",
     "slug": "gymapp",
     "scheme": "gymapp",
-    "platforms": ["ios", "android"],
-    "newArchEnabled": true
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#e11d48",
+      "image": null
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

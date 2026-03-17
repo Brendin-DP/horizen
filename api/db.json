@@ -273,6 +273,16 @@
       "completedAt": "2026-03-16T06:49:57.731Z",
       "notes": null,
       "createdAt": "2026-03-16T06:49:53.003Z"
+    },
+    {
+      "id": "d6f4e87b-ec92-4fbf-bd8b-5b074cebfc23",
+      "userId": "m1",
+      "name": "My test workout",
+      "status": "completed",
+      "startedAt": "2026-03-17T06:50:11.661Z",
+      "completedAt": "2026-03-17T06:50:32.281Z",
+      "notes": null,
+      "createdAt": "2026-03-17T06:50:11.661Z"
     }
   ],
   "workoutExercises": [
@@ -331,6 +341,14 @@
       "order": 1,
       "notes": null,
       "createdAt": "2026-03-16T06:49:55.638Z"
+    },
+    {
+      "id": "3b2259a8-7140-4fa2-a8c0-23e17148dd3f",
+      "workoutId": "d6f4e87b-ec92-4fbf-bd8b-5b074cebfc23",
+      "exerciseId": "ex1",
+      "order": 1,
+      "notes": null,
+      "createdAt": "2026-03-17T06:50:15.841Z"
     }
   ],
   "sets": [
@@ -377,6 +395,28 @@
       "distanceMeters": null,
       "completed": true,
       "createdAt": "2026-03-16T06:49:36.992Z"
+    },
+    {
+      "id": "13e043e4-02fd-4166-8a63-b0dcb88f8ccb",
+      "workoutExerciseId": "3b2259a8-7140-4fa2-a8c0-23e17148dd3f",
+      "setNumber": 1,
+      "reps": 20,
+      "weightKg": 10,
+      "durationSeconds": null,
+      "distanceMeters": null,
+      "completed": true,
+      "createdAt": "2026-03-17T06:50:22.176Z"
+    },
+    {
+      "id": "1c24c5a7-04ec-4a6f-b690-1744b1a1e9f1",
+      "workoutExerciseId": "3b2259a8-7140-4fa2-a8c0-23e17148dd3f",
+      "setNumber": 2,
+      "reps": 25,
+      "weightKg": 15,
+      "durationSeconds": null,
+      "distanceMeters": null,
+      "completed": true,
+      "createdAt": "2026-03-17T06:50:30.342Z"
     }
   ]
 }

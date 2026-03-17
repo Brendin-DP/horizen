@@ -12,9 +12,12 @@ import {
   TextInput,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { getWorkouts, createWorkout } from '../../lib/api';
 import type { Workout } from '../../types';
+import { colors } from '../../constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -83,33 +86,108 @@ export default function WorkoutsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#fbbf24" />
-        <Text style={styles.loadingText}>Loading workouts...</Text>
-      </View>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading workouts...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (error && workouts.length === 0) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity onPress={() => { setLoading(true); fetchWorkouts(); }} style={styles.retry}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.center}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={() => { setLoading(true); fetchWorkouts(); }} style={styles.retry}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Pressable
-        style={[styles.newButton, creating && styles.buttonDisabled]}
-        onPress={openCreateModal}
-        disabled={creating}
-      >
-        <Text style={styles.newButtonText}>{creating ? 'Creating...' : 'Start New Workout'}</Text>
-      </Pressable>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.header}>
+        <View style={styles.logoPlaceholder} />
+        <Text style={styles.headerTitle}>Your Workouts</Text>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{member?.name?.charAt(0) ?? '?'}</Text>
+        </View>
+      </View>
+
+      {error && <Text style={styles.errorBanner}>{error}</Text>}
+
+      {workouts.length === 0 ? (
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIconContainer}>
+            <View style={styles.emptyCircle1} />
+            <View style={styles.emptyCircle2} />
+            <View style={styles.emptyIcon}>
+              <Ionicons name="barbell-outline" size={64} color={colors.accentDark} />
+            </View>
+          </View>
+          <Text style={styles.emptyTitle}>Add Workouts</Text>
+          <Text style={styles.emptyText}>
+            You currently have no workouts yet. Click the add button to get started.
+          </Text>
+          <Pressable
+            style={[styles.addButton, creating && styles.buttonDisabled]}
+            onPress={openCreateModal}
+            disabled={creating}
+          >
+            <Ionicons name="add" size={20} color={colors.white} />
+            <Text style={styles.addButtonText}>Add</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <>
+          <Pressable
+            style={[styles.newButton, creating && styles.buttonDisabled]}
+            onPress={openCreateModal}
+            disabled={creating}
+          >
+            <Ionicons name="add" size={20} color={colors.white} />
+            <Text style={styles.newButtonText}>{creating ? 'Creating...' : 'Start New Workout'}</Text>
+          </Pressable>
+
+          <FlatList
+            data={workouts}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => { setRefreshing(true); fetchWorkouts(); }}
+                tintColor={colors.primary}
+              />
+            }
+            renderItem={({ item }) => (
+              <Pressable
+                style={styles.card}
+                onPress={() => router.push(`/workout/${item.id}`)}
+              >
+                <Text style={styles.cardName}>{item.name || 'Untitled Workout'}</Text>
+                <Text style={styles.cardDate}>{formatDate(item.startedAt)}</Text>
+                <View style={styles.cardMeta}>
+                  <View
+                    style={[
+                      styles.badge,
+                      item.status === 'completed' ? styles.badgeComplete : styles.badgeProgress,
+                    ]}
+                  >
+                    <Text style={styles.badgeText}>
+                      {item.status === 'completed' ? 'Completed' : 'In progress'}
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+            )}
+          />
+        </>
+      )}
 
       <Modal visible={nameModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -120,7 +198,7 @@ export default function WorkoutsScreen() {
               placeholder="Workout name (optional)"
               value={workoutName}
               onChangeText={setWorkoutName}
-              placeholderTextColor="#64748b"
+              placeholderTextColor={colors.textMuted}
               autoFocus
             />
             <View style={styles.modalRow}>
@@ -138,88 +216,154 @@ export default function WorkoutsScreen() {
           </View>
         </View>
       </Modal>
-
-      {error && <Text style={styles.errorBanner}>{error}</Text>}
-
-      <FlatList
-        data={workouts}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchWorkouts(); }} tintColor="#fbbf24" />
-        }
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.card}
-            onPress={() => router.push(`/workout/${item.id}`)}
-          >
-            <Text style={styles.cardName}>{item.name || 'Untitled Workout'}</Text>
-            <Text style={styles.cardDate}>{formatDate(item.startedAt)}</Text>
-            <View style={styles.cardMeta}>
-              <View style={[styles.badge, item.status === 'completed' ? styles.badgeComplete : styles.badgeProgress]}>
-                <Text style={styles.badgeText}>{item.status === 'completed' ? 'Completed' : 'In progress'}</Text>
-              </View>
-            </View>
-          </Pressable>
-        )}
-        ListEmptyComponent={
-          <Text style={styles.empty}>No workouts yet. Start your first one!</Text>
-        }
-      />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
+  safe: { flex: 1, backgroundColor: colors.background },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  logoPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    marginRight: 12,
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 16,
+  },
   center: {
     flex: 1,
-    backgroundColor: '#0f172a',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
-  loadingText: { color: '#94a3b8', marginTop: 12 },
-  errorText: { color: '#f87171', textAlign: 'center' },
+  loadingText: { color: colors.textMuted, marginTop: 12 },
+  errorText: { color: colors.primary, textAlign: 'center' },
   retry: {
     marginTop: 16,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: '#334155',
+    backgroundColor: colors.primary,
     borderRadius: 8,
   },
-  retryText: { color: '#f8fafc' },
+  retryText: { color: colors.white },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyIconContainer: {
+    position: 'relative',
+    marginBottom: 24,
+  },
+  emptyCircle1: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.accent,
+    top: -20,
+    left: -20,
+  },
+  emptyCircle2: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.accentDark,
+    top: 0,
+    left: 0,
+  },
+  emptyIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+  },
+  addButtonText: { color: colors.white, fontWeight: '600', fontSize: 16 },
   newButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     margin: 16,
     padding: 14,
-    backgroundColor: '#3b82f6',
-    borderRadius: 8,
-    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 12,
   },
   buttonDisabled: { opacity: 0.6 },
-  newButtonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  errorBanner: { color: '#f87171', paddingHorizontal: 16, marginBottom: 8 },
+  newButtonText: { color: colors.white, fontWeight: '600', fontSize: 16 },
+  errorBanner: { color: colors.primary, paddingHorizontal: 16, marginBottom: 8 },
   list: { padding: 16, paddingTop: 0 },
   card: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.background,
     padding: 16,
     marginBottom: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
-  cardName: { fontSize: 18, fontWeight: '600', color: '#f8fafc' },
-  cardDate: { fontSize: 14, color: '#94a3b8', marginTop: 4 },
+  cardName: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
+  cardDate: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
   cardMeta: { flexDirection: 'row', marginTop: 8 },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
-  badgeProgress: { backgroundColor: '#fbbf24' },
+  badgeProgress: { backgroundColor: colors.accent },
   badgeComplete: { backgroundColor: '#22c55e' },
-  badgeText: { fontSize: 12, fontWeight: '600', color: '#0f172a' },
-  empty: { color: '#94a3b8', textAlign: 'center', padding: 32 },
+  badgeText: { fontSize: 12, fontWeight: '600', color: colors.textPrimary },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -227,31 +371,31 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalContent: {
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 24,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
-  modalTitle: { fontSize: 18, fontWeight: '600', color: '#f8fafc', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, marginBottom: 16 },
   modalInput: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.backgroundDark,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 14,
-    color: '#f8fafc',
+    color: colors.textPrimary,
     fontSize: 16,
     marginBottom: 20,
   },
   modalRow: { flexDirection: 'row', gap: 12, justifyContent: 'flex-end' },
   modalCancel: { paddingVertical: 12, paddingHorizontal: 20 },
-  modalCancelText: { color: '#94a3b8' },
+  modalCancelText: { color: colors.textMuted },
   modalCreate: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: '#3b82f6',
+    backgroundColor: colors.primary,
     borderRadius: 8,
   },
-  modalCreateText: { color: '#fff', fontWeight: '600' },
+  modalCreateText: { color: colors.white, fontWeight: '600' },
 });

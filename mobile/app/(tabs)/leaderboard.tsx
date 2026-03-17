@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { getLeaderboard, LeaderboardEntry } from '../../lib/api';
+import { colors } from '../../constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LeaderboardScreen() {
   const [data, setData] = useState<LeaderboardEntry[]>([]);
@@ -40,32 +42,37 @@ export default function LeaderboardScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#fbbf24" />
-        <Text style={styles.loadingText}>Loading leaderboard...</Text>
-      </View>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading leaderboard...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity onPress={() => { setLoading(true); fetchLeaderboard(); }} style={styles.retry}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.center}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={() => { setLoading(true); fetchLeaderboard(); }} style={styles.retry}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.container}>
       <FlatList
         data={data}
         keyExtractor={(item) => item.memberId}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fbbf24" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -76,39 +83,40 @@ export default function LeaderboardScreen() {
         )}
         ListEmptyComponent={<Text style={styles.empty}>No rankings yet.</Text>}
       />
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   center: {
     flex: 1,
-    backgroundColor: '#0f172a',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   loadingText: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     marginTop: 12,
   },
   errorText: {
-    color: '#f87171',
+    color: colors.primary,
     textAlign: 'center',
   },
   retry: {
     marginTop: 16,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: '#334155',
+    backgroundColor: colors.primary,
     borderRadius: 8,
   },
   retryText: {
-    color: '#f8fafc',
+    color: colors.white,
   },
   list: {
     padding: 16,
@@ -116,32 +124,32 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1e293b',
+    backgroundColor: colors.white,
     padding: 16,
     marginBottom: 8,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: colors.border,
   },
   rank: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fbbf24',
+    color: colors.primary,
     width: 44,
   },
   name: {
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
-    color: '#f8fafc',
+    color: colors.textPrimary,
   },
   stars: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fbbf24',
+    color: colors.primary,
   },
   empty: {
-    color: '#94a3b8',
+    color: colors.textMuted,
     textAlign: 'center',
     padding: 24,
   },
