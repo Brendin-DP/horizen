@@ -13,6 +13,7 @@ export const colors = {
   borderFocus: '#E74C3C',
   white: '#FFFFFF',
   black: '#000000',
+  gold: '#fbbf24',
 } as const;
 
 export const spacing = {
