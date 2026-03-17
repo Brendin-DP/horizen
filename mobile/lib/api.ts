@@ -1,14 +1,17 @@
 /**
  * API client for GymApp.
  *
- * PHYSICAL DEVICE (Expo Go on phone): Use your Mac's LAN IP so the phone can reach your API.
- * SIMULATOR (Expo → press i for iOS): Use 'localhost' — the simulator runs on your Mac.
+ * The mobile app talks to the Express API only — it does NOT access Supabase directly.
  *
- * To find your Mac's IP: run `ifconfig` and look for inet under en0 (Wi‑Fi).
+ * API URL (set in .env or app.config):
+ * - EXPO_PUBLIC_API_URL: e.g. http://192.168.1.5:3001 for physical device
+ * - iOS Simulator: localhost works (default)
+ * - Android Emulator: use http://10.0.2.2:3001
+ * - Physical device: use your Mac's LAN IP (run `ifconfig`, inet under en0)
  */
-const USE_SIMULATOR = true; // Set to true when using iOS Simulator (press i in Expo)
-const API_HOST = USE_SIMULATOR ? 'localhost' : '10.21.216.254';
-const BASE_URL = `http://${API_HOST}:3001`;
+const BASE_URL =
+  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
+  'http://localhost:3001';
 
 export interface Member {
   id: string;
@@ -67,14 +70,22 @@ export async function login({
   email: string;
   password: string;
 }): Promise<AuthResponse> {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+  } catch (e) {
+    throw new Error(
+      'Cannot reach API. On a physical device? Set EXPO_PUBLIC_API_URL to your Mac IP (e.g. http://192.168.1.5:3001) in .env'
+    );
+  }
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as { error?: string }).error || 'Login failed');
+    const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+    const msg = err.detail ? `${err.error || 'Login failed'}: ${err.detail}` : (err.error || 'Login failed');
+    throw new Error(msg);
   }
   return res.json();
 }

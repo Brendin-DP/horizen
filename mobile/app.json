@@ -10,10 +10,13 @@
     "newArchEnabled": true,
     "splash": {
       "backgroundColor": "#e11d48",
-      "image": null
+      "resizeMode": "contain"
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "ios": {
+      "bundleIdentifier": "com.anonymous.gymapp"
+    }
   }
 }

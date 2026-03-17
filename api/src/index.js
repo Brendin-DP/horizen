@@ -52,7 +52,13 @@ app.use('/workouts', workoutsRouter);
 app.use('/workout-exercises', workoutExercisesRouter);
 app.use('/sets', setsIdRouter);
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log('API running on http://localhost:' + PORT);
-});
+// Local development — only listen when not running in Vercel
+if (process.env.VERCEL !== '1') {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log('API running on http://localhost:' + PORT);
+  });
+}
+
+// Export for Vercel serverless
+module.exports = app;
