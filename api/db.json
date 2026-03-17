@@ -188,6 +188,119 @@
       "createdAt": "2025-01-01T00:00:00Z"
     }
   ],
+  "plans": [
+    {
+      "id": "free",
+      "name": "Free",
+      "priceMonthly": 0
+    },
+    {
+      "id": "pro",
+      "name": "Pro",
+      "priceMonthly": 299
+    },
+    {
+      "id": "elite",
+      "name": "Elite",
+      "priceMonthly": 599
+    }
+  ],
+  "features": [
+    {
+      "id": "leaderboard_access",
+      "name": "Leaderboard",
+      "description": "Access to the leaderboard and ranking"
+    },
+    {
+      "id": "exercise_history",
+      "name": "Full Exercise History",
+      "description": "View exercise history and progress graph; days limit applies on free"
+    },
+    {
+      "id": "advanced_stats",
+      "name": "Advanced Stats",
+      "description": "Advanced workout statistics"
+    },
+    {
+      "id": "max_workouts",
+      "name": "Workouts",
+      "description": "Number of workouts allowed; free tier has a limit"
+    }
+  ],
+  "planFeatures": [
+    {
+      "planId": "free",
+      "featureId": "leaderboard_access",
+      "enabled": false,
+      "limit": null
+    },
+    {
+      "planId": "pro",
+      "featureId": "leaderboard_access",
+      "enabled": true,
+      "limit": null
+    },
+    {
+      "planId": "elite",
+      "featureId": "leaderboard_access",
+      "enabled": true,
+      "limit": null
+    },
+    {
+      "planId": "free",
+      "featureId": "exercise_history",
+      "enabled": true,
+      "limit": 30
+    },
+    {
+      "planId": "pro",
+      "featureId": "exercise_history",
+      "enabled": true,
+      "limit": null
+    },
+    {
+      "planId": "elite",
+      "featureId": "exercise_history",
+      "enabled": true,
+      "limit": null
+    },
+    {
+      "planId": "free",
+      "featureId": "advanced_stats",
+      "enabled": false,
+      "limit": null
+    },
+    {
+      "planId": "pro",
+      "featureId": "advanced_stats",
+      "enabled": true,
+      "limit": null
+    },
+    {
+      "planId": "elite",
+      "featureId": "advanced_stats",
+      "enabled": true,
+      "limit": null
+    },
+    {
+      "planId": "free",
+      "featureId": "max_workouts",
+      "enabled": true,
+      "limit": 10
+    },
+    {
+      "planId": "pro",
+      "featureId": "max_workouts",
+      "enabled": true,
+      "limit": null
+    },
+    {
+      "planId": "elite",
+      "featureId": "max_workouts",
+      "enabled": true,
+      "limit": null
+    }
+  ],
   "starAwards": [
     {
       "id": "s1",
@@ -524,6 +637,69 @@
       "awardedBy": "a1",
       "reason": null,
       "createdAt": "2026-03-17T07:48:36.488Z"
+    },
+    {
+      "id": "dd7e23c8-b55d-4322-bd6c-da9123091c57",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": null,
+      "createdAt": "2026-03-17T11:59:00.174Z"
+    },
+    {
+      "id": "6adeb605-8595-495d-9bf6-b7e63ceb2dcc",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": null,
+      "createdAt": "2026-03-17T11:59:02.542Z"
+    },
+    {
+      "id": "5fc38743-56d1-48e4-a772-516d9e56d497",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": null,
+      "createdAt": "2026-03-17T11:59:04.669Z"
+    },
+    {
+      "id": "dc9937da-560e-417e-a7c4-21e2d899ef75",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": null,
+      "createdAt": "2026-03-17T11:59:06.662Z"
+    },
+    {
+      "id": "ebc7b458-70f0-41d2-b7f4-2bee072979ad",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": null,
+      "createdAt": "2026-03-17T11:59:08.452Z"
+    },
+    {
+      "id": "bf200032-06ba-48ff-98f5-50659db01292",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": null,
+      "createdAt": "2026-03-17T11:59:10.145Z"
+    },
+    {
+      "id": "ca05a297-8585-4045-9dcf-fa1f07cd3d94",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": null,
+      "createdAt": "2026-03-17T11:59:11.731Z"
+    },
+    {
+      "id": "2edf6119-f5f3-49b9-be00-937f8b813e92",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": null,
+      "createdAt": "2026-03-17T11:59:13.275Z"
+    },
+    {
+      "id": "48a0c8aa-232d-4d8d-b9f6-59ab24d78aa1",
+      "memberId": "m9",
+      "awardedBy": "i1",
+      "reason": null,
+      "createdAt": "2026-03-17T11:59:14.809Z"
     }
   ],
   "exerciseLibrary": [
@@ -723,9 +899,9 @@
       "id": "133131b5-3c8c-4436-b59c-5a2f0697df78",
       "userId": "m1",
       "name": "My new workout",
-      "status": "in_progress",
+      "status": "completed",
       "startedAt": "2026-03-17T07:45:43.111Z",
-      "completedAt": null,
+      "completedAt": "2026-03-17T11:58:05.893Z",
       "notes": null,
       "createdAt": "2026-03-17T07:45:43.111Z"
     }
@@ -911,6 +1087,17 @@
       "distanceMeters": null,
       "completed": true,
       "createdAt": "2026-03-17T07:09:01.692Z"
+    },
+    {
+      "id": "dad056e4-53db-4063-b347-43ed70e97b59",
+      "workoutExerciseId": "273e170b-6235-421f-9e41-5d663bee736b",
+      "setNumber": 1,
+      "reps": 10,
+      "weightKg": 20,
+      "durationSeconds": null,
+      "distanceMeters": null,
+      "completed": true,
+      "createdAt": "2026-03-17T11:58:04.678Z"
     }
   ]
 }
