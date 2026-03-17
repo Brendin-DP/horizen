@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -39,6 +39,17 @@ export default function AdminMembersScreen() {
   const [selectedMember, setSelectedMember] = useState<MemberWithStars | null>(null);
   const [reason, setReason] = useState('');
   const [awarding, setAwarding] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredMembers = useMemo(() => {
+    if (!searchQuery.trim()) return members;
+    const q = searchQuery.trim().toLowerCase();
+    return members.filter(
+      (m) =>
+        m.name.toLowerCase().includes(q) ||
+        m.email.toLowerCase().includes(q)
+    );
+  }, [members, searchQuery]);
 
   const fetchData = useCallback(async () => {
     setError(null);
@@ -113,15 +124,34 @@ export default function AdminMembersScreen() {
 
       {error && <Text style={styles.errorBanner}>{error}</Text>}
 
+      {members.length > 0 && (
+        <View style={styles.searchContainer}>
+          <Ionicons name="search-outline" size={20} color={colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name or email"
+            placeholderTextColor={colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+      )}
+
       {members.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="people-outline" size={64} color={colors.textMuted} />
           <Text style={styles.emptyTitle}>No participants yet</Text>
           <Text style={styles.emptyText}>Members will appear here when they join.</Text>
         </View>
+      ) : filteredMembers.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="search-outline" size={64} color={colors.textMuted} />
+          <Text style={styles.emptyTitle}>No matches</Text>
+          <Text style={styles.emptyText}>Try a different search term.</Text>
+        </View>
       ) : (
         <FlatList
-          data={members}
+          data={filteredMembers}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           refreshControl={
@@ -211,6 +241,26 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: colors.white, fontWeight: '600', fontSize: 14 },
   errorBanner: { color: colors.primary, padding: 12, backgroundColor: colors.accent },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.white,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.textPrimary,
+    paddingVertical: 8,
+  },
   list: { padding: 16 },
   emptyState: {
     flex: 1,

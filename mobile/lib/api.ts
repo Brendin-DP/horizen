@@ -106,6 +106,35 @@ export async function updateProfile(
   return res.json();
 }
 
+export interface FundData {
+  target: number;
+  raised: number;
+  donateUrl: string;
+  visible: boolean;
+}
+
+export async function getFund(): Promise<FundData> {
+  const res = await fetch(`${BASE_URL}/fund`);
+  if (!res.ok) throw new Error('Failed to fetch fund');
+  return res.json();
+}
+
+export async function updateFund(
+  body: { raised?: number; visible?: boolean },
+  token?: string | null
+): Promise<{ raised: number; visible: boolean }> {
+  const res = await fetchApi('/fund', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+    token,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to update fund');
+  }
+  return res.json();
+}
+
 export async function getLeaderboard(token?: string | null): Promise<LeaderboardEntry[]> {
   const res = await fetch(`${BASE_URL}/leaderboard`, {
     headers: headersWithAuth(token ?? null),

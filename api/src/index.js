@@ -9,6 +9,7 @@ const adminRouter = require('./routes/admin.js');
 const exercisesRouter = require('./routes/exercises.js');
 const workoutsRouter = require('./routes/workouts.js');
 const { workoutExercisesRouter, setsIdRouter } = require('./routes/sets.js');
+const fundRouter = require('./routes/fund.js');
 
 const app = express();
 app.use(cors());
@@ -51,14 +52,9 @@ app.use('/exercises', exercisesRouter);
 app.use('/workouts', workoutsRouter);
 app.use('/workout-exercises', workoutExercisesRouter);
 app.use('/sets', setsIdRouter);
+app.use('/fund', fundRouter);
 
-// Local development — only listen when not running in Vercel
-if (process.env.VERCEL !== '1') {
-  const PORT = process.env.PORT || 3001;
-  app.listen(PORT, () => {
-    console.log('API running on http://localhost:' + PORT);
-  });
-}
-
-// Export for Vercel serverless
-module.exports = app;
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log('API running on http://localhost:' + PORT);
+});

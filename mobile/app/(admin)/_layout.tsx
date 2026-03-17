@@ -25,6 +25,13 @@ export default function AdminTabLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="trophy-outline" size={size} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="fund"
+        options={{
+          title: 'Fund',
+          tabBarIcon: ({ color, size }) => <Ionicons name="wallet-outline" size={size} color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
