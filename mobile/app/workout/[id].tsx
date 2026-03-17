@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,9 @@ import {
   FlatList,
   Alert,
   Switch,
+  Dimensions,
 } from 'react-native';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -22,6 +24,7 @@ import {
   addSet,
   getExercises,
 } from '../../lib/api';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { WorkoutWithDetails, Exercise } from '../../types';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,6 +47,8 @@ export default function WorkoutDetailScreen() {
   const [distance, setDistance] = useState('');
   const [bodyweight, setBodyweight] = useState(false);
   const [savingSet, setSavingSet] = useState(false);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const confettiRef = useRef<ConfettiCannon>(null);
 
   const fetchWorkout = useCallback(async () => {
     if (!id) return;
@@ -69,6 +74,8 @@ export default function WorkoutDetailScreen() {
       await addWorkoutExercise(id, exerciseId, undefined, token);
       setPickerVisible(false);
       fetchWorkout();
+      setSuccessModalVisible(true);
+      setTimeout(() => confettiRef.current?.start(), 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add exercise');
     } finally {
@@ -206,9 +213,51 @@ export default function WorkoutDetailScreen() {
 
         {error && <Text style={styles.error}>{error}</Text>}
 
+        {isInProgress &&
+        (!workout.workoutExercises || workout.workoutExercises.length === 0) ? (
+          <View style={styles.exercisesEmptyState}>
+            <View style={styles.emptyIconContainer}>
+              <View style={styles.emptyCircle1} />
+              <View style={styles.emptyCircle2} />
+              <View style={styles.emptyIcon}>
+                <Ionicons name="barbell-outline" size={36} color={colors.accentDark} />
+              </View>
+            </View>
+            <Text style={styles.emptyTitle}>Add Exercises</Text>
+            <Text style={styles.emptyText}>
+              You currently have no exercises yet. Click the add button to get started.
+            </Text>
+            <Pressable
+              style={[styles.addButton, addingExercise && styles.buttonDisabled]}
+              onPress={() => {
+                loadExercises();
+                setPickerVisible(true);
+              }}
+              disabled={addingExercise}
+            >
+              <Ionicons name="add" size={20} color={colors.white} />
+              <Text style={styles.addButtonText}>Add</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {workout.workoutExercises?.map((we) => (
-          <View key={we.id} style={styles.exerciseBlock}>
-            <Text style={styles.exerciseName}>{we.exercise?.name ?? 'Exercise'}</Text>
+          <Pressable
+            key={we.id}
+            style={styles.exerciseBlock}
+            onPress={() =>
+              we.exerciseId && router.push(`/exercise/${we.exerciseId}`)
+            }
+          >
+            <View style={styles.exerciseHeader}>
+              <Text style={styles.exerciseName}>{we.exercise?.name ?? 'Exercise'}</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            </View>
+            <Text style={styles.setCountSummary}>
+              {we.sets?.length === 1
+                ? '1 set'
+                : `${we.sets?.length ?? 0} sets`}
+            </Text>
             {we.sets?.map((s) => (
               <View key={s.id} style={styles.setRow}>
                 <Text style={styles.setNum}>Set {s.setNumber}</Text>
@@ -224,11 +273,17 @@ export default function WorkoutDetailScreen() {
               </View>
             ))}
             {isInProgress && we.exercise && (
-              <Pressable style={styles.addSetBtn} onPress={() => openSetModal(we)}>
+              <Pressable
+                style={styles.addSetBtn}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  openSetModal(we);
+                }}
+              >
                 <Text style={styles.addSetText}>+ Add Set</Text>
               </Pressable>
             )}
-          </View>
+          </Pressable>
         ))}
 
         {isInProgress && (
@@ -277,6 +332,34 @@ export default function WorkoutDetailScreen() {
             />
             <Pressable style={styles.closeBtn} onPress={() => setPickerVisible(false)}>
               <Text style={styles.closeText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={successModalVisible} animationType="fade" transparent>
+        <View style={styles.successModalOverlay}>
+          <ConfettiCannon
+            ref={confettiRef}
+            count={150}
+            origin={{ x: Dimensions.get('window').width / 2 - 20, y: 200 }}
+            autoStart={false}
+            fadeOut
+            colors={[colors.primary, colors.accent, colors.accentDark, '#22c55e', '#fbbf24']}
+          />
+          <View style={styles.successCard}>
+            <View style={styles.successIconCircle}>
+              <Ionicons name="gift-outline" size={40} color={colors.primary} />
+            </View>
+            <Text style={styles.successTitle}>Well Done!</Text>
+            <Text style={styles.successSub}>
+              Your exercise has been successfully added. You crushed your PB.
+            </Text>
+            <Pressable
+              style={styles.successOkay}
+              onPress={() => setSuccessModalVisible(false)}
+            >
+              <Text style={styles.successOkayText}>Okay</Text>
             </Pressable>
           </View>
         </View>
@@ -392,7 +475,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  exerciseHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   exerciseName: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
+  setCountSummary: {
+    fontSize: 14,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
   setRow: { flexDirection: 'row', marginTop: 8, gap: 12 },
   setNum: { color: colors.textMuted, width: 60 },
   setDetail: { color: colors.textPrimary },
@@ -474,4 +567,106 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   saveSetText: { color: colors.white, fontWeight: '600' },
+  exercisesEmptyState: {
+    marginTop: 32,
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  emptyIconContainer: {
+    position: 'relative',
+    marginBottom: 24,
+    width: 120,
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyCircle1: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.accent,
+    top: 0,
+    left: 0,
+  },
+  emptyCircle2: {
+    position: 'absolute',
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: colors.accentDark,
+    top: 15,
+    left: 15,
+  },
+  emptyIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  emptyTitle: { fontSize: 22, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 8 },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+  },
+  addButtonText: { color: colors.white, fontWeight: '600', fontSize: 16 },
+  successModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  successCard: {
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+  },
+  successIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  successSub: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  successOkay: {
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 48,
+    borderRadius: 12,
+  },
+  successOkayText: { color: colors.white, fontWeight: '600', fontSize: 16 },
 });

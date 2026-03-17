@@ -22,6 +22,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="workout/[id]" options={{ presentation: 'card' }} />
+          <Stack.Screen name="exercise/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />
           <Stack.Screen name="loading" />

@@ -235,3 +235,34 @@ export async function deleteSet(id: string, token?: string | null): Promise<void
   const res = await fetchApi(`/sets/${id}`, { method: 'DELETE', token });
   if (!res.ok) throw new Error('Failed to delete set');
 }
+
+export interface ProgressHistoryEntry {
+  workoutId: string;
+  workoutName: string | null;
+  workoutDate: string;
+  sets: Array<{
+    id: string;
+    setNumber: number;
+    reps: number | null;
+    weightKg: number | null;
+    durationSeconds: number | null;
+    distanceMeters: number | null;
+    completed: boolean;
+    createdAt: string;
+  }>;
+  bestSet: { reps: number; weightKg: number } | null;
+  totalVolume: number;
+}
+
+export async function getMemberProgress(
+  memberId: string,
+  exerciseId: string,
+  token?: string | null
+): Promise<ProgressHistoryEntry[]> {
+  const res = await fetchApi(
+    `/members/${memberId}/progress/${exerciseId}`,
+    { token }
+  );
+  if (!res.ok) throw new Error('Failed to fetch progress');
+  return res.json();
+}

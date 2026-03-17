@@ -275,14 +275,24 @@
       "createdAt": "2026-03-16T06:49:53.003Z"
     },
     {
-      "id": "d6f4e87b-ec92-4fbf-bd8b-5b074cebfc23",
+      "id": "178fe517-95ec-4cbd-93b4-a18a2168e00e",
       "userId": "m1",
-      "name": "My test workout",
+      "name": "My MMM workout",
       "status": "completed",
-      "startedAt": "2026-03-17T06:50:11.661Z",
-      "completedAt": "2026-03-17T06:50:32.281Z",
+      "startedAt": "2026-03-17T07:08:08.683Z",
+      "completedAt": "2026-03-17T07:08:41.347Z",
       "notes": null,
-      "createdAt": "2026-03-17T06:50:11.661Z"
+      "createdAt": "2026-03-17T07:08:08.683Z"
+    },
+    {
+      "id": "4e32cdc6-d4fa-4478-bc20-d8cd983dd194",
+      "userId": "m1",
+      "name": "My MMM workout 2",
+      "status": "completed",
+      "startedAt": "2026-03-17T07:08:51.605Z",
+      "completedAt": "2026-03-17T07:09:08.113Z",
+      "notes": null,
+      "createdAt": "2026-03-17T07:08:51.605Z"
     }
   ],
   "workoutExercises": [
@@ -343,12 +353,20 @@
       "createdAt": "2026-03-16T06:49:55.638Z"
     },
     {
-      "id": "3b2259a8-7140-4fa2-a8c0-23e17148dd3f",
-      "workoutId": "d6f4e87b-ec92-4fbf-bd8b-5b074cebfc23",
+      "id": "fb415682-56a3-4fda-b80f-c49f0418e338",
+      "workoutId": "178fe517-95ec-4cbd-93b4-a18a2168e00e",
       "exerciseId": "ex1",
       "order": 1,
       "notes": null,
-      "createdAt": "2026-03-17T06:50:15.841Z"
+      "createdAt": "2026-03-17T07:08:11.719Z"
+    },
+    {
+      "id": "23f3c5cb-5884-4608-9a5d-c595fd5eab5f",
+      "workoutId": "4e32cdc6-d4fa-4478-bc20-d8cd983dd194",
+      "exerciseId": "ex1",
+      "order": 1,
+      "notes": null,
+      "createdAt": "2026-03-17T07:08:54.219Z"
     }
   ],
   "sets": [
@@ -397,26 +415,59 @@
       "createdAt": "2026-03-16T06:49:36.992Z"
     },
     {
-      "id": "13e043e4-02fd-4166-8a63-b0dcb88f8ccb",
-      "workoutExerciseId": "3b2259a8-7140-4fa2-a8c0-23e17148dd3f",
+      "id": "70a577d3-156c-48ce-8ef6-010b03556212",
+      "workoutExerciseId": "fb415682-56a3-4fda-b80f-c49f0418e338",
       "setNumber": 1,
-      "reps": 20,
-      "weightKg": 10,
+      "reps": 5,
+      "weightKg": 20,
       "durationSeconds": null,
       "distanceMeters": null,
       "completed": true,
-      "createdAt": "2026-03-17T06:50:22.176Z"
+      "createdAt": "2026-03-17T07:08:20.611Z"
     },
     {
-      "id": "1c24c5a7-04ec-4a6f-b690-1744b1a1e9f1",
-      "workoutExerciseId": "3b2259a8-7140-4fa2-a8c0-23e17148dd3f",
+      "id": "f632b4ce-66f3-4ce6-b1cd-1af0e7851280",
+      "workoutExerciseId": "fb415682-56a3-4fda-b80f-c49f0418e338",
       "setNumber": 2,
-      "reps": 25,
+      "reps": 10,
       "weightKg": 15,
       "durationSeconds": null,
       "distanceMeters": null,
       "completed": true,
-      "createdAt": "2026-03-17T06:50:30.342Z"
+      "createdAt": "2026-03-17T07:08:25.691Z"
+    },
+    {
+      "id": "33ca54a3-5837-4696-8f3d-e11c074703d9",
+      "workoutExerciseId": "fb415682-56a3-4fda-b80f-c49f0418e338",
+      "setNumber": 3,
+      "reps": 15,
+      "weightKg": 10,
+      "durationSeconds": null,
+      "distanceMeters": null,
+      "completed": true,
+      "createdAt": "2026-03-17T07:08:31.360Z"
+    },
+    {
+      "id": "11d0ffa0-5560-4a5d-9340-48c35c05f14b",
+      "workoutExerciseId": "fb415682-56a3-4fda-b80f-c49f0418e338",
+      "setNumber": 4,
+      "reps": 20,
+      "weightKg": 5,
+      "durationSeconds": null,
+      "distanceMeters": null,
+      "completed": true,
+      "createdAt": "2026-03-17T07:08:36.634Z"
+    },
+    {
+      "id": "5739bfee-ac03-4e65-8c85-97385ee75153",
+      "workoutExerciseId": "23f3c5cb-5884-4608-9a5d-c595fd5eab5f",
+      "setNumber": 1,
+      "reps": 30,
+      "weightKg": 10,
+      "durationSeconds": null,
+      "distanceMeters": null,
+      "completed": true,
+      "createdAt": "2026-03-17T07:09:01.692Z"
     }
   ]
 }
