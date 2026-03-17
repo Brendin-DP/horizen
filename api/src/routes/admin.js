@@ -1,8 +1,12 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
+const { randomUUID } = require('crypto');
 const { getDb } = require('../db.js');
+const { toPublicMember } = require('../utils/members.js');
 const { requireAuth, requireRole } = require('../middleware/auth.js');
 
 const router = express.Router();
+const SALT_ROUNDS = 10;
 
 // All admin routes require auth + admin role
 router.use(requireAuth);
@@ -100,6 +104,36 @@ router.get('/metrics', (req, res) => {
     arr,
     starsThisMonth,
   });
+});
+
+router.post('/members', async (req, res) => {
+  const { name, email, password, role } = req.body;
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({ error: 'Name, email, password, and role are required' });
+  }
+  if (!['member', 'instructor', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Role must be member, instructor, or admin' });
+  }
+  const db = getDb();
+  db.read();
+  const existing = db.get('members').find({ email: email.trim().toLowerCase() }).value();
+  if (existing) {
+    return res.status(409).json({ error: 'Email already registered' });
+  }
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const member = {
+    id: randomUUID(),
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
+    passwordHash,
+    role,
+    plan: role === 'member' ? 'free' : 'elite',
+    planExpiresAt: null,
+    avatarUrl: null,
+    createdAt: new Date().toISOString(),
+  };
+  db.get('members').push(member).write();
+  res.status(201).json(toPublicMember(member));
 });
 
 module.exports = router;

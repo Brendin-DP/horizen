@@ -186,6 +186,17 @@
       "planExpiresAt": null,
       "avatarUrl": null,
       "createdAt": "2025-01-01T00:00:00Z"
+    },
+    {
+      "id": "743ff715-824a-41e2-8a18-c725b36dc6ad",
+      "name": "Brendin du Plessis",
+      "email": "brendp51@gmail.com",
+      "passwordHash": "$2b$10$mX8nPpKcQhNEc9c7n5aTR.eoIXoLblVu2z2uYrHh.NxsyR5TTkGsm",
+      "role": "admin",
+      "plan": "elite",
+      "planExpiresAt": null,
+      "avatarUrl": null,
+      "createdAt": "2026-03-17T12:23:00.414Z"
     }
   ],
   "plans": [

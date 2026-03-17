@@ -39,6 +39,9 @@ export default function Layout() {
           <NavLink to="/members" style={navStyle}>
             Members
           </NavLink>
+          <NavLink to="/users" style={navStyle}>
+            Users
+          </NavLink>
           <NavLink to="/plans-features" style={navStyle}>
             Plans & Features
           </NavLink>

@@ -71,14 +71,38 @@ export async function updateMemberPlan(
   planExpiresAt: string | null,
   token: string
 ): Promise<Member> {
+  return updateMember(memberId, { plan, planExpiresAt }, token);
+}
+
+export async function updateMember(
+  memberId: string,
+  updates: { plan?: string; planExpiresAt?: string | null; role?: 'member' | 'instructor' | 'admin' },
+  token: string
+): Promise<Member> {
   const res = await fetch(`${BASE_URL}/members/${memberId}`, {
     method: 'PATCH',
     headers: headersWithAuth(token),
-    body: JSON.stringify({ plan, planExpiresAt }),
+    body: JSON.stringify(updates),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as { error?: string }).error || 'Failed to update member');
+  }
+  return res.json();
+}
+
+export async function createMember(
+  data: { name: string; email: string; password: string; role: 'member' | 'instructor' | 'admin' },
+  token: string
+): Promise<Member> {
+  const res = await fetch(`${BASE_URL}/admin/members`, {
+    method: 'POST',
+    headers: headersWithAuth(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to create user');
   }
   return res.json();
 }

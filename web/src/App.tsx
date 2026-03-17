@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
+import Users from './pages/Users';
 import PlansFeatures from './pages/PlansFeatures';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="members" element={<Members />} />
+        <Route path="users" element={<Users />} />
         <Route path="plans-features" element={<PlansFeatures />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -27,10 +27,16 @@ router.patch('/:id', requireAuth, requireRole('admin'), (req, res) => {
   if (!member) {
     return res.status(404).json({ error: 'Member not found' });
   }
-  const { plan, planExpiresAt } = req.body;
+  const { plan, planExpiresAt, role } = req.body;
   const updates = {};
   if (plan !== undefined) updates.plan = plan;
   if (planExpiresAt !== undefined) updates.planExpiresAt = planExpiresAt === '' ? null : planExpiresAt;
+  if (role !== undefined) {
+    if (!['member', 'instructor', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Role must be member, instructor, or admin' });
+    }
+    updates.role = role;
+  }
   if (Object.keys(updates).length === 0) {
     return res.json(toPublicMember(member));
   }
