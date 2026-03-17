@@ -1,0 +1,7 @@
+** BUILD FAILED **
+
+
+The following build commands failed:
+	CompileAssetCatalogVariant thinned /Users/brendinduplessis/Library/Developer/Xcode/DerivedData/HorizenGym-adoxforyambyaadhgihtqwbfjmtb/Build/Products/Debug-iphonesimulator/HorizenGym.app /Users/brendinduplessis/Documents/Development/horizen/mobile/ios/HorizenGym/Images.xcassets (in target 'HorizenGym' from project 'HorizenGym')
+	Building workspace HorizenGym with scheme HorizenGym and configuration Debug
+(2 failures)

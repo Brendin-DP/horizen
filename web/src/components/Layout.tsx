@@ -45,6 +45,9 @@ export default function Layout() {
           <NavLink to="/plans-features" style={navStyle}>
             Plans & Features
           </NavLink>
+          <NavLink to="/fund" style={navStyle}>
+            Fund
+          </NavLink>
         </nav>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 14, color: colors.textMuted }}>

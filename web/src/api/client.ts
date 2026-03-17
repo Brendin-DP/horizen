@@ -171,3 +171,32 @@ export async function getAdminMetrics(token: string): Promise<AdminMetrics> {
   if (!res.ok) throw new Error('Failed to fetch metrics');
   return res.json();
 }
+
+export interface FundData {
+  target: number;
+  raised: number;
+  donateUrl: string;
+  visible: boolean;
+}
+
+export async function getFund(): Promise<FundData> {
+  const res = await fetch(`${BASE_URL}/fund`);
+  if (!res.ok) throw new Error('Failed to fetch fund');
+  return res.json();
+}
+
+export async function updateFund(
+  body: { raised?: number; visible?: boolean },
+  token: string
+): Promise<{ raised: number; visible: boolean }> {
+  const res = await fetch(`${BASE_URL}/fund`, {
+    method: 'PATCH',
+    headers: headersWithAuth(token),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to update fund');
+  }
+  return res.json();
+}

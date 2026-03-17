@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
 import Users from './pages/Users';
 import PlansFeatures from './pages/PlansFeatures';
+import Fund from './pages/Fund';
 
 function App() {
   const { token } = useAuth();
@@ -27,6 +28,7 @@ function App() {
         <Route path="members" element={<Members />} />
         <Route path="users" element={<Users />} />
         <Route path="plans-features" element={<PlansFeatures />} />
+        <Route path="fund" element={<Fund />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
