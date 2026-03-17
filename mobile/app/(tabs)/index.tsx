@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { View, Text, StyleSheet, Pressable, Modal, TextInput, Linking, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { createWorkout, getFund, type FundData } from '../../lib/api';
@@ -79,16 +79,9 @@ export default function HomeScreen() {
           </Text>
         </Pressable>
 
-        <Link href="/(tabs)/leaderboard" asChild>
-          <Pressable style={styles.card}>
-            <Text style={styles.cardTitle}>View Leaderboard</Text>
-            <Text style={styles.cardDesc}>See who's leading the star rankings</Text>
-          </Pressable>
-        </Link>
-
         {fund?.visible !== false && (
         <View style={styles.fundCard}>
-          <Text style={styles.cardTitle}>Support Horizen</Text>
+          <Text style={styles.fundTitle}>Help keep Horizen alive by donating something</Text>
           {fundLoading ? (
             <ActivityIndicator size="small" color={colors.primary} style={styles.fundLoader} />
           ) : fund ? (
@@ -176,26 +169,13 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 8,
   },
-  card: {
-    marginTop: 24,
-    backgroundColor: colors.white,
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
   cardDesc: {
     fontSize: 14,
     color: colors.textMuted,
     marginTop: 4,
   },
   fundCard: {
-    marginTop: 16,
+    marginTop: 24,
     backgroundColor: colors.white,
     padding: 20,
     borderRadius: 12,
@@ -217,15 +197,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 4,
   },
+  fundTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    lineHeight: 22,
+  },
   donateBtn: {
     marginTop: 16,
     padding: 12,
-    backgroundColor: colors.primary,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: colors.primary,
     borderRadius: 8,
     alignItems: 'center',
   },
   donateBtnText: {
-    color: colors.white,
+    color: colors.primary,
     fontWeight: '600',
     fontSize: 16,
   },
