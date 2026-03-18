@@ -1,5 +1,5 @@
 import express from 'express';
-import { supabase } from '../db.js';
+import supabase from '../db.js';
 import { toPublicMember } from '../utils/members.js';
 import { mapMember, mapStarAward } from '../utils/mappers.js';
 import { toDbMember } from '../utils/mappers.js';

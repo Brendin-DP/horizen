@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
-import { supabase } from '../db.js';
+import supabase from '../db.js';
 import { mapPlan, mapFeature, mapPlanFeature, mapMember, toDbMember, toDbPlanFeature } from '../utils/mappers.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 

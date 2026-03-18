@@ -1,6 +1,6 @@
 import express from 'express';
 import { randomUUID } from 'crypto';
-import { supabase } from '../db.js';
+import supabase from '../db.js';
 import { mapStarAward, toDbStarAward } from '../utils/mappers.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 

@@ -1,7 +1,7 @@
 // api/src/config/features.js
 // Reads from plan_features in Supabase. Falls back to hardcoded FEATURES if query fails.
 
-import { supabase } from '../db.js';
+import supabase from '../db.js';
 
 export const FEATURE_ID_MAP = {
   MAX_WORKOUTS: 'max_workouts',

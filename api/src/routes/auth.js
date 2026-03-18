@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
-import { supabase } from '../db.js';
+import supabase from '../db.js';
 import { mapMember, toDbMember } from '../utils/mappers.js';
 import { JWT_SECRET } from '../middleware/auth.js';
 

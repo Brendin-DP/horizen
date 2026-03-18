@@ -1,5 +1,5 @@
 import express from 'express';
-import { supabase } from '../db.js';
+import supabase from '../db.js';
 import { mapExercise } from '../utils/mappers.js';
 
 const router = express.Router();

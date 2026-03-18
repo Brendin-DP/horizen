@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { supabase } from '../db.js';
+import supabase from '../db.js';
 import { mapMember } from '../utils/mappers.js';
 
 export const JWT_SECRET = process.env.JWT_SECRET || 'gymapp-dev-secret-change-in-production';
