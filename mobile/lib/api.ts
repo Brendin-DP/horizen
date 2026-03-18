@@ -3,17 +3,12 @@
  *
  * The mobile app talks to the Express API only — it does NOT access Supabase directly.
  *
- * - __DEV__ (local): uses EXPO_PUBLIC_API_URL or localhost
- * - Production (TestFlight/EAS): uses Railway URL
- * - For physical device local dev, set EXPO_PUBLIC_API_URL to your LAN IP (e.g. http://192.168.1.5:3001)
+ * - __DEV__ (local): replace 192.168.x.x with your Mac's LAN IP for physical device testing
+ * - Production: Railway URL
  */
-const API_URL_DEV =
-  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
-  'http://localhost:3001';
-const API_URL_PROD = 'https://gymapp-api.up.railway.app';
-
-const BASE_URL =
-  typeof __DEV__ !== 'undefined' && __DEV__ ? API_URL_DEV : API_URL_PROD;
+const BASE_URL = __DEV__
+  ? 'http://192.168.x.x:3001'
+  : 'https://horizen-production.up.railway.app';
 
 export interface Member {
   id: string;
