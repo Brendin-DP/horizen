@@ -1,6 +1,7 @@
 {
   "name": "gymapp-api",
   "version": "1.0.0",
+  "type": "module",
   "description": "GymApp REST API",
   "main": "src/index.js",
   "scripts": {
