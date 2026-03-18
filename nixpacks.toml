@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_18"]
+
+[phases.install]
+cmds = ["cd api && npm install"]
+
+[phases.build]
+cmds = ["cd api && npm run build || true"]
+
+[start]
+cmd = "cd api && node src/index.js"
