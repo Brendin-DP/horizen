@@ -16,31 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.json({
-    message: 'GymApp API',
-    endpoints: {
-      register: 'POST /auth/register',
-      login: 'POST /auth/login',
-      members: 'GET /members',
-      member: 'GET /members/:id',
-      memberStars: 'GET /members/:id/stars',
-      memberProgress: 'GET /members/:id/progress/:exerciseId',
-      memberStats: 'GET /members/:id/stats',
-      exercises: 'GET /exercises',
-      exercise: 'GET /exercises/:id',
-      workouts: 'GET /workouts?userId=x',
-      workout: 'GET /workouts/:id',
-      createWorkout: 'POST /workouts',
-      updateWorkout: 'PATCH /workouts/:id',
-      deleteWorkout: 'DELETE /workouts/:id',
-      addWorkoutExercise: 'POST /workouts/:id/exercises',
-      addSet: 'POST /workout-exercises/:id/sets',
-      updateSet: 'PATCH /sets/:id',
-      deleteSet: 'DELETE /sets/:id',
-      leaderboard: 'GET /leaderboard',
-      awardStar: 'POST /stars',
-    },
-  });
+  res.json({ status: 'ok', message: 'GymApp API running' });
 });
 
 app.use('/auth', authRouter);
@@ -56,5 +32,5 @@ app.use('/fund', fundRouter);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log('API running on http://localhost:' + PORT);
+  console.log(`API running on port ${PORT}`);
 });

@@ -3,15 +3,17 @@
  *
  * The mobile app talks to the Express API only — it does NOT access Supabase directly.
  *
- * API URL (set in .env or app.config):
- * - EXPO_PUBLIC_API_URL: e.g. http://192.168.1.5:3001 for physical device
- * - iOS Simulator: localhost works (default)
- * - Android Emulator: use http://10.0.2.2:3001
- * - Physical device: use your Mac's LAN IP (run `ifconfig`, inet under en0)
+ * - __DEV__ (local): uses EXPO_PUBLIC_API_URL or localhost
+ * - Production (TestFlight/EAS): uses Railway URL
+ * - For physical device local dev, set EXPO_PUBLIC_API_URL to your LAN IP (e.g. http://192.168.1.5:3001)
  */
-const BASE_URL =
+const API_URL_DEV =
   (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
   'http://localhost:3001';
+const API_URL_PROD = 'https://gymapp-api.up.railway.app';
+
+const BASE_URL =
+  typeof __DEV__ !== 'undefined' && __DEV__ ? API_URL_DEV : API_URL_PROD;
 
 export interface Member {
   id: string;
