@@ -12,8 +12,9 @@ const API_URL_DEV =
   'http://localhost:3001';
 const API_URL_PROD = 'https://horizen-production.up.railway.app';
 
-const BASE_URL =
-  typeof __DEV__ !== 'undefined' && __DEV__ ? API_URL_DEV : API_URL_PROD;
+const BASE_URL = __DEV__
+  ? 'http://192.168.x.x:3001'
+  : 'https://horizen-production.up.railway.app'
 
 export interface Member {
   id: string;

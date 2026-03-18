@@ -7,6 +7,8 @@ import { FALLBACK_DONATE_URL } from '../../constants/fund';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+const SHOW_DONATIONS = false; // Set to true to show donations block
+
 export default function HomeScreen() {
   const { member, token, logout } = useAuth();
   const router = useRouter();
@@ -79,7 +81,7 @@ export default function HomeScreen() {
           </Text>
         </Pressable>
 
-        {fund?.visible !== false && (
+        {SHOW_DONATIONS && fund?.visible !== false && (
         <View style={styles.fundCard}>
           <Text style={styles.fundTitle}>Help keep Horizen alive by donating something</Text>
           {fundLoading ? (

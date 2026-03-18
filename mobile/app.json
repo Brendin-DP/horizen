@@ -16,7 +16,22 @@
       "expo-font"
     ],
     "ios": {
-      "bundleIdentifier": "com.anonymous.gymapp"
+      "bundleIdentifier": "com.anonymous.gymapp",
+      "runtimeVersion": "1.0.0"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "637fafbc-8e16-4b96-b29e-11783abd17dc"
+      }
+    },
+    "owner": "brendindp",
+    "updates": {
+      "url": "https://u.expo.dev/637fafbc-8e16-4b96-b29e-11783abd17dc"
+    },
+    "android": {
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     }
   }
 }
