@@ -1,7 +1,7 @@
-const express = require('express');
-const { randomUUID } = require('crypto');
-const { supabase } = require('../db.js');
-const { mapWorkout, mapWorkoutExercise, mapExercise, mapSet, toDbWorkout, toDbWorkoutExercise } = require('../utils/mappers.js');
+import express from 'express';
+import { randomUUID } from 'crypto';
+import { supabase } from '../db.js';
+import { mapWorkout, mapWorkoutExercise, mapExercise, mapSet, toDbWorkout, toDbWorkoutExercise } from '../utils/mappers.js';
 
 const router = express.Router();
 
@@ -274,4 +274,4 @@ router.delete('/:workoutId/exercises/:id', async (req, res) => {
   res.status(204).send();
 });
 
-module.exports = router;
+export default router;

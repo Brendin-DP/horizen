@@ -1,8 +1,8 @@
-const express = require('express');
-const { randomUUID } = require('crypto');
-const { supabase } = require('../db.js');
-const { mapStarAward, toDbStarAward } = require('../utils/mappers.js');
-const { requireAuth, requireRole } = require('../middleware/auth.js');
+import express from 'express';
+import { randomUUID } from 'crypto';
+import { supabase } from '../db.js';
+import { mapStarAward, toDbStarAward } from '../utils/mappers.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -44,4 +44,4 @@ router.post('/', requireAuth, requireRole('admin', 'instructor'), async (req, re
   res.status(201).json(mapStarAward(inserted));
 });
 
-module.exports = router;
+export default router;

@@ -1,10 +1,10 @@
-const jwt = require('jsonwebtoken');
-const { supabase } = require('../db.js');
-const { mapMember } = require('../utils/mappers.js');
+import jwt from 'jsonwebtoken';
+import { supabase } from '../db.js';
+import { mapMember } from '../utils/mappers.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'gymapp-dev-secret-change-in-production';
+export const JWT_SECRET = process.env.JWT_SECRET || 'gymapp-dev-secret-change-in-production';
 
-async function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
@@ -29,7 +29,7 @@ async function requireAuth(req, res, next) {
   }
 }
 
-function requireRole(...roles) {
+export function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.member) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -40,5 +40,3 @@ function requireRole(...roles) {
     next();
   };
 }
-
-module.exports = { requireAuth, requireRole, JWT_SECRET };

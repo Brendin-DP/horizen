@@ -1,9 +1,9 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const { randomUUID } = require('crypto');
-const { supabase } = require('../db.js');
-const { mapPlan, mapFeature, mapPlanFeature, mapMember, toDbMember, toDbPlanFeature } = require('../utils/mappers.js');
-const { requireAuth, requireRole } = require('../middleware/auth.js');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
+import { supabase } from '../db.js';
+import { mapPlan, mapFeature, mapPlanFeature, mapMember, toDbMember, toDbPlanFeature } from '../utils/mappers.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 const SALT_ROUNDS = 10;
@@ -189,4 +189,4 @@ router.post('/members', async (req, res) => {
   res.status(201).json(mapMember(inserted));
 });
 
-module.exports = router;
+export default router;

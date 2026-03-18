@@ -3,7 +3,7 @@
  * toDb helpers: camelCase payloads → snake_case for inserts/updates.
  */
 
-function mapMember(row) {
+export function mapMember(row) {
   if (!row) return null;
   const { password_hash, ...rest } = row;
   return {
@@ -18,7 +18,7 @@ function mapMember(row) {
   };
 }
 
-function mapPlan(row) {
+export function mapPlan(row) {
   if (!row) return null;
   return {
     id: row.id,
@@ -27,7 +27,7 @@ function mapPlan(row) {
   };
 }
 
-function mapFeature(row) {
+export function mapFeature(row) {
   if (!row) return null;
   return {
     id: row.id,
@@ -36,7 +36,7 @@ function mapFeature(row) {
   };
 }
 
-function mapPlanFeature(row) {
+export function mapPlanFeature(row) {
   if (!row) return null;
   return {
     planId: row.plan_id,
@@ -46,7 +46,7 @@ function mapPlanFeature(row) {
   };
 }
 
-function mapStarAward(row) {
+export function mapStarAward(row) {
   if (!row) return null;
   return {
     id: row.id,
@@ -57,7 +57,7 @@ function mapStarAward(row) {
   };
 }
 
-function mapExercise(row) {
+export function mapExercise(row) {
   if (!row) return null;
   return {
     id: row.id,
@@ -70,7 +70,7 @@ function mapExercise(row) {
   };
 }
 
-function mapWorkout(row) {
+export function mapWorkout(row) {
   if (!row) return null;
   return {
     id: row.id,
@@ -84,7 +84,7 @@ function mapWorkout(row) {
   };
 }
 
-function mapWorkoutExercise(row) {
+export function mapWorkoutExercise(row) {
   if (!row) return null;
   return {
     id: row.id,
@@ -96,7 +96,7 @@ function mapWorkoutExercise(row) {
   };
 }
 
-function mapSet(row) {
+export function mapSet(row) {
   if (!row) return null;
   return {
     id: row.id,
@@ -113,7 +113,7 @@ function mapSet(row) {
 
 // --- toDb helpers (camelCase → snake_case) ---
 
-function toDbMember(payload) {
+export function toDbMember(payload) {
   const out = {};
   if (payload.id !== undefined) out.id = payload.id;
   if (payload.name !== undefined) out.name = payload.name;
@@ -127,7 +127,7 @@ function toDbMember(payload) {
   return out;
 }
 
-function toDbWorkout(payload) {
+export function toDbWorkout(payload) {
   const out = {};
   if (payload.id !== undefined) out.id = payload.id;
   if (payload.userId !== undefined) out.user_id = payload.userId;
@@ -140,7 +140,7 @@ function toDbWorkout(payload) {
   return out;
 }
 
-function toDbWorkoutExercise(payload) {
+export function toDbWorkoutExercise(payload) {
   const out = {};
   if (payload.id !== undefined) out.id = payload.id;
   if (payload.workoutId !== undefined) out.workout_id = payload.workoutId;
@@ -151,7 +151,7 @@ function toDbWorkoutExercise(payload) {
   return out;
 }
 
-function toDbSet(payload) {
+export function toDbSet(payload) {
   const out = {};
   if (payload.id !== undefined) out.id = payload.id;
   if (payload.workoutExerciseId !== undefined) out.workout_exercise_id = payload.workoutExerciseId;
@@ -165,7 +165,7 @@ function toDbSet(payload) {
   return out;
 }
 
-function toDbStarAward(payload) {
+export function toDbStarAward(payload) {
   const out = {};
   if (payload.id !== undefined) out.id = payload.id;
   if (payload.memberId !== undefined) out.member_id = payload.memberId;
@@ -175,7 +175,7 @@ function toDbStarAward(payload) {
   return out;
 }
 
-function toDbPlanFeature(payload) {
+export function toDbPlanFeature(payload) {
   const out = {};
   if (payload.planId !== undefined) out.plan_id = payload.planId;
   if (payload.featureId !== undefined) out.feature_id = payload.featureId;
@@ -183,21 +183,3 @@ function toDbPlanFeature(payload) {
   if (payload.limit !== undefined) out.limit_value = payload.limit;
   return out;
 }
-
-module.exports = {
-  mapMember,
-  mapPlan,
-  mapFeature,
-  mapPlanFeature,
-  mapStarAward,
-  mapExercise,
-  mapWorkout,
-  mapWorkoutExercise,
-  mapSet,
-  toDbMember,
-  toDbWorkout,
-  toDbWorkoutExercise,
-  toDbSet,
-  toDbStarAward,
-  toDbPlanFeature,
-};

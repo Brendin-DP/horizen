@@ -1,6 +1,7 @@
-const express = require('express');
-const { supabase } = require('../db.js');
-const { requireAuth, requireRole } = require('../middleware/auth.js');
+import express from 'express';
+import { supabase } from '../db.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+
 const router = express.Router();
 
 const envTarget = Number(process.env.FUND_TARGET) || 6000;
@@ -94,4 +95,4 @@ router.patch('/', requireAuth, requireRole('admin', 'instructor'), async (req, r
   });
 });
 
-module.exports = router;
+export default router;

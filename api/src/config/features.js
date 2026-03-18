@@ -1,16 +1,16 @@
 // api/src/config/features.js
 // Reads from plan_features in Supabase. Falls back to hardcoded FEATURES if query fails.
 
-const { supabase } = require('../db.js');
+import { supabase } from '../db.js';
 
-const FEATURE_ID_MAP = {
+export const FEATURE_ID_MAP = {
   MAX_WORKOUTS: 'max_workouts',
   LEADERBOARD_ACCESS: 'leaderboard_access',
   EXERCISE_HISTORY_DAYS: 'exercise_history',
   ADVANCED_STATS: 'advanced_stats',
 };
 
-const FEATURES = {
+export const FEATURES = {
   MAX_WORKOUTS: { free: 10, pro: Infinity, elite: Infinity },
   LEADERBOARD_ACCESS: { free: false, pro: true, elite: true },
   EXERCISE_HISTORY_DAYS: { free: 30, pro: Infinity, elite: Infinity },
@@ -28,7 +28,7 @@ async function getPlanFeature(plan, featureId) {
   return data;
 }
 
-async function can(user, feature) {
+export async function can(user, feature) {
   const featureId = FEATURE_ID_MAP[feature] ?? feature;
   const plan = user?.plan ?? 'free';
   const pf = await getPlanFeature(plan, featureId);
@@ -41,7 +41,7 @@ async function can(user, feature) {
   return value === true || value === Infinity;
 }
 
-async function limit(user, feature) {
+export async function limit(user, feature) {
   const featureId = FEATURE_ID_MAP[feature] ?? feature;
   const plan = user?.plan ?? 'free';
   const pf = await getPlanFeature(plan, featureId);
@@ -52,5 +52,3 @@ async function limit(user, feature) {
   if (!rule) return 0;
   return rule[plan];
 }
-
-module.exports = { FEATURES, FEATURE_ID_MAP, can, limit };

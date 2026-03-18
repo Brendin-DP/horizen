@@ -1,6 +1,6 @@
-const express = require('express');
-const { supabase } = require('../db.js');
-const { mapExercise } = require('../utils/mappers.js');
+import express from 'express';
+import { supabase } from '../db.js';
+import { mapExercise } from '../utils/mappers.js';
 
 const router = express.Router();
 
@@ -33,4 +33,4 @@ router.get('/:id', async (req, res) => {
   res.json(mapExercise(data));
 });
 
-module.exports = router;
+export default router;

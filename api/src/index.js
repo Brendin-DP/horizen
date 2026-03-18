@@ -1,15 +1,15 @@
-import 'dotenv/config'
-const express = require('express');
-const cors = require('cors');
-const membersRouter = require('./routes/members.js');
-const starsRouter = require('./routes/stars.js');
-const leaderboardRouter = require('./routes/leaderboard.js');
-const authRouter = require('./routes/auth.js');
-const adminRouter = require('./routes/admin.js');
-const exercisesRouter = require('./routes/exercises.js');
-const workoutsRouter = require('./routes/workouts.js');
-const { workoutExercisesRouter, setsIdRouter } = require('./routes/sets.js');
-const fundRouter = require('./routes/fund.js');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import membersRouter from './routes/members.js';
+import starsRouter from './routes/stars.js';
+import leaderboardRouter from './routes/leaderboard.js';
+import authRouter from './routes/auth.js';
+import adminRouter from './routes/admin.js';
+import exercisesRouter from './routes/exercises.js';
+import workoutsRouter from './routes/workouts.js';
+import { workoutExercisesRouter, setsIdRouter } from './routes/sets.js';
+import fundRouter from './routes/fund.js';
 
 const app = express();
 app.use(cors());

@@ -1,9 +1,9 @@
-const express = require('express');
-const { supabase } = require('../db.js');
-const { toPublicMember } = require('../utils/members.js');
-const { mapMember, mapStarAward } = require('../utils/mappers.js');
-const { toDbMember } = require('../utils/mappers.js');
-const { requireAuth, requireRole } = require('../middleware/auth.js');
+import express from 'express';
+import { supabase } from '../db.js';
+import { toPublicMember } from '../utils/members.js';
+import { mapMember, mapStarAward } from '../utils/mappers.js';
+import { toDbMember } from '../utils/mappers.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -264,4 +264,4 @@ router.get('/:id/stats', async (req, res) => {
   res.json({ totalWorkouts, totalSets, personalBests });
 });
 
-module.exports = router;
+export default router;

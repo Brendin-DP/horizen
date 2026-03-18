@@ -1,10 +1,10 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { randomUUID } = require('crypto');
-const { supabase } = require('../db.js');
-const { mapMember, toDbMember } = require('../utils/mappers.js');
-const { JWT_SECRET } = require('../middleware/auth.js');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
+import { supabase } from '../db.js';
+import { mapMember, toDbMember } from '../utils/mappers.js';
+import { JWT_SECRET } from '../middleware/auth.js';
 
 const router = express.Router();
 const SALT_ROUNDS = 10;
@@ -104,4 +104,4 @@ router.post('/login', async (req, res) => {
   });
 });
 
-module.exports = router;
+export default router;
