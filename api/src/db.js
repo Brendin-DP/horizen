@@ -8,7 +8,7 @@ const supabaseKey =
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  supabaseKey
+  process.env.SUPABASE_ANON_KEY
 );
 
-export { supabase };
+export default supabase
