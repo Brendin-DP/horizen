@@ -9,6 +9,10 @@ const supabaseKey =
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
+
 );
+
+console.log('URL:', process.env.SUPABASE_URL?.slice(0, 30))
+console.log('KEY:', process.env.SUPABASE_ANON_KEY?.slice(0, 20))
 
 export default supabase
