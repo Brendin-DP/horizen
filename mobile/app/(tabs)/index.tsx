@@ -1,13 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, StyleSheet, Pressable, Modal, TextInput, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, TextInput } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { createWorkout, getFund, type FundData } from '../../lib/api';
-import { FALLBACK_DONATE_URL } from '../../constants/fund';
+import { createWorkout } from '../../lib/api';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const SHOW_DONATIONS = false; // Set to true to show donations block
 
 export default function HomeScreen() {
   const { member, token, logout } = useAuth();
@@ -15,30 +12,6 @@ export default function HomeScreen() {
   const [creating, setCreating] = useState(false);
   const [nameModalVisible, setNameModalVisible] = useState(false);
   const [workoutName, setWorkoutName] = useState('');
-  const [fund, setFund] = useState<FundData | null>(null);
-  const [fundLoading, setFundLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    getFund()
-      .then((data) => {
-        if (!cancelled) setFund(data);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFund({
-            target: 6000,
-            raised: 0,
-            donateUrl: FALLBACK_DONATE_URL,
-            visible: true,
-          });
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setFundLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, []);
 
   function openCreateModal() {
     setWorkoutName('');
@@ -80,36 +53,6 @@ export default function HomeScreen() {
             {creating ? 'Creating...' : 'Start New Workout'}
           </Text>
         </Pressable>
-
-        {SHOW_DONATIONS && fund?.visible !== false && (
-        <View style={styles.fundCard}>
-          <Text style={styles.fundTitle}>Help keep Horizen alive by donating something</Text>
-          {fundLoading ? (
-            <ActivityIndicator size="small" color={colors.primary} style={styles.fundLoader} />
-          ) : fund ? (
-            <>
-              <Text style={styles.cardDesc}>
-                ZAR {fund.raised.toLocaleString()} of ZAR {fund.target.toLocaleString()} raised this year
-              </Text>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${Math.min(100, (fund.raised / fund.target) * 100)}%` },
-                  ]}
-                />
-              </View>
-              <Pressable
-                style={styles.donateBtn}
-                onPress={() => fund.donateUrl && Linking.openURL(fund.donateUrl)}
-                disabled={!fund.donateUrl}
-              >
-                <Text style={styles.donateBtnText}>Donate</Text>
-              </Pressable>
-            </>
-          ) : null}
-        </View>
-        )}
       </View>
 
       <Modal visible={nameModalVisible} animationType="slide" transparent>
@@ -170,54 +113,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textMuted,
     marginTop: 8,
-  },
-  cardDesc: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginTop: 4,
-  },
-  fundCard: {
-    marginTop: 24,
-    backgroundColor: colors.white,
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  fundLoader: {
-    marginTop: 12,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: colors.backgroundDark,
-    borderRadius: 4,
-    marginTop: 12,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: 4,
-  },
-  fundTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    lineHeight: 22,
-  },
-  donateBtn: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: colors.primary,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  donateBtnText: {
-    color: colors.primary,
-    fontWeight: '600',
-    fontSize: 16,
   },
   logout: {
     paddingVertical: 8,
