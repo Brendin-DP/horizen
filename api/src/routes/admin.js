@@ -1,5 +1,5 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { randomUUID } = require('crypto');
 const { supabase } = require('../db.js');
 const { mapPlan, mapFeature, mapPlanFeature, mapMember, toDbMember, toDbPlanFeature } = require('../utils/mappers.js');
