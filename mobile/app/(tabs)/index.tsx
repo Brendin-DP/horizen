@@ -17,7 +17,6 @@ export default function HomeScreen() {
     setWorkoutName('');
     setNameModalVisible(true);
   }
-
   async function handleCreateWorkout() {
     if (!member?.id || creating) return;
     setCreating(true);
