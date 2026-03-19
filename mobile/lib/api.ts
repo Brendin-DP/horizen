@@ -1,20 +1,17 @@
 /**
  * API client for GymApp.
  *
- * The mobile app talks to the Express API only — it does NOT access Supabase directly.
- *
- * - __DEV__ (local): EXPO_PUBLIC_API_URL or fallback to localhost (Simulator). For physical
- *   device, set EXPO_PUBLIC_API_URL to your Mac's LAN IP in .env (e.g. http://192.168.1.5:3001).
+ * - __DEV__: EXPO_PUBLIC_API_URL or http://localhost:3001 (works for Simulator)
+ *   Physical device: set EXPO_PUBLIC_API_URL to your Mac's LAN IP in .env
  * - Production: Railway URL
  */
 const API_URL_DEV =
   (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
   'http://localhost:3001';
 const API_URL_PROD = 'https://horizen-production.up.railway.app';
+const BASE_URL = typeof __DEV__ !== 'undefined' && __DEV__ ? API_URL_DEV : API_URL_PROD;
 
-const BASE_URL = __DEV__
-  ? 'http://192.168.x.x:3001'
-  : 'https://horizen-production.up.railway.app'
+const REQUEST_TIMEOUT_MS = 10000;
 
 export interface Member {
   id: string;
@@ -54,11 +51,27 @@ export async function register({
   password: string;
   name: string;
 }): Promise<AuthResponse> {
-  const res = await fetch(`${BASE_URL}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, name }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, name }),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    clearTimeout(timeout);
+    const isAbort = e instanceof Error && e.name === 'AbortError';
+    throw new Error(
+      isAbort
+        ? 'Connection timeout. Ensure the API is running at ' + BASE_URL
+        : 'Cannot reach API. Check that the API is running.'
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as { error?: string }).error || 'Registration failed');
@@ -73,17 +86,26 @@ export async function login({
   email: string;
   password: string;
 }): Promise<AuthResponse> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let res: Response;
   try {
     res = await fetch(`${BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
+      signal: controller.signal,
     });
   } catch (e) {
+    clearTimeout(timeout);
+    const isAbort = e instanceof Error && e.name === 'AbortError';
     throw new Error(
-      'Cannot reach API. On a physical device? Set EXPO_PUBLIC_API_URL to your Mac IP (e.g. http://192.168.1.5:3001) in .env'
+      isAbort
+        ? 'Connection timeout. Ensure the API is running at ' + BASE_URL
+        : 'Cannot reach API. On physical device? Set EXPO_PUBLIC_API_URL to your Mac IP (e.g. http://192.168.1.5:3001) in .env'
     );
+  } finally {
+    clearTimeout(timeout);
   }
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
