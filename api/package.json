@@ -6,7 +6,8 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "seed:admin": "node scripts/seed-admin.js"
   },
   "engines": {
     "node": ">=18"
@@ -19,6 +20,7 @@
     "expo": "^55.0.6",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
     "uuid": "^10.0.0"
   }
 }

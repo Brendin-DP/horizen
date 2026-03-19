@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import {
   View,
   Text,
@@ -10,7 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { updateProfile } from '../../lib/api';
+import { updateProfile, uploadAvatar } from '../../lib/api';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -29,6 +30,7 @@ export default function ProfileScreen() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,12 +64,31 @@ export default function ProfileScreen() {
     }
   }
 
-  function handleChangePhoto() {
-    Alert.alert(
-      'Change Photo',
-      'Avatar upload will be available when connected to Supabase storage.',
-      [{ text: 'OK' }]
-    );
+  async function handleChangePhoto() {
+    if (!token) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Allow photo access to set your profile picture.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    setUploading(true);
+    setError(null);
+    try {
+      const updated = await uploadAvatar(result.assets[0].uri, token);
+      await updateMember(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload avatar');
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
@@ -83,10 +104,17 @@ export default function ProfileScreen() {
               <Text style={styles.avatarInitials}>{getInitials(member?.name ?? '?')}</Text>
             </View>
           )}
-          <Pressable style={styles.changePhotoBtn} onPress={handleChangePhoto}>
-            <Text style={styles.changePhotoText}>Change photo</Text>
+          <Pressable
+            style={[styles.changePhotoBtn, uploading && styles.buttonDisabled]}
+            onPress={handleChangePhoto}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <Text style={styles.changePhotoText}>Change photo</Text>
+            )}
           </Pressable>
-          <Text style={styles.avatarHint}>Avatar upload coming with Supabase</Text>
         </View>
 
         {error && <Text style={styles.error}>{error}</Text>}
@@ -181,11 +209,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 15,
     fontWeight: '600',
-  },
-  avatarHint: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 4,
   },
   error: {
     color: colors.primary,

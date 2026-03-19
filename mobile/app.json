@@ -13,7 +13,13 @@
       "resizeMode": "contain"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Horizen to access your photos to set your profile picture."
+        }
+      ]
     ],
     "ios": {
       "bundleIdentifier": "com.anonymous.gymapp",

@@ -1,13 +1,23 @@
 #!/usr/bin/env node
 /**
- * Seed an admin user into Supabase. Run from api/: node scripts/seed-admin.js
- * Usage: node scripts/seed-admin.js [email] [password] [name]
+ * Seed an admin user into Supabase.
+ * Run from project root: node api/scripts/seed-admin.js [email] [password] [name]
+ * Or from api/: node scripts/seed-admin.js [email] [password] [name]
  * Default: admin@gym.com / password123 / Admin User
+ *
+ * Requires: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) in api/.env
  */
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
-const bcrypt = require('bcryptjs');
-const { randomUUID } = require('crypto');
-const { createClient } = require('@supabase/supabase-js');
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
+import { createClient } from '@supabase/supabase-js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const email = process.argv[2] || 'admin@gym.com';
 const password = process.argv[3] || 'password123';

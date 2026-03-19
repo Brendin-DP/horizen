@@ -109,6 +109,31 @@ export async function updateProfile(
   return res.json();
 }
 
+export async function uploadAvatar(uri: string, token: string | null): Promise<Member> {
+  const formData = new FormData();
+  formData.append('avatar', {
+    uri,
+    name: 'avatar.jpg',
+    type: 'image/jpeg',
+  } as unknown as Blob);
+
+  const headers: HeadersInit = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  // Do not set Content-Type; fetch sets multipart boundary
+
+  const res = await fetch(`${BASE_URL}/members/me/avatar`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to upload avatar');
+  }
+  return res.json();
+}
+
 export interface FundData {
   target: number;
   raised: number;

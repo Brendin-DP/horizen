@@ -1,4 +1,5 @@
 import express from 'express';
+import multer from 'multer';
 import supabase from '../db.js';
 import { toPublicMember } from '../utils/members.js';
 import { mapMember, mapStarAward } from '../utils/mappers.js';
@@ -6,6 +7,10 @@ import { toDbMember } from '../utils/mappers.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
+});
 
 router.get('/', async (req, res) => {
   let query = supabase.from('members').select('*');
@@ -59,6 +64,44 @@ router.patch('/me', requireAuth, async (req, res) => {
     .eq('id', req.member.id)
     .select()
     .single();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  if (!updated) return res.status(404).json({ error: 'Member not found' });
+  res.json(toPublicMember(mapMember(updated)));
+});
+
+router.post('/me/avatar', requireAuth, upload.single('avatar'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowed.includes(req.file.mimetype)) {
+    return res.status(400).json({ error: 'Invalid image type. Use JPEG, PNG, or WebP' });
+  }
+  const ext = req.file.mimetype.split('/')[1];
+  const path = `${req.member.id}/avatar.${ext}`;
+
+  const { error: upErr } = await supabase.storage
+    .from('Avatars')
+    .upload(path, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+
+  if (upErr) {
+    console.error('Avatar upload error:', upErr);
+    return res.status(500).json({ error: 'Failed to upload avatar', detail: upErr.message });
+  }
+
+  const { data: { publicUrl } } = supabase.storage.from('Avatars').getPublicUrl(path);
+  const toDb = toDbMember({ avatarUrl: publicUrl });
+
+  const { data: updated, error } = await supabase
+    .from('members')
+    .update(toDb)
+    .eq('id', req.member.id)
+    .select()
+    .single();
+
   if (error) {
     console.error(error);
     return res.status(500).json({ error: 'Database error', detail: error.message });
