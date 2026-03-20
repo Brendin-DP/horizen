@@ -128,7 +128,7 @@ export default function ExercisesScreen() {
       <FlatList
         data={logs}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, logs.length === 0 && styles.listEmpty]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -163,13 +163,23 @@ export default function ExercisesScreen() {
           </Swipeable>
         )}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>No exercises logged yet</Text>
-            <Text style={styles.emptySub}>Tap Add to log your first exercise</Text>
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
+              <View style={styles.emptyCircle1} />
+              <View style={styles.emptyCircle2} />
+              <View style={styles.emptyIcon}>
+                <Ionicons name="barbell-outline" size={64} color={colors.accentDark} />
+              </View>
+            </View>
+            <Text style={styles.emptyTitle}>Log Exercises</Text>
+            <Text style={styles.emptyText}>
+              You have no exercises logged yet. Tap the button below to log your first exercise and start tracking your progress.
+            </Text>
             <Pressable
               style={styles.emptyAddBtn}
               onPress={() => router.push('/exercise/log')}
             >
+              <Ionicons name="add" size={20} color={colors.white} />
               <Text style={styles.emptyAddText}>Add exercise</Text>
             </Pressable>
           </View>
@@ -263,6 +273,7 @@ const styles = StyleSheet.create({
   loadingText: { color: colors.textMuted, marginTop: 12 },
   errorBanner: { color: colors.primary, paddingHorizontal: 16, marginBottom: 8 },
   list: { padding: 16, paddingBottom: 32 },
+  listEmpty: { flexGrow: 1 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -336,18 +347,63 @@ const styles = StyleSheet.create({
   },
   modalDeleteText: { color: colors.white, fontWeight: '600' },
   buttonDisabled: { opacity: 0.6 },
-  empty: {
-    padding: 24,
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 48,
+    padding: 32,
+    minHeight: 400,
   },
-  emptyText: { fontSize: 16, color: colors.textMuted },
-  emptySub: { fontSize: 14, color: colors.textMuted, marginTop: 8 },
+  emptyIconContainer: {
+    position: 'relative',
+    marginBottom: 24,
+  },
+  emptyCircle1: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.accent,
+    top: -20,
+    left: -20,
+  },
+  emptyCircle2: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.accentDark,
+    top: 0,
+    left: 0,
+  },
+  emptyIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
   emptyAddBtn: {
-    marginTop: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     borderRadius: 12,
   },
   emptyAddText: { color: colors.white, fontWeight: '600', fontSize: 16 },
