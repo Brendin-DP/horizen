@@ -112,12 +112,6 @@ export default function ExercisesScreen() {
       <View style={styles.header}>
         <View style={styles.logoPlaceholder} />
         <Text style={styles.headerTitle}>Exercises</Text>
-        <Pressable
-          style={styles.addBtn}
-          onPress={() => router.push('/exercise/log')}
-        >
-          <Ionicons name="add" size={24} color={colors.white} />
-        </Pressable>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{member?.name?.charAt(0) ?? '?'}</Text>
         </View>
@@ -126,6 +120,7 @@ export default function ExercisesScreen() {
       {error && <Text style={styles.errorBanner}>{error}</Text>}
 
       <FlatList
+        style={styles.listContainer}
         data={logs}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[styles.list, logs.length === 0 && styles.listEmpty]}
@@ -175,16 +170,19 @@ export default function ExercisesScreen() {
             <Text style={styles.emptyText}>
               You have no exercises logged yet. Tap the button below to log your first exercise and start tracking your progress.
             </Text>
-            <Pressable
-              style={styles.emptyAddBtn}
-              onPress={() => router.push('/exercise/log')}
-            >
-              <Ionicons name="add" size={20} color={colors.white} />
-              <Text style={styles.emptyAddText}>Add exercise</Text>
-            </Pressable>
           </View>
         }
       />
+
+      <View style={styles.addCtaContainer}>
+        <Pressable
+          style={styles.addCta}
+          onPress={() => router.push('/exercise/log')}
+        >
+          <Ionicons name="add" size={20} color={colors.white} />
+          <Text style={styles.addCtaText}>Add Exercise</Text>
+        </Pressable>
+      </View>
 
       <Modal visible={deleteModalVisible} animationType="fade" transparent>
         <View style={styles.modalOverlay}>
@@ -242,15 +240,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.textPrimary,
   },
-  addBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
   avatar: {
     width: 36,
     height: 36,
@@ -260,6 +249,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  listContainer: { flex: 1 },
+  addCtaContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  addCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+  },
+  addCtaText: {
     color: colors.white,
     fontWeight: '600',
     fontSize: 16,
@@ -395,16 +407,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     textAlign: 'center',
-    marginBottom: 24,
   },
-  emptyAddBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-  },
-  emptyAddText: { color: colors.white, fontWeight: '600', fontSize: 16 },
 });
