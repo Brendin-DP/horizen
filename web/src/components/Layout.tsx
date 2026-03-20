@@ -32,7 +32,13 @@ export default function Layout() {
           boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
         }}
       >
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img
+            src="/favicon.png"
+            alt="Horizen"
+            style={{ width: 32, height: 32 }}
+          />
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <NavLink to="/dashboard" style={navStyle}>
             Dashboard
           </NavLink>
@@ -49,6 +55,7 @@ export default function Layout() {
             Fund
           </NavLink>
         </nav>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 14, color: colors.textMuted }}>
             {member?.name}

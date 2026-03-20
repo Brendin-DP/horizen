@@ -8,6 +8,7 @@ import {
   Pressable,
   RefreshControl,
   Modal,
+  Image,
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -110,7 +111,7 @@ export default function ExercisesScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <View style={styles.logoPlaceholder} />
+        <Image source={require('../../assets/logo.png')} style={styles.logo} />
         <Text style={styles.headerTitle}>Exercises</Text>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{member?.name?.charAt(0) ?? '?'}</Text>
@@ -227,11 +228,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  logoPlaceholder: {
+  logo: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.primary,
     marginRight: 12,
   },
   headerTitle: {

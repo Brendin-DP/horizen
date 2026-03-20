@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
+  Image,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -111,7 +112,7 @@ export default function WorkoutsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <View style={styles.logoPlaceholder} />
+        <Image source={require('../../assets/logo.png')} style={styles.logo} />
         <Text style={styles.headerTitle}>Your Workouts</Text>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{member?.name?.charAt(0) ?? '?'}</Text>
@@ -230,11 +231,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  logoPlaceholder: {
+  logo: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.primary,
     marginRight: 12,
   },
   headerTitle: {

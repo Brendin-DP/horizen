@@ -34,7 +34,7 @@ export default function TabLayout() {
         options={{
           href: SHOW_WORKOUTS ? null : undefined,
           title: 'Exercises',
-          tabBarIcon: ({ color, size }) => <Ionicons name="barbell-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="barbell" size={size} color={color} />,
         }}
       />
       <Tabs.Screen

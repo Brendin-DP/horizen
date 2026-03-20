@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Animated, Dimensions, Image } from 'react-native';
 import { colors } from '../constants/theme';
 
 const SPLASH_DURATION = 2000;
@@ -97,8 +97,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         ]}
       />
       <Animated.View style={[styles.content, { opacity, transform: [{ scale }] }]}>
-        <Text style={styles.brand}>HORIZEN</Text>
-        <Text style={styles.gym}>GYM</Text>
+        <Image source={require('../assets/logo.png')} style={styles.logo} />
       </Animated.View>
       <Animated.Text style={[styles.tagline, { opacity }]}>
         BETTER THAN YESTERDAY
@@ -121,18 +120,9 @@ const styles = StyleSheet.create({
   content: {
     alignItems: 'center',
   },
-  brand: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: colors.white,
-    letterSpacing: 4,
-  },
-  gym: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.white,
-    letterSpacing: 8,
-    marginTop: 4,
+  logo: {
+    width: 120,
+    height: 120,
   },
   tagline: {
     position: 'absolute',

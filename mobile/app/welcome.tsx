@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,7 +37,7 @@ export default function WelcomeScreen() {
     >
       <SafeAreaView style={styles.safe}>
         <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
-          <View style={styles.logoCircle} />
+          <Image source={require('../assets/logo.png')} style={styles.logo} />
           <Text style={styles.greeting}>Welcome, {member?.name ?? 'there'}</Text>
           <Text style={styles.sub}>We're so glad you're here.</Text>
           <Pressable style={styles.button} onPress={handleLetsGo}>
@@ -67,11 +67,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
   },
-  logoCircle: {
+  logo: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.primary,
     marginBottom: 24,
   },
   greeting: {

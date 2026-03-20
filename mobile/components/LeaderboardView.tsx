@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
+  Image,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getLeaderboard, type LeaderboardEntry } from '../lib/api';
@@ -157,9 +158,7 @@ export function LeaderboardView() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <View style={styles.logoPlaceholder}>
-          <Ionicons name="pulse-outline" size={20} color={colors.white} />
-        </View>
+        <Image source={require('../assets/logo.png')} style={styles.logo} />
         <Ionicons name="search-outline" size={22} color={colors.textMuted} style={styles.searchIcon} />
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{getInitials(member?.name ?? '?')}</Text>
@@ -219,13 +218,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  logoPlaceholder: {
+  logo: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginRight: 12,
   },
   searchIcon: { marginLeft: 'auto', marginRight: 12 },
   avatar: {

@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  Image,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
@@ -52,7 +53,7 @@ export default function LoginScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.logoPlaceholder} />
+        <Image source={require('../assets/logo.png')} style={styles.logo} />
         <Text style={styles.title}>Sign in with Email</Text>
         <Text style={styles.subtitle}>Enter your credentials</Text>
 
@@ -141,11 +142,10 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     paddingBottom: 48,
   },
-  logoPlaceholder: {
+  logo: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.primary,
     alignSelf: 'center',
     marginBottom: 24,
   },

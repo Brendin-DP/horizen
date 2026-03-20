@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "Horizen Gym",
+    "icon": "./assets/logo.png",
     "slug": "gymapp",
     "scheme": "gymapp",
     "platforms": [
@@ -9,6 +10,7 @@
     ],
     "newArchEnabled": true,
     "splash": {
+      "image": "./assets/logo.png",
       "backgroundColor": "#e11d48",
       "resizeMode": "contain"
     },
