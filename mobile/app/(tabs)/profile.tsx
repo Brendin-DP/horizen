@@ -25,7 +25,7 @@ function getInitials(name: string): string {
 }
 
 export default function ProfileScreen() {
-  const { member, token, updateMember } = useAuth();
+  const { member, token, updateMember, logout } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -94,7 +94,12 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.container}>
-        <Text style={styles.title}>Profile</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Profile</Text>
+          <Pressable onPress={logout} style={styles.logoutBtn}>
+            <Text style={styles.logoutText}>Log out</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.avatarSection}>
           {member?.avatarUrl ? (
@@ -172,11 +177,25 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1, padding: 24 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: colors.textPrimary,
-    marginBottom: 24,
+  },
+  logoutBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  logoutText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   avatarSection: {
     alignItems: 'center',
