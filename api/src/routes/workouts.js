@@ -23,6 +23,76 @@ router.get('/', async (req, res) => {
   res.json((data || []).map(mapWorkout));
 });
 
+router.get('/default', async (req, res) => {
+  const userId = req.query.userId;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId query is required' });
+  }
+  const { data: existing } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'in_progress')
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  let workoutId;
+  if (existing) {
+    workoutId = existing.id;
+  } else {
+    const workout = {
+      id: randomUUID(),
+      userId,
+      name: null,
+      status: 'in_progress',
+      startedAt: new Date().toISOString(),
+      completedAt: null,
+      notes: null,
+      createdAt: new Date().toISOString(),
+    };
+    const toDb = toDbWorkout(workout);
+    const { data: created, error } = await supabase
+      .from('workouts')
+      .insert(toDb)
+      .select()
+      .single();
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Database error', detail: error.message });
+    }
+    workoutId = created.id;
+  }
+  const { data: workout } = await supabase.from('workouts').select('*').eq('id', workoutId).single();
+  if (!workout) return res.status(404).json({ error: 'Workout not found' });
+  const { data: workoutExercises } = await supabase
+    .from('workout_exercises')
+    .select('*')
+    .eq('workout_id', workout.id)
+    .order('order_index', { ascending: true });
+  const { data: exercises } = await supabase.from('exercise_library').select('*');
+  const exerciseMap = {};
+  for (const e of exercises || []) {
+    exerciseMap[e.id] = mapExercise(e);
+  }
+  const workoutExercisesWithDetails = [];
+  for (const we of workoutExercises || []) {
+    const { data: sets } = await supabase
+      .from('sets')
+      .select('*')
+      .eq('workout_exercise_id', we.id)
+      .order('set_number', { ascending: true });
+    workoutExercisesWithDetails.push({
+      ...mapWorkoutExercise(we),
+      exercise: exerciseMap[we.exercise_id] ?? null,
+      sets: (sets || []).map(mapSet),
+    });
+  }
+  res.json({
+    ...mapWorkout(workout),
+    workoutExercises: workoutExercisesWithDetails,
+  });
+});
+
 router.post('/', async (req, res) => {
   const { userId, name } = req.body;
 

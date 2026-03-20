@@ -1,10 +1,19 @@
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { View, Text, StyleSheet, Pressable, Modal, TextInput } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { createWorkout } from '../../lib/api';
+import { createWorkout, getExerciseLogs } from '../../lib/api';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SHOW_WORKOUTS } from '../../lib/featureFlags';
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+}
 
 export default function HomeScreen() {
   const { member, token, logout } = useAuth();
@@ -12,6 +21,27 @@ export default function HomeScreen() {
   const [creating, setCreating] = useState(false);
   const [nameModalVisible, setNameModalVisible] = useState(false);
   const [workoutName, setWorkoutName] = useState('');
+  const [recentLogs, setRecentLogs] = useState<Awaited<ReturnType<typeof getExerciseLogs>>>([]);
+
+  const fetchRecentLogs = useCallback(async () => {
+    if (!member?.id) return;
+    try {
+      const logs = await getExerciseLogs(member.id, token);
+      setRecentLogs(logs.slice(0, 3));
+    } catch {
+      setRecentLogs([]);
+    }
+  }, [member?.id, token]);
+
+  useEffect(() => {
+    fetchRecentLogs();
+  }, [fetchRecentLogs]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchRecentLogs();
+    }, [fetchRecentLogs])
+  );
 
   function openCreateModal() {
     setWorkoutName('');
@@ -44,16 +74,38 @@ export default function HomeScreen() {
         <Text style={styles.sub}>Ready to train?</Text>
 
         <Pressable
-          style={[styles.startWorkoutBtn, creating && styles.buttonDisabled]}
-          onPress={openCreateModal}
-          disabled={creating}
+          style={styles.logExerciseBtn}
+          onPress={() => router.push('/exercise/log')}
         >
-          <Text style={styles.startWorkoutText}>
-            {creating ? 'Creating...' : 'Start New Workout'}
-          </Text>
+          <Text style={styles.logExerciseText}>Log an Exercise</Text>
         </Pressable>
+
+        {SHOW_WORKOUTS && (
+          <Pressable
+            style={[styles.startWorkoutBtn, creating && styles.buttonDisabled]}
+            onPress={openCreateModal}
+            disabled={creating}
+          >
+            <Text style={styles.startWorkoutText}>
+              {creating ? 'Creating...' : 'Start New Workout'}
+            </Text>
+          </Pressable>
+        )}
+
+        {recentLogs.length > 0 && (
+          <View style={styles.recentSection}>
+            <Text style={styles.recentTitle}>Recent logs</Text>
+            {recentLogs.map((log) => (
+              <View key={log.id} style={styles.recentCard}>
+                <Text style={styles.recentName}>{log.exercise?.name ?? 'Exercise'}</Text>
+                <Text style={styles.recentDate}>{formatDate(log.loggedAt)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
 
+      {SHOW_WORKOUTS && (
       <Modal visible={nameModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -81,6 +133,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -121,12 +174,51 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 14,
   },
-  startWorkoutBtn: {
+  logExerciseBtn: {
     marginTop: 24,
     padding: 16,
     backgroundColor: colors.primary,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  logExerciseText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  startWorkoutBtn: {
+    marginTop: 12,
+    padding: 16,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  recentSection: {
+    marginTop: 24,
+  },
+  recentTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
+  recentCard: {
+    backgroundColor: colors.backgroundDark,
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  recentName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  recentDate: {
+    fontSize: 14,
+    color: colors.textMuted,
+    marginTop: 4,
   },
   startWorkoutText: {
     color: colors.white,

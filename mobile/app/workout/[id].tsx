@@ -28,6 +28,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import type { WorkoutWithDetails, Exercise } from '../../types';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Toast } from '../../components/Toast';
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -48,6 +49,8 @@ export default function WorkoutDetailScreen() {
   const [bodyweight, setBodyweight] = useState(false);
   const [savingSet, setSavingSet] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const confettiRef = useRef<ConfettiCannon>(null);
 
   const fetchWorkout = useCallback(async () => {
@@ -74,8 +77,8 @@ export default function WorkoutDetailScreen() {
       await addWorkoutExercise(id, exerciseId, undefined, token);
       setPickerVisible(false);
       fetchWorkout();
-      setSuccessModalVisible(true);
-      setTimeout(() => confettiRef.current?.start(), 100);
+      setToastMessage('Exercise added');
+      setToastVisible(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add exercise');
     } finally {
@@ -97,6 +100,9 @@ export default function WorkoutDetailScreen() {
     if (!selectedWe || savingSet) return;
     const exercise = selectedWe.exercise;
     if (!exercise) return;
+
+    const previousSetsCount = selectedWe.sets?.length ?? 0;
+    const isFirstSet = previousSetsCount === 0;
 
     setSavingSet(true);
     setError(null);
@@ -138,6 +144,11 @@ export default function WorkoutDetailScreen() {
       setSetModalVisible(false);
       setSelectedWe(null);
       fetchWorkout();
+
+      if (isFirstSet) {
+        setTimeout(() => confettiRef.current?.start(), 100);
+        setSuccessModalVisible(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save set');
     } finally {
@@ -353,7 +364,7 @@ export default function WorkoutDetailScreen() {
             </View>
             <Text style={styles.successTitle}>Well Done!</Text>
             <Text style={styles.successSub}>
-              Your exercise has been successfully added. You crushed your PB.
+              Your first set has been logged. Keep crushing it!
             </Text>
             <Pressable
               style={styles.successOkay}
@@ -445,6 +456,12 @@ export default function WorkoutDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        onDismiss={() => setToastVisible(false)}
+      />
     </SafeAreaView>
   );
 }

@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '../../constants/theme';
+import { SHOW_WORKOUTS } from '../../lib/featureFlags';
 
 export default function TabLayout() {
   return (
@@ -21,7 +22,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="workouts"
         options={{
+          href: SHOW_WORKOUTS ? undefined : null,
           title: 'Workouts',
+          tabBarIcon: ({ color, size }) => <Ionicons name="barbell-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="exercises"
+        options={{
+          href: SHOW_WORKOUTS ? null : undefined,
+          title: 'Exercises',
           tabBarIcon: ({ color, size }) => <Ionicons name="barbell-outline" size={size} color={color} />,
         }}
       />

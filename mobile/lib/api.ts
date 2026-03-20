@@ -253,6 +253,24 @@ export async function getWorkouts(userId: string, token?: string | null): Promis
   return res.json();
 }
 
+export async function getDefaultWorkout(
+  userId: string,
+  token?: string | null
+): Promise<import('../types').WorkoutWithDetails> {
+  const res = await fetchApi(`/workouts/default?userId=${encodeURIComponent(userId)}`, { token });
+  if (!res.ok) throw new Error('Failed to fetch default workout');
+  return res.json();
+}
+
+export async function getWorkoutExercise(
+  workoutExerciseId: string,
+  token?: string | null
+): Promise<import('../types').WorkoutExercise> {
+  const res = await fetchApi(`/workout-exercises/${workoutExerciseId}`, { token });
+  if (!res.ok) throw new Error('Workout exercise not found');
+  return res.json();
+}
+
 export async function createWorkout(
   userId: string,
   name?: string | null,
@@ -396,5 +414,75 @@ export async function getMemberProgress(
     { token }
   );
   if (!res.ok) throw new Error('Failed to fetch progress');
+  return res.json();
+}
+
+// Exercise logs (new flow, no workout container)
+export async function createExerciseLog(payload: {
+  memberId: string;
+  exerciseId: string;
+  notes?: string;
+  loggedAt?: string;
+}, token?: string | null): Promise<import('../types').ExerciseLog> {
+  const res = await fetchApi('/exercise-logs', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    token,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to create exercise log');
+  }
+  return res.json();
+}
+
+export async function getExerciseLogs(memberId: string, token?: string | null): Promise<import('../types').ExerciseLog[]> {
+  const res = await fetchApi(`/exercise-logs?memberId=${encodeURIComponent(memberId)}`, { token });
+  if (!res.ok) throw new Error('Failed to fetch exercise logs');
+  return res.json();
+}
+
+export async function getExerciseLog(id: string, token?: string | null): Promise<import('../types').ExerciseLog> {
+  const res = await fetchApi(`/exercise-logs/${id}`, { token });
+  if (!res.ok) throw new Error('Exercise log not found');
+  return res.json();
+}
+
+export async function deleteExerciseLog(id: string, token?: string | null): Promise<void> {
+  const res = await fetchApi(`/exercise-logs/${id}`, { method: 'DELETE', token });
+  if (!res.ok) throw new Error('Failed to delete exercise log');
+}
+
+export async function addSetToExerciseLog(
+  exerciseLogId: string,
+  payload: {
+    setNumber: number;
+    reps?: number;
+    weightKg?: number;
+    durationSeconds?: number;
+    distanceMeters?: number;
+    completed?: boolean;
+  },
+  token?: string | null
+): Promise<import('../types').Set> {
+  const res = await fetchApi(`/exercise-logs/${exerciseLogId}/sets`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    token,
+  });
+  if (!res.ok) throw new Error('Failed to add set');
+  return res.json();
+}
+
+export async function getExerciseHistory(
+  memberId: string,
+  exerciseId: string,
+  token?: string | null
+): Promise<import('../types').ExerciseHistory[]> {
+  const res = await fetchApi(
+    `/members/${memberId}/exercise-history/${exerciseId}`,
+    { token }
+  );
+  if (!res.ok) throw new Error('Failed to fetch exercise history');
   return res.json();
 }

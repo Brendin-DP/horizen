@@ -34,9 +34,32 @@ export interface WorkoutExercise {
   sets?: Set[];
 }
 
+export interface ExerciseLog {
+  id: string;
+  memberId: string;
+  exerciseId: string;
+  loggedAt: string;
+  notes: string | null;
+  createdAt: string;
+  exercise?: Exercise;
+  sets?: Set[];
+}
+
+export interface ExerciseHistory {
+  logId: string;
+  loggedAt: string;
+  sets: Set[];
+  bestSet: {
+    reps: number | null;
+    weightKg: number | null;
+  };
+  totalVolume: number;
+}
+
 export interface Set {
   id: string;
-  workoutExerciseId: string;
+  workoutExerciseId?: string | null;
+  exerciseLogId?: string | null;
   setNumber: number;
   reps: number | null;
   weightKg: number | null;

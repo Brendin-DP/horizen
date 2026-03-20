@@ -2,9 +2,10 @@ import express from 'express';
 import multer from 'multer';
 import supabase from '../db.js';
 import { toPublicMember } from '../utils/members.js';
-import { mapMember, mapStarAward } from '../utils/mappers.js';
+import { mapMember, mapStarAward, mapSet } from '../utils/mappers.js';
 import { toDbMember } from '../utils/mappers.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { limit } from '../config/features.js';
 
 const router = express.Router();
 const upload = multer({
@@ -173,6 +174,81 @@ router.get('/:id/stars', async (req, res) => {
   }
   const awards = (data || []).map(mapStarAward);
   res.json(awards);
+});
+
+router.get('/:id/exercise-history/:exerciseId', async (req, res) => {
+  const memberId = req.params.id;
+  const exerciseId = req.params.exerciseId;
+
+  const { data: member } = await supabase.from('members').select('plan').eq('id', memberId).single();
+  if (!member) {
+    return res.status(404).json({ error: 'Member not found' });
+  }
+
+  const { data: exercise } = await supabase
+    .from('exercise_library')
+    .select('id')
+    .eq('id', exerciseId)
+    .single();
+  if (!exercise) {
+    return res.status(404).json({ error: 'Exercise not found' });
+  }
+
+  let query = supabase
+    .from('exercise_logs')
+    .select('*')
+    .eq('member_id', memberId)
+    .eq('exercise_id', exerciseId)
+    .order('logged_at', { ascending: true });
+
+  const daysLimit = await limit({ plan: member.plan }, 'EXERCISE_HISTORY_DAYS');
+  if (daysLimit !== Infinity && daysLimit != null) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - daysLimit);
+    query = query.gte('logged_at', cutoff.toISOString());
+  }
+
+  const { data: logs, error } = await query;
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+
+  const history = [];
+  for (const log of logs || []) {
+    const { data: sets } = await supabase
+      .from('sets')
+      .select('*')
+      .eq('exercise_log_id', log.id)
+      .order('set_number', { ascending: true });
+
+    let bestSet = { reps: null, weightKg: null };
+    let totalVolume = 0;
+    const mappedSets = (sets || []).map((s) => mapSet(s));
+
+    for (const s of sets || []) {
+      if (s.reps != null && s.weight_kg != null) {
+        totalVolume += s.reps * s.weight_kg;
+        if (
+          !bestSet.weightKg ||
+          s.weight_kg > bestSet.weightKg ||
+          (s.weight_kg === bestSet.weightKg && s.reps > (bestSet.reps ?? 0))
+        ) {
+          bestSet = { reps: s.reps, weightKg: s.weight_kg };
+        }
+      }
+    }
+
+    history.push({
+      logId: log.id,
+      loggedAt: log.logged_at,
+      sets: mappedSets,
+      bestSet,
+      totalVolume,
+    });
+  }
+
+  res.json(history);
 });
 
 router.get('/:id/progress/:exerciseId', async (req, res) => {

@@ -1,9 +1,42 @@
 import express from 'express';
 import { randomUUID } from 'crypto';
 import supabase from '../db.js';
-import { mapSet, toDbSet } from '../utils/mappers.js';
+import { mapSet, mapWorkoutExercise, mapExercise, toDbSet } from '../utils/mappers.js';
 
 const router = express.Router();
+
+router.get('/:id', async (req, res) => {
+  const workoutExerciseId = req.params.id;
+  const { data: we, error: weErr } = await supabase
+    .from('workout_exercises')
+    .select('*')
+    .eq('id', workoutExerciseId)
+    .single();
+  if (weErr || !we) {
+    return res.status(404).json({ error: 'Workout exercise not found' });
+  }
+  const { data: exercise, error: exErr } = await supabase
+    .from('exercise_library')
+    .select('*')
+    .eq('id', we.exercise_id)
+    .single();
+  if (exErr) {
+    return res.status(500).json({ error: 'Database error', detail: exErr.message });
+  }
+  const { data: sets, error: setsErr } = await supabase
+    .from('sets')
+    .select('*')
+    .eq('workout_exercise_id', workoutExerciseId)
+    .order('set_number', { ascending: true });
+  if (setsErr) {
+    return res.status(500).json({ error: 'Database error', detail: setsErr.message });
+  }
+  res.json({
+    ...mapWorkoutExercise(we),
+    exercise: exercise ? mapExercise(exercise) : null,
+    sets: (sets || []).map(mapSet),
+  });
+});
 
 router.post('/:id/sets', async (req, res) => {
   const workoutExerciseId = req.params.id;
