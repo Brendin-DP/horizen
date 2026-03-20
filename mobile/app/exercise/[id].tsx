@@ -170,12 +170,26 @@ export default function ExerciseDetailScreen() {
               <Text style={styles.pbEmptySub}>Add from the Exercises tab to track your progress</Text>
             </View>
           ) : (
-            pastLogs.map((log) => (
-              <View key={log.logId} style={styles.pbCard}>
-                <Text style={styles.pbWeight}>{formatDate(log.loggedAt)}</Text>
-                <Text style={styles.pbMeta}>{formatSetSummary(log)}</Text>
-              </View>
-            ))
+            pastLogs.map((log, index) => {
+              const isPb = index === 0 && log.bestSet?.weightKg != null;
+              return (
+                <View
+                  key={log.logId}
+                  style={[styles.pbCard, isPb && styles.pbCardHighlight]}
+                >
+                  <View style={styles.pbCardHeader}>
+                    <Text style={styles.pbWeight}>{formatDate(log.loggedAt)}</Text>
+                    {isPb && (
+                      <View style={styles.pbBadge}>
+                        <Ionicons name="trophy" size={14} color={colors.white} />
+                        <Text style={styles.pbBadgeText}>PB</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.pbMeta}>{formatSetSummary(log)}</Text>
+                </View>
+              );
+            })
           )}
         </View>
       </ScrollView>
@@ -258,6 +272,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  pbCardHighlight: {
+    borderColor: colors.primary,
+    borderWidth: 2,
+    backgroundColor: 'rgba(254, 205, 211, 0.35)',
+  },
+  pbCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
   pbWeight: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
-  pbMeta: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
+  pbBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primary,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    borderRadius: 6,
+  },
+  pbBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.white,
+    letterSpacing: 0.5,
+  },
+  pbMeta: { fontSize: 14, color: colors.textMuted },
 });

@@ -85,15 +85,15 @@ router.post('/me/avatar', requireAuth, upload.single('avatar'), async (req, res)
   const path = `${req.member.id}/avatar.${ext}`;
 
   const { error: upErr } = await supabase.storage
-    .from('Avatars')
+    .from('avatars')
     .upload(path, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
 
   if (upErr) {
-    console.error('Avatar upload error:', upErr);
+    console.error('Avatar upload error:', JSON.stringify(upErr));
     return res.status(500).json({ error: 'Failed to upload avatar', detail: upErr.message });
   }
 
-  const { data: { publicUrl } } = supabase.storage.from('Avatars').getPublicUrl(path);
+  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
   const toDb = toDbMember({ avatarUrl: publicUrl });
 
   const { data: updated, error } = await supabase
