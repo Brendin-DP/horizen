@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,14 @@ import {
   TextInput,
   FlatList,
   Switch,
+  Modal,
+  Dimensions,
 } from 'react-native';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
-import { getExercise, getExercises, createExerciseLog, addSetToExerciseLog } from '../../lib/api';
+import { getExercise, getExercises, createExerciseLog, addSetToExerciseLog, getExerciseHistory } from '../../lib/api';
 import type { Exercise } from '../../types';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -39,6 +42,10 @@ export default function LogExerciseScreen() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [prWeightKg, setPrWeightKg] = useState<number>(0);
+  const confettiRef = useRef<ConfettiCannon>(null);
+  const pendingNavigationRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (exerciseId) {
@@ -88,6 +95,13 @@ export default function LogExerciseScreen() {
     );
   }
 
+  function handlePrModalOkay() {
+    setSuccessModalVisible(false);
+    const target = pendingNavigationRef.current;
+    pendingNavigationRef.current = null;
+    if (target) router.replace(target as '/exercise/[id]' | '/(tabs)/exercises');
+  }
+
   async function handleSaveLog() {
     if (!member?.id || !selectedExercise || saving) return;
     const exercise = selectedExercise;
@@ -95,6 +109,15 @@ export default function LogExerciseScreen() {
     setSaving(true);
     setError(null);
     try {
+      let previousMax = 0;
+      if (exercise.unit === 'weight_reps') {
+        const history = await getExerciseHistory(member.id, exercise.id, token);
+        previousMax =
+          history.length > 0
+            ? Math.max(...history.map((h) => h.bestSet?.weightKg ?? 0))
+            : 0;
+      }
+
       const log = await createExerciseLog(
         { memberId: member.id, exerciseId: exercise.id },
         token
@@ -137,10 +160,25 @@ export default function LogExerciseScreen() {
         await addSetToExerciseLog(log.id, body, token);
       }
 
-      if (exerciseId) {
-        router.replace(`/exercise/${exercise.id}`);
+      const targetRoute = exerciseId ? `/exercise/${exercise.id}` : '/(tabs)/exercises';
+
+      if (exercise.unit === 'weight_reps') {
+        const weights = sets
+          .filter((s) => !s.bodyweight)
+          .map((s) => parseFloat(s.weight))
+          .filter((w) => !isNaN(w) && w > 0);
+        const newMax = weights.length > 0 ? Math.max(...weights) : 0;
+
+        if (newMax > previousMax && newMax > 0) {
+          pendingNavigationRef.current = targetRoute;
+          setPrWeightKg(newMax);
+          setSuccessModalVisible(true);
+          setTimeout(() => confettiRef.current?.start(), 100);
+        } else {
+          router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
+        }
       } else {
-        router.replace('/(tabs)/exercises');
+        router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save log');
@@ -288,6 +326,31 @@ export default function LogExerciseScreen() {
           <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save Log'}</Text>
         </Pressable>
       </ScrollView>
+
+      <Modal visible={successModalVisible} animationType="fade" transparent>
+        <View style={styles.successModalOverlay}>
+          <ConfettiCannon
+            ref={confettiRef}
+            count={150}
+            origin={{ x: Dimensions.get('window').width / 2 - 20, y: 200 }}
+            autoStart={false}
+            fadeOut
+            colors={[colors.primary, colors.accent, colors.accentDark, '#22c55e', '#fbbf24']}
+          />
+          <View style={styles.successCard}>
+            <View style={styles.successIconCircle}>
+              <Ionicons name="trophy-outline" size={40} color={colors.primary} />
+            </View>
+            <Text style={styles.successTitle}>Record Broken!</Text>
+            <Text style={styles.successSub}>
+              That's your heaviest {exercise.name} yet! {prWeightKg}kg
+            </Text>
+            <Pressable style={styles.successOkay} onPress={handlePrModalOkay}>
+              <Text style={styles.successOkayText}>Okay</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -376,4 +439,48 @@ const styles = StyleSheet.create({
   },
   saveText: { color: colors.white, fontWeight: '600', fontSize: 16 },
   buttonDisabled: { opacity: 0.6 },
+  successModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  successCard: {
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+  },
+  successIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  successSub: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  successOkay: {
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 48,
+    borderRadius: 12,
+  },
+  successOkayText: { color: colors.white, fontWeight: '600', fontSize: 16 },
 });

@@ -7,11 +7,13 @@ import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
+  Modal,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
-import { getExerciseLogs } from '../../lib/api';
+import { getExerciseLogs, deleteExerciseLog } from '../../lib/api';
 import type { ExerciseLog } from '../../types';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,6 +33,9 @@ export default function ExercisesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [logToDelete, setLogToDelete] = useState<ExerciseLog | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!member?.id) {
@@ -58,6 +63,38 @@ export default function ExercisesScreen() {
       fetchData();
     }, [fetchData])
   );
+
+  function openDeleteModal(log: ExerciseLog) {
+    setLogToDelete(log);
+    setDeleteModalVisible(true);
+  }
+
+  async function handleConfirmDelete() {
+    if (!logToDelete || deleting) return;
+    setDeleting(true);
+    try {
+      await deleteExerciseLog(logToDelete.id, token);
+      setLogs((prev) => prev.filter((l) => l.id !== logToDelete.id));
+      setDeleteModalVisible(false);
+      setLogToDelete(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function renderRightActions(log: ExerciseLog) {
+    return (
+      <Pressable
+        style={styles.deleteAction}
+        onPress={() => openDeleteModal(log)}
+      >
+        <Ionicons name="trash-outline" size={22} color={colors.white} />
+        <Text style={styles.deleteActionText}>Delete</Text>
+      </Pressable>
+    );
+  }
 
   if (loading) {
     return (
@@ -103,13 +140,27 @@ export default function ExercisesScreen() {
           />
         }
         renderItem={({ item }) => (
-          <Pressable
-            style={styles.card}
-            onPress={() => router.push(`/exercise/${item.exerciseId}`)}
+          <Swipeable
+            renderRightActions={() => renderRightActions(item)}
+            friction={2}
           >
-            <Text style={styles.cardName}>{item.exercise?.name ?? 'Exercise'}</Text>
-            <Text style={styles.cardMeta}>{formatDate(item.loggedAt)}</Text>
-          </Pressable>
+            <View style={styles.card}>
+              <Pressable
+                style={styles.cardMain}
+                onPress={() => router.push(`/exercise/${item.exerciseId}`)}
+              >
+                <Text style={styles.cardName}>{item.exercise?.name ?? 'Exercise'}</Text>
+                <Text style={styles.cardMeta}>{formatDate(item.loggedAt)}</Text>
+              </Pressable>
+              <Pressable
+                style={styles.editBtn}
+                onPress={() => router.push(`/log/edit/${item.id}`)}
+                hitSlop={8}
+              >
+                <Ionicons name="pencil-outline" size={20} color={colors.primary} />
+              </Pressable>
+            </View>
+          </Swipeable>
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -124,6 +175,36 @@ export default function ExercisesScreen() {
           </View>
         }
       />
+
+      <Modal visible={deleteModalVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Delete log?</Text>
+            <Text style={styles.modalSub}>
+              This will remove {logToDelete?.exercise?.name ?? 'this exercise'} from{' '}
+              {logToDelete ? formatDate(logToDelete.loggedAt) : ''}.
+            </Text>
+            <View style={styles.modalRow}>
+              <Pressable
+                style={styles.modalCancel}
+                onPress={() => {
+                  setDeleteModalVisible(false);
+                  setLogToDelete(null);
+                }}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalDelete, deleting && styles.buttonDisabled]}
+                onPress={handleConfirmDelete}
+                disabled={deleting}
+              >
+                <Text style={styles.modalDeleteText}>{deleting ? 'Deleting...' : 'Delete'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -183,6 +264,8 @@ const styles = StyleSheet.create({
   errorBanner: { color: colors.primary, paddingHorizontal: 16, marginBottom: 8 },
   list: { padding: 16, paddingBottom: 32 },
   card: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.white,
     padding: 16,
     marginBottom: 12,
@@ -190,8 +273,69 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  cardMain: { flex: 1 },
   cardName: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
   cardMeta: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
+  editBtn: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  deleteAction: {
+    backgroundColor: '#dc2626',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    marginBottom: 12,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  deleteActionText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 14,
+    marginTop: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 24,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  modalSub: {
+    fontSize: 14,
+    color: colors.textMuted,
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  modalRow: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'flex-end',
+  },
+  modalCancel: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  modalCancelText: { color: colors.textMuted, fontWeight: '500' },
+  modalDelete: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#dc2626',
+    borderRadius: 12,
+  },
+  modalDeleteText: { color: colors.white, fontWeight: '600' },
+  buttonDisabled: { opacity: 0.6 },
   empty: {
     padding: 24,
     alignItems: 'center',
