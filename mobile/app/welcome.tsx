@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated, Image, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { SHOW_WORKOUTS } from '../lib/featureFlags';
 import { colors } from '../constants/theme';
@@ -31,10 +30,12 @@ export default function WelcomeScreen() {
   }
 
   return (
-    <LinearGradient
-      colors={[colors.textPrimary, colors.textSecondary]}
+    <ImageBackground
+      source={require('../assets/gym-bg.png')}
       style={styles.bg}
+      resizeMode="cover"
     >
+      <View style={styles.overlay} pointerEvents="none" />
       <SafeAreaView style={styles.safe}>
         <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
           <Image source={require('../assets/logo.png')} style={styles.logo} />
@@ -45,13 +46,17 @@ export default function WelcomeScreen() {
           </Pressable>
         </Animated.View>
       </SafeAreaView>
-    </LinearGradient>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   safe: {
     flex: 1,

@@ -30,12 +30,24 @@ export default function Login() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.backgroundDark,
         padding: 24,
+        backgroundImage: 'url(/gym-bg.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        position: 'relative',
       }}
     >
       <div
         style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.4)',
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        style={{
+          position: 'relative',
           width: '100%',
           maxWidth: 400,
           backgroundColor: colors.white,

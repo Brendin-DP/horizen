@@ -10,9 +10,7 @@
     ],
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/logo.png",
-      "backgroundColor": "#e11d48",
-      "resizeMode": "contain"
+      "backgroundColor": "#e11d48"
     },
     "plugins": [
       "expo-font",
@@ -39,7 +37,12 @@
     "android": {
       "runtimeVersion": {
         "policy": "appVersion"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.gymapp"
     }
   }
 }

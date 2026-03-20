@@ -1,9 +1,12 @@
 import { useState, useCallback } from 'react';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as ExpoSplashScreen from 'expo-splash-screen';
 import { AuthProvider } from '../contexts/AuthContext';
 import { AuthGate } from '../components/AuthGate';
 import SplashScreen from './splash';
+
+ExpoSplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);

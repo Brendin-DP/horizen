@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import * as ExpoSplashScreen from 'expo-splash-screen';
 import { colors } from '../constants/theme';
 
 const SPLASH_DURATION = 2000;
@@ -14,6 +15,10 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
   const scale = useRef(new Animated.Value(0.8)).current;
   const circle1 = useRef(new Animated.Value(0)).current;
   const circle2 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    ExpoSplashScreen.hideAsync();
+  }, []);
 
   useEffect(() => {
     Animated.parallel([
@@ -97,7 +102,8 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         ]}
       />
       <Animated.View style={[styles.content, { opacity, transform: [{ scale }] }]}>
-        <Image source={require('../assets/logo.png')} style={styles.logo} />
+        <Text style={styles.brand}>HORIZEN</Text>
+        <Text style={styles.gym}>GYM</Text>
       </Animated.View>
       <Animated.Text style={[styles.tagline, { opacity }]}>
         BETTER THAN YESTERDAY
@@ -120,9 +126,18 @@ const styles = StyleSheet.create({
   content: {
     alignItems: 'center',
   },
-  logo: {
-    width: 120,
-    height: 120,
+  brand: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: colors.white,
+    letterSpacing: 4,
+  },
+  gym: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.white,
+    letterSpacing: 8,
+    marginTop: 4,
   },
   tagline: {
     position: 'absolute',
