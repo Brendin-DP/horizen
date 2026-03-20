@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
+import { SHOW_WORKOUTS } from '../lib/featureFlags';
 import { colors } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -25,7 +26,7 @@ export default function WelcomeScreen() {
     if (role === 'admin' || role === 'instructor') {
       router.replace('/(admin)/members');
     } else {
-      router.replace('/(tabs)');
+      router.replace(SHOW_WORKOUTS ? '/(tabs)/workouts' : '/(tabs)/exercises');
     }
   }
 

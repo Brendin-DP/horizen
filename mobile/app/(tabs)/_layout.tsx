@@ -6,6 +6,7 @@ import { SHOW_WORKOUTS } from '../../lib/featureFlags';
 export default function TabLayout() {
   return (
     <Tabs
+      initialRouteName={SHOW_WORKOUTS ? 'workouts' : 'exercises'}
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
@@ -16,7 +17,6 @@ export default function TabLayout() {
         name="index"
         options={{
           href: null,
-          tabBarButton: () => null,
           title: 'Home',
           tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
         }}

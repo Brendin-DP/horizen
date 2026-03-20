@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
+import { SHOW_WORKOUTS } from '../lib/featureFlags';
 import { colors } from '../constants/theme';
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
@@ -35,7 +36,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       if (isAdminOrInstructor && inTabs) {
         router.replace('/(admin)/members');
       } else if (!isAdminOrInstructor && inAdmin) {
-        router.replace('/(tabs)');
+        router.replace(SHOW_WORKOUTS ? '/(tabs)/workouts' : '/(tabs)/exercises');
       }
     }
   }, [token, isLoading, hasCompletedWelcome, member, segments]);
