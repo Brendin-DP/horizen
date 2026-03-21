@@ -29,6 +29,7 @@ export interface LeaderboardEntry {
   memberId: string;
   name: string;
   starCount: number;
+  avatarUrl?: string | null;
 }
 
 export interface AuthResponse {

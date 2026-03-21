@@ -25,7 +25,7 @@ function getInitials(name: string): string {
 }
 
 export default function ProfileScreen() {
-  const { member, token, updateMember, logout } = useAuth();
+  const { member, token, updateMember, logout, getAvatarUrl } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -103,7 +103,7 @@ export default function ProfileScreen() {
 
         <View style={styles.avatarSection}>
           {member?.avatarUrl ? (
-            <Image source={{ uri: member.avatarUrl }} style={styles.avatar} />
+            <Image source={{ uri: getAvatarUrl(member.avatarUrl) ?? member.avatarUrl }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
               <Text style={styles.avatarInitials}>{getInitials(member?.name ?? '?')}</Text>

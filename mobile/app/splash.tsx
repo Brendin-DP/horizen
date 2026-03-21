@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Animated, Dimensions, InteractionManager } from 'react-native';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import { colors } from '../constants/theme';
 
@@ -17,7 +17,10 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
   const circle2 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    ExpoSplashScreen.hideAsync();
+    const task = InteractionManager.runAfterInteractions(() => {
+      ExpoSplashScreen.hideAsync();
+    });
+    return () => task.cancel();
   }, []);
 
   useEffect(() => {

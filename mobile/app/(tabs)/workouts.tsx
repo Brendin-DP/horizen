@@ -29,8 +29,17 @@ function formatDate(iso: string) {
   });
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export default function WorkoutsScreen() {
-  const { member, token } = useAuth();
+  const { member, token, getAvatarUrl } = useAuth();
   const router = useRouter();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,7 +124,15 @@ export default function WorkoutsScreen() {
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
         <Text style={styles.headerTitle}>Your Workouts</Text>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{member?.name?.charAt(0) ?? '?'}</Text>
+          {member?.avatarUrl ? (
+            <Image
+              source={{ uri: getAvatarUrl(member.avatarUrl) ?? member.avatarUrl }}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={styles.avatarText}>{getInitials(member?.name ?? '?')}</Text>
+          )}
         </View>
       </View>
 
@@ -232,9 +249,9 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   logo: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     marginRight: 12,
   },
   headerTitle: {
@@ -250,6 +267,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   avatarText: {
     color: colors.white,

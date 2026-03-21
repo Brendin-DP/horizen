@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Image,
+  Dimensions,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getLeaderboard, type LeaderboardEntry } from '../lib/api';
@@ -24,7 +25,17 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-function Top3Podium({ data }: { data: LeaderboardEntry[] }) {
+function Top3Podium({
+  data,
+  currentUserId,
+  currentUserAvatarUrl,
+  getAvatarUrl,
+}: {
+  data: LeaderboardEntry[];
+  currentUserId?: string;
+  currentUserAvatarUrl: string | null | undefined;
+  getAvatarUrl: (url: string | null | undefined) => string | null;
+}) {
   const order =
     data.length >= 3 ? [data[1], data[0], data[2]] : data.length === 2 ? [data[1], data[0]] : data;
   const sizes = data.length >= 3 ? [56, 72, 56] : data.length === 2 ? [56, 72] : [72];
@@ -45,9 +56,30 @@ function Top3Podium({ data }: { data: LeaderboardEntry[] }) {
               { width: sizes[i], height: sizes[i], borderRadius: sizes[i] / 2 },
             ]}
           >
-            <Text style={[styles.podiumInitials, { fontSize: sizes[i] * 0.4 }]}>
-              {getInitials(entry.name)}
-            </Text>
+            <View
+              style={[
+                styles.podiumAvatarInner,
+                { width: sizes[i], height: sizes[i], borderRadius: sizes[i] / 2 },
+              ]}
+            >
+              {(() => {
+                const resolvedUrl =
+                  entry.memberId === currentUserId && currentUserAvatarUrl
+                    ? getAvatarUrl(currentUserAvatarUrl) ?? currentUserAvatarUrl
+                    : entry.avatarUrl;
+                return resolvedUrl ? (
+                <Image
+                  source={{ uri: resolvedUrl }}
+                  style={{ width: sizes[i], height: sizes[i], borderRadius: sizes[i] / 2 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={[styles.podiumInitials, { fontSize: sizes[i] * 0.4 }]}>
+                  {getInitials(entry.name)}
+                </Text>
+              );
+              })()}
+            </View>
             <View style={[styles.rankBadge, entry.rank === 1 && styles.rankBadgeFirst]}>
               <Text style={styles.rankBadgeText}>{ranks[i]}</Text>
             </View>
@@ -65,15 +97,31 @@ function Top3Podium({ data }: { data: LeaderboardEntry[] }) {
 function ListRow({
   item,
   isCurrentUser,
+  currentUserAvatarUrl,
+  getAvatarUrl,
 }: {
   item: LeaderboardEntry;
   isCurrentUser: boolean;
+  currentUserAvatarUrl: string | null | undefined;
+  getAvatarUrl: (url: string | null | undefined) => string | null;
 }) {
+  const resolvedUrl =
+    isCurrentUser && currentUserAvatarUrl
+      ? getAvatarUrl(currentUserAvatarUrl) ?? currentUserAvatarUrl
+      : item.avatarUrl;
   return (
     <View style={styles.listRow}>
       <Text style={styles.listRank}>{item.rank}</Text>
       <View style={styles.listAvatar}>
-        <Text style={styles.listAvatarText}>{getInitials(item.name)}</Text>
+        {resolvedUrl ? (
+          <Image
+            source={{ uri: resolvedUrl }}
+            style={styles.listAvatarImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={styles.listAvatarText}>{getInitials(item.name)}</Text>
+        )}
       </View>
       <View style={styles.listNameContainer}>
         <Text style={styles.listName} numberOfLines={1}>
@@ -93,8 +141,30 @@ function ListRow({
   );
 }
 
+const LEADERBOARD_COMING_SOON = true;
+
+function ComingSoonOverlay() {
+  return (
+    <View style={styles.comingSoonOverlay}>
+      <View style={styles.comingSoonCard}>
+        <View style={styles.comingSoonIconWrap}>
+          <Ionicons name="trophy" size={56} color={colors.gold} />
+        </View>
+        <View style={styles.comingSoonBadge}>
+          <Text style={styles.comingSoonBadgeText}>Coming Soon</Text>
+        </View>
+        <Text style={styles.comingSoonTitle}>Leaderboard</Text>
+        <Text style={styles.comingSoonMessage}>
+          Compete with friends, track your progress, and climb the ranks. We're building something
+          special — stay tuned!
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 export function LeaderboardView() {
-  const { member, token } = useAuth();
+  const { member, token, getAvatarUrl } = useAuth();
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -157,11 +227,20 @@ export function LeaderboardView() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      {LEADERBOARD_COMING_SOON && <ComingSoonOverlay />}
       <View style={styles.header}>
         <Image source={require('../assets/logo.png')} style={styles.logo} />
         <Ionicons name="search-outline" size={22} color={colors.textMuted} style={styles.searchIcon} />
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{getInitials(member?.name ?? '?')}</Text>
+          {member?.avatarUrl ? (
+            <Image
+              source={{ uri: getAvatarUrl(member.avatarUrl) ?? member.avatarUrl }}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={styles.avatarText}>{getInitials(member?.name ?? '?')}</Text>
+          )}
         </View>
       </View>
 
@@ -177,9 +256,23 @@ export function LeaderboardView() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
-        ListHeaderComponent={top3.length >= 1 ? <Top3Podium data={top3} /> : null}
+        ListHeaderComponent={
+          top3.length >= 1 ? (
+            <Top3Podium
+              data={top3}
+              currentUserId={member?.id}
+              currentUserAvatarUrl={member?.avatarUrl}
+              getAvatarUrl={getAvatarUrl}
+            />
+          ) : null
+        }
         renderItem={({ item }) => (
-          <ListRow item={item} isCurrentUser={item.memberId === member?.id} />
+          <ListRow
+            item={item}
+            isCurrentUser={item.memberId === member?.id}
+            currentUserAvatarUrl={member?.avatarUrl}
+            getAvatarUrl={getAvatarUrl}
+          />
         )}
         ListEmptyComponent={
           top3.length === 0 ? (
@@ -232,6 +325,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   avatarText: { color: colors.white, fontWeight: '600', fontSize: 14 },
   titleRow: {
@@ -264,6 +363,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+  },
+  podiumAvatarInner: {
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   podiumInitials: { color: colors.primary, fontWeight: '600' },
   rankBadge: {
@@ -315,6 +419,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    overflow: 'hidden',
+  },
+  listAvatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   listAvatarText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
   listNameContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -329,4 +439,59 @@ const styles = StyleSheet.create({
   listScore: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   listScoreText: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
   empty: { color: colors.textMuted, textAlign: 'center', padding: 24 },
+  comingSoonOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(248, 250, 252, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    zIndex: 100,
+  },
+  comingSoonCard: {
+    backgroundColor: colors.white,
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: Math.min(340, Dimensions.get('window').width - 48),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  comingSoonIconWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  comingSoonBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginBottom: 12,
+  },
+  comingSoonBadgeText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  comingSoonTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  comingSoonMessage: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
 });

@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
 
   const { data: members, error: membersErr } = await supabase
     .from('members')
-    .select('id, name')
+    .select('id, name, avatar_url')
     .in('id', memberIds);
   if (membersErr) {
     console.error(membersErr);
@@ -40,7 +40,12 @@ router.get('/', async (req, res) => {
     .map(([memberId, starCount]) => {
       const member = memberMap[memberId];
       if (!member) return null;
-      return { memberId, name: member.name, starCount };
+      return {
+        memberId,
+        name: member.name,
+        starCount,
+        avatarUrl: member.avatar_url || null,
+      };
     })
     .filter(Boolean)
     .sort((a, b) => b.starCount - a.starCount)

@@ -19,9 +19,11 @@ interface AuthState {
   authRequest: AuthRequest | null;
   authError: string | null;
   hasCompletedWelcome: boolean;
+  avatarVersion: number;
 }
 
 interface AuthContextValue extends AuthState {
+  getAvatarUrl: (url: string | null | undefined) => string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     authRequest: null,
     authError: null,
     hasCompletedWelcome: false,
+    avatarVersion: 0,
   });
 
   useEffect(() => {
@@ -52,11 +55,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           AsyncStorage.getItem(MEMBER_KEY),
         ]);
         if (storedToken && storedMember) {
-          setState({
+          setState((s) => ({
+            ...s,
             token: storedToken,
             member: JSON.parse(storedMember) as Member,
             isLoading: false,
-          });
+          }));
         } else {
           setState((s) => ({ ...s, isLoading: false }));
         }
@@ -71,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       AsyncStorage.setItem(TOKEN_KEY, token),
       AsyncStorage.setItem(MEMBER_KEY, JSON.stringify(member)),
     ]);
-    setState({ member, token, isLoading: false });
+    setState((s) => ({ ...s, member, token, isLoading: false }));
   };
 
   const clearAuth = async () => {
@@ -79,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       AsyncStorage.removeItem(TOKEN_KEY),
       AsyncStorage.removeItem(MEMBER_KEY),
     ]);
-    setState({ member: null, token: null, isLoading: false });
+    setState((s) => ({ ...s, member: null, token: null, isLoading: false }));
   };
 
   const login = async (email: string, password: string) => {
@@ -133,13 +137,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateMember = async (member: Member) => {
     await AsyncStorage.setItem(MEMBER_KEY, JSON.stringify(member));
-    setState((s) => ({ ...s, member }));
+    setState((s) => ({ ...s, member, avatarVersion: s.avatarVersion + 1 }));
+  };
+
+  const getAvatarUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}v=${state.avatarVersion}`;
   };
 
   return (
     <AuthContext.Provider
       value={{
         ...state,
+        getAvatarUrl,
         login,
         register,
         logout,

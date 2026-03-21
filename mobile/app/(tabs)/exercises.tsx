@@ -27,8 +27,17 @@ function formatDate(iso: string) {
   });
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export default function ExercisesScreen() {
-  const { member, token } = useAuth();
+  const { member, token, getAvatarUrl } = useAuth();
   const router = useRouter();
   const [logs, setLogs] = useState<ExerciseLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,10 +121,23 @@ export default function ExercisesScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
-        <Text style={styles.headerTitle}>Exercises</Text>
+        <View style={styles.headerSpacer} />
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{member?.name?.charAt(0) ?? '?'}</Text>
+          {member?.avatarUrl ? (
+            <Image
+              source={{ uri: getAvatarUrl(member.avatarUrl) ?? member.avatarUrl }}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={styles.avatarText}>{getInitials(member?.name ?? '?')}</Text>
+          )}
         </View>
+      </View>
+
+      <View style={styles.titleRow}>
+        <Ionicons name="barbell-outline" size={24} color={colors.primary} />
+        <Text style={styles.titleRowText}>Exercises</Text>
       </View>
 
       {error && <Text style={styles.errorBanner}>{error}</Text>}
@@ -229,17 +251,12 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   logo: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     marginRight: 12,
   },
-  headerTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
+  headerSpacer: { flex: 1 },
   avatar: {
     width: 36,
     height: 36,
@@ -247,12 +264,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   avatarText: {
     color: colors.white,
     fontWeight: '600',
     fontSize: 16,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  titleRowText: { fontSize: 22, fontWeight: 'bold', color: colors.textPrimary },
   listContainer: { flex: 1 },
   addCtaContainer: {
     paddingHorizontal: 16,
