@@ -214,19 +214,32 @@ router.get('/:id/exercise-history/:exerciseId', async (req, res) => {
     return res.status(500).json({ error: 'Database error', detail: error.message });
   }
 
-  const history = [];
-  for (const log of logs || []) {
-    const { data: sets } = await supabase
+  const logList = logs || [];
+  const logIds = logList.map((l) => l.id);
+
+  let allSets = [];
+  if (logIds.length > 0) {
+    const { data: setsData } = await supabase
       .from('sets')
       .select('*')
-      .eq('exercise_log_id', log.id)
+      .in('exercise_log_id', logIds)
       .order('set_number', { ascending: true });
+    allSets = setsData || [];
+  }
 
+  const setsByLogId = {};
+  for (const s of allSets) {
+    const logId = s.exercise_log_id;
+    if (!setsByLogId[logId]) setsByLogId[logId] = [];
+    setsByLogId[logId].push(s);
+  }
+
+  const history = logList.map((log) => {
+    const sets = setsByLogId[log.id] || [];
     let bestSet = { reps: null, weightKg: null };
     let totalVolume = 0;
-    const mappedSets = (sets || []).map((s) => mapSet(s));
 
-    for (const s of sets || []) {
+    for (const s of sets) {
       if (s.reps != null && s.weight_kg != null) {
         totalVolume += s.reps * s.weight_kg;
         if (
@@ -239,16 +252,56 @@ router.get('/:id/exercise-history/:exerciseId', async (req, res) => {
       }
     }
 
-    history.push({
+    return {
       logId: log.id,
       loggedAt: log.logged_at,
-      sets: mappedSets,
+      sets: sets.map((s) => mapSet(s)),
       bestSet,
       totalVolume,
-    });
-  }
+    };
+  });
 
   res.json(history);
+});
+
+router.get('/:id/exercise-history/:exerciseId/max-weight', async (req, res) => {
+  const memberId = req.params.id;
+  const exerciseId = req.params.exerciseId;
+  const excludeLogId = req.query.excludeLogId;
+
+  const { data: exercise } = await supabase
+    .from('exercise_library')
+    .select('id')
+    .eq('id', exerciseId)
+    .single();
+  if (!exercise) {
+    return res.status(404).json({ error: 'Exercise not found' });
+  }
+
+  const { data: logs } = await supabase
+    .from('exercise_logs')
+    .select('id')
+    .eq('member_id', memberId)
+    .eq('exercise_id', exerciseId);
+  const logIds = (logs || []).map((l) => l.id).filter((id) => !excludeLogId || id !== excludeLogId);
+
+  if (logIds.length === 0) {
+    return res.json({ maxWeightKg: null });
+  }
+
+  const { data: sets } = await supabase
+    .from('sets')
+    .select('weight_kg')
+    .in('exercise_log_id', logIds)
+    .not('weight_kg', 'is', null)
+    .gt('weight_kg', 0);
+
+  const maxWeightKg =
+    sets && sets.length > 0
+      ? Math.max(...sets.map((s) => s.weight_kg))
+      : null;
+
+  res.json({ maxWeightKg });
 });
 
 router.get('/:id/progress/:exerciseId', async (req, res) => {

@@ -11,12 +11,19 @@ import {
   Switch,
   Modal,
   Dimensions,
+  InteractionManager,
 } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
-import { getExercise, getExercises, createExerciseLog, addSetToExerciseLog, getExerciseHistory } from '../../lib/api';
+import {
+  getExercise,
+  getExercises,
+  createExerciseLog,
+  addSetsBatchToExerciseLog,
+  getExerciseMaxWeight,
+} from '../../lib/api';
 import type { Exercise } from '../../types';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -109,19 +116,14 @@ export default function LogExerciseScreen() {
     setSaving(true);
     setError(null);
     try {
-      let previousMax = 0;
-      if (exercise.unit === 'weight_reps') {
-        const history = await getExerciseHistory(member.id, exercise.id, token);
-        previousMax =
-          history.length > 0
-            ? Math.max(...history.map((h) => h.bestSet?.weightKg ?? 0))
-            : 0;
-      }
-
-      const log = await createExerciseLog(
-        { memberId: member.id, exerciseId: exercise.id },
-        token
-      );
+      const setsPayload: Array<{
+        setNumber: number;
+        reps?: number;
+        weightKg?: number;
+        durationSeconds?: number;
+        distanceMeters?: number;
+        completed: boolean;
+      }> = [];
 
       for (let i = 0; i < sets.length; i++) {
         const s = sets[i];
@@ -157,8 +159,15 @@ export default function LogExerciseScreen() {
           }
           body.distanceMeters = d;
         }
-        await addSetToExerciseLog(log.id, body, token);
+        setsPayload.push(body as (typeof setsPayload)[0]);
       }
+
+      const log = await createExerciseLog(
+        { memberId: member.id, exerciseId: exercise.id },
+        token
+      );
+
+      await addSetsBatchToExerciseLog(log.id, setsPayload, token);
 
       const targetRoute = exerciseId ? `/exercise/${exercise.id}` : '/(tabs)/exercises';
 
@@ -169,11 +178,25 @@ export default function LogExerciseScreen() {
           .filter((w) => !isNaN(w) && w > 0);
         const newMax = weights.length > 0 ? Math.max(...weights) : 0;
 
-        if (newMax > previousMax && newMax > 0) {
-          pendingNavigationRef.current = targetRoute;
-          setPrWeightKg(newMax);
-          setSuccessModalVisible(true);
-          setTimeout(() => confettiRef.current?.start(), 100);
+        if (newMax > 0) {
+          const { maxWeightKg: previousMax } = await getExerciseMaxWeight(
+            member.id,
+            exercise.id,
+            { excludeLogId: log.id },
+            token
+          );
+          const prev = previousMax ?? 0;
+
+          if (newMax > prev) {
+            pendingNavigationRef.current = targetRoute;
+            setPrWeightKg(newMax);
+            setSuccessModalVisible(true);
+            InteractionManager.runAfterInteractions(() => {
+              setTimeout(() => confettiRef.current?.start(), 80);
+            });
+          } else {
+            router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
+          }
         } else {
           router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
         }
@@ -331,7 +354,7 @@ export default function LogExerciseScreen() {
         <View style={styles.successModalOverlay}>
           <ConfettiCannon
             ref={confettiRef}
-            count={150}
+            count={80}
             origin={{ x: Dimensions.get('window').width / 2 - 20, y: 200 }}
             autoStart={false}
             fadeOut

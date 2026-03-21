@@ -117,6 +117,48 @@ router.delete('/:id', async (req, res) => {
   res.status(204).send();
 });
 
+router.post('/:id/sets/batch', async (req, res) => {
+  const exerciseLogId = req.params.id;
+  const { sets: setsPayload } = req.body;
+
+  if (!Array.isArray(setsPayload) || setsPayload.length === 0) {
+    return res.status(400).json({ error: 'sets array is required and must not be empty' });
+  }
+
+  const { data: log } = await supabase
+    .from('exercise_logs')
+    .select('id')
+    .eq('id', exerciseLogId)
+    .single();
+  if (!log) {
+    return res.status(404).json({ error: 'Exercise log not found' });
+  }
+
+  const now = new Date().toISOString();
+  const toInsert = setsPayload.map((s, idx) => {
+    const setNumber = s.setNumber !== undefined ? s.setNumber : idx + 1;
+    return toDbSet({
+      id: randomUUID(),
+      exerciseLogId,
+      setNumber,
+      reps: s.reps ?? null,
+      weightKg: s.weightKg ?? null,
+      durationSeconds: s.durationSeconds ?? null,
+      distanceMeters: s.distanceMeters ?? null,
+      completed: s.completed !== undefined ? s.completed : true,
+      createdAt: now,
+    });
+  });
+
+  const { data: inserted, error } = await supabase.from('sets').insert(toInsert).select();
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Database error', detail: error.message });
+  }
+  const ordered = (inserted || []).sort((a, b) => (a.set_number ?? 0) - (b.set_number ?? 0));
+  res.status(201).json(ordered.map(mapSet));
+});
+
 router.post('/:id/sets', async (req, res) => {
   const exerciseLogId = req.params.id;
   const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed } = req.body;

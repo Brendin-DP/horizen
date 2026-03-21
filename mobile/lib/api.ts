@@ -475,6 +475,44 @@ export async function addSetToExerciseLog(
   return res.json();
 }
 
+export async function addSetsBatchToExerciseLog(
+  exerciseLogId: string,
+  sets: Array<{
+    setNumber: number;
+    reps?: number;
+    weightKg?: number;
+    durationSeconds?: number;
+    distanceMeters?: number;
+    completed?: boolean;
+  }>,
+  token?: string | null
+): Promise<import('../types').Set[]> {
+  const res = await fetchApi(`/exercise-logs/${exerciseLogId}/sets/batch`, {
+    method: 'POST',
+    body: JSON.stringify({ sets }),
+    token,
+  });
+  if (!res.ok) throw new Error('Failed to add sets');
+  return res.json();
+}
+
+export async function getExerciseMaxWeight(
+  memberId: string,
+  exerciseId: string,
+  options?: { excludeLogId?: string },
+  token?: string | null
+): Promise<{ maxWeightKg: number | null }> {
+  const params = new URLSearchParams();
+  if (options?.excludeLogId) params.set('excludeLogId', options.excludeLogId);
+  const q = params.toString() ? `?${params.toString()}` : '';
+  const res = await fetchApi(
+    `/members/${memberId}/exercise-history/${exerciseId}/max-weight${q}`,
+    { token }
+  );
+  if (!res.ok) throw new Error('Failed to fetch max weight');
+  return res.json();
+}
+
 export async function getExerciseHistory(
   memberId: string,
   exerciseId: string,
