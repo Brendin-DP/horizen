@@ -36,7 +36,7 @@ export default function Layout() {
           <img
             src="/favicon.png"
             alt="Horizen"
-            style={{ width: 32, height: 32 }}
+            style={{ width: 32, height: 32, objectFit: 'contain' }}
           />
           <nav style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <NavLink to="/dashboard" style={navStyle}>

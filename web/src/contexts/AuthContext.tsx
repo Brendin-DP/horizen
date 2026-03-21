@@ -2,9 +2,6 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { Member } from '../api/client';
 import { login as apiLogin } from '../api/client';
 
-const TOKEN_KEY = 'horizen_admin_token';
-const MEMBER_KEY = 'horizen_admin_member';
-
 interface AuthContextValue {
   token: string | null;
   member: Member | null;
@@ -16,13 +13,8 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem(TOKEN_KEY)
-  );
-  const [member, setMember] = useState<Member | null>(() => {
-    const stored = localStorage.getItem(MEMBER_KEY);
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [token, setToken] = useState<string | null>(null);
+  const [member, setMember] = useState<Member | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -32,8 +24,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (m.role !== 'admin') {
         throw new Error('Access denied. Admin login required.');
       }
-      localStorage.setItem(TOKEN_KEY, t);
-      localStorage.setItem(MEMBER_KEY, JSON.stringify(m));
       setToken(t);
       setMember(m);
     } finally {
@@ -42,8 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(MEMBER_KEY);
     setToken(null);
     setMember(null);
   }, []);

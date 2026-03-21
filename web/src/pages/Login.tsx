@@ -57,6 +57,17 @@ export default function Login() {
           border: `1px solid ${colors.border}`,
         }}
       >
+        <img
+          src="/favicon.png"
+          alt="Horizen"
+          style={{
+            width: 48,
+            height: 48,
+            objectFit: 'contain',
+            display: 'block',
+            margin: '0 auto 16px',
+          }}
+        />
         <h1 style={{ margin: '0 0 8px', fontSize: 24, color: colors.textPrimary }}>
           Horizen Gym
         </h1>
