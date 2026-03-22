@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { getWorkouts, createWorkout } from '../../lib/api';
 import type { Workout } from '../../types';
@@ -39,6 +40,7 @@ function getInitials(name: string): string {
 }
 
 export default function WorkoutsScreen() {
+  const posthog = usePostHog();
   const { member, token, getAvatarUrl } = useAuth();
   const router = useRouter();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -86,6 +88,7 @@ export default function WorkoutsScreen() {
     const name = workoutName.trim() || undefined;
     try {
       const workout = await createWorkout(member.id, name || null, token);
+      posthog?.capture('created_workout', { workoutId: workout.id, workoutName: workout.name ?? undefined });
       router.push(`/workout/${workout.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create workout');

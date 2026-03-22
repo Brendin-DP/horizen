@@ -14,6 +14,7 @@ import {
   Dimensions,
 } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
+import { usePostHog } from 'posthog-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -33,6 +34,7 @@ import { Toast } from '../../components/Toast';
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const posthog = usePostHog();
   const { token } = useAuth();
   const [workout, setWorkout] = useState<WorkoutWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,6 +77,12 @@ export default function WorkoutDetailScreen() {
     setAddingExercise(true);
     try {
       await addWorkoutExercise(id, exerciseId, undefined, token);
+      const exercise = exercises.find((e) => e.id === exerciseId);
+      posthog?.capture('added_exercise_to_workout', {
+        workoutId: id,
+        exerciseId,
+        exerciseName: exercise?.name,
+      });
       setPickerVisible(false);
       fetchWorkout();
       setToastMessage('Exercise added');
@@ -141,6 +149,11 @@ export default function WorkoutDetailScreen() {
       }
 
       await addSet(selectedWe.id, body, token);
+      posthog?.capture('saved_set', {
+        workoutId: id,
+        exerciseName: exercise.name,
+        workoutExerciseId: selectedWe.id,
+      });
       setSetModalVisible(false);
       setSelectedWe(null);
       fetchWorkout();
@@ -164,6 +177,7 @@ export default function WorkoutDetailScreen() {
         { status: 'completed', completedAt: new Date().toISOString() },
         token
       );
+      posthog?.capture('completed_workout', { workoutId: id, workoutName: workout?.name });
       fetchWorkout();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to complete');

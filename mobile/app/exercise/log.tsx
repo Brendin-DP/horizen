@@ -14,6 +14,7 @@ import {
   InteractionManager,
 } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
+import { usePostHog } from 'posthog-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -40,6 +41,7 @@ interface SetEntry {
 export default function LogExerciseScreen() {
   const { exerciseId } = useLocalSearchParams<{ exerciseId?: string }>();
   const router = useRouter();
+  const posthog = usePostHog();
   const { member, token } = useAuth();
   const [step, setStep] = useState<'pick' | 'sets'>('pick');
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -169,6 +171,12 @@ export default function LogExerciseScreen() {
 
       await addSetsBatchToExerciseLog(log.id, setsPayload, token);
 
+      posthog?.capture('logged_exercise', {
+        exerciseId: exercise.id,
+        exerciseName: exercise.name,
+        setCount: sets.length,
+      });
+
       const targetRoute = exerciseId ? `/exercise/${exercise.id}` : '/(tabs)/exercises';
 
       if (exercise.unit === 'weight_reps') {
@@ -188,6 +196,11 @@ export default function LogExerciseScreen() {
           const prev = previousMax ?? 0;
 
           if (newMax > prev) {
+            posthog?.capture('personal_best_achieved', {
+              exerciseId: exercise.id,
+              exerciseName: exercise.name,
+              weightKg: newMax,
+            });
             pendingNavigationRef.current = targetRoute;
             setPrWeightKg(newMax);
             setSuccessModalVisible(true);

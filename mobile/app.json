@@ -19,7 +19,8 @@
         {
           "photosPermission": "Allow Horizen to access your photos to set your profile picture."
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "ios": {
       "bundleIdentifier": "com.anonymous.gymapp",

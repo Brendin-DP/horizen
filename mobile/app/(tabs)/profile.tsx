@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { updateProfile, uploadAvatar, type Member } from '../../lib/api';
 import { colors, borderRadius } from '../../constants/theme';
@@ -69,6 +70,7 @@ function ProfileV1Content({
   handleChangePhoto: () => Promise<void>;
   uploading: boolean;
 }) {
+  const posthog = usePostHog();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -99,6 +101,7 @@ function ProfileV1Content({
     try {
       const updated = await updateProfile({ name: fullName, email: email.trim() }, token);
       await updateMember(updated);
+      posthog?.capture('updated_profile');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
@@ -260,6 +263,7 @@ function ProfileV2Content({
 }
 
 export default function ProfileScreen() {
+  const posthog = usePostHog();
   const { member, token, updateMember, logout, getAvatarUrl } = useAuth();
   const [profileVersion, setProfileVersion] = useState<ProfileVersion>('v1');
   const [uploading, setUploading] = useState(false);
@@ -283,6 +287,7 @@ export default function ProfileScreen() {
     try {
       const updated = await uploadAvatar(result.assets[0].uri, token);
       await updateMember(updated);
+      posthog?.capture('changed_avatar');
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Failed to upload avatar');
     } finally {

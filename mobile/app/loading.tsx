@@ -2,11 +2,13 @@ import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { colors } from '../constants/theme';
 
 export default function LoadingScreen() {
   const router = useRouter();
+  const posthog = usePostHog();
   const { authRequest, executeAuthRequest } = useAuth();
   const executed = useRef(false);
 
@@ -18,9 +20,13 @@ export default function LoadingScreen() {
     if (executed.current) return;
     executed.current = true;
     executeAuthRequest(authRequest)
-      .then(() => router.replace('/welcome'))
+      .then(() => {
+        const event = authRequest.type === 'register' ? 'signed_up' : 'logged_in';
+        posthog?.capture(event, { email: authRequest.email, name: authRequest.name });
+        router.replace('/welcome');
+      })
       .catch(() => router.replace('/login'));
-  }, [authRequest, executeAuthRequest, router]);
+  }, [authRequest, executeAuthRequest, router, posthog]);
 
   return (
     <LinearGradient

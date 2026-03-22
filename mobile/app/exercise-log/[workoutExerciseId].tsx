@@ -12,6 +12,7 @@ import {
   Dimensions,
 } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
+import { usePostHog } from 'posthog-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -23,6 +24,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function ExerciseLogScreen() {
   const { workoutExerciseId } = useLocalSearchParams<{ workoutExerciseId: string }>();
   const router = useRouter();
+  const posthog = usePostHog();
   const { token } = useAuth();
   const [we, setWe] = useState<WorkoutExercise | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,6 +110,11 @@ export default function ExerciseLogScreen() {
       }
 
       await addSet(we.id, body, token);
+      posthog?.capture('saved_set', {
+        workoutId: we.workoutId,
+        workoutExerciseId: we.id,
+        exerciseName: exercise?.name,
+      });
       setSetModalVisible(false);
       fetchData();
 

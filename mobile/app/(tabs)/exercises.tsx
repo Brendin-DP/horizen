@@ -13,6 +13,7 @@ import {
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { getExerciseLogs, deleteExerciseLog } from '../../lib/api';
 import type { ExerciseLog } from '../../types';
@@ -37,6 +38,7 @@ function getInitials(name: string): string {
 }
 
 export default function ExercisesScreen() {
+  const posthog = usePostHog();
   const { member, token, getAvatarUrl } = useAuth();
   const router = useRouter();
   const [logs, setLogs] = useState<ExerciseLog[]>([]);
@@ -84,6 +86,10 @@ export default function ExercisesScreen() {
     setDeleting(true);
     try {
       await deleteExerciseLog(logToDelete.id, token);
+      posthog?.capture('deleted_exercise_log', {
+        logId: logToDelete.id,
+        exerciseName: logToDelete.exercise?.name,
+      });
       setLogs((prev) => prev.filter((l) => l.id !== logToDelete.id));
       setDeleteModalVisible(false);
       setLogToDelete(null);
