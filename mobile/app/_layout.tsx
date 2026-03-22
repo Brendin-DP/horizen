@@ -20,7 +20,13 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <PostHogProvider apiKey={POSTHOG_KEY} options={{ host: 'https://us.i.posthog.com' }}>
+      <PostHogProvider
+        apiKey={POSTHOG_KEY}
+        options={{
+          host: 'https://us.i.posthog.com',
+          disabled: __DEV__,
+        }}
+      >
         <AuthProvider>
           <PostHogAuthSync />
           {!splashDone ? (
