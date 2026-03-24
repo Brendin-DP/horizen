@@ -18,7 +18,7 @@ import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { getWorkouts, createWorkout } from '../../lib/api';
 import type { Workout } from '../../types';
-import { colors } from '../../constants/theme';
+import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 function formatDate(iso: string) {
@@ -30,18 +30,9 @@ function formatDate(iso: string) {
   });
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-}
-
 export default function WorkoutsScreen() {
   const posthog = usePostHog();
-  const { member, token, getAvatarUrl } = useAuth();
+  const { member, token } = useAuth();
   const router = useRouter();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,10 +90,12 @@ export default function WorkoutsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading workouts...</Text>
+      <SafeAreaView style={styles.safeOuter} edges={['top']}>
+        <View style={styles.bodyFill}>
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Loading workouts...</Text>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -110,36 +103,32 @@ export default function WorkoutsScreen() {
 
   if (error && workouts.length === 0) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={() => { setLoading(true); fetchWorkouts(); }} style={styles.retry}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+      <SafeAreaView style={styles.safeOuter} edges={['top']}>
+        <View style={styles.bodyFill}>
+          <View style={styles.center}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={() => { setLoading(true); fetchWorkouts(); }} style={styles.retry}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safeOuter} edges={['top']}>
       <View style={styles.header}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
-        <Text style={styles.headerTitle}>Your Workouts</Text>
-        <View style={styles.avatar}>
-          {member?.avatarUrl ? (
-            <Image
-              source={{ uri: getAvatarUrl(member.avatarUrl) ?? member.avatarUrl }}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <Text style={styles.avatarText}>{getInitials(member?.name ?? '?')}</Text>
-          )}
-        </View>
       </View>
 
-      {error && <Text style={styles.errorBanner}>{error}</Text>}
+      <View style={styles.bodyFill}>
+        <View style={styles.titleRow}>
+          <Ionicons name="barbell-outline" size={24} color={colors.primary} />
+          <Text style={styles.titleRowText}>Your Workouts</Text>
+        </View>
+
+        {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
 
       {workouts.length === 0 ? (
         <View style={styles.emptyState}>
@@ -178,6 +167,7 @@ export default function WorkoutsScreen() {
             data={workouts}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
+            style={styles.listFlex}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -209,6 +199,7 @@ export default function WorkoutsScreen() {
           />
         </>
       )}
+      </View>
 
       <Modal visible={nameModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -242,7 +233,8 @@ export default function WorkoutsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safeOuter: { flex: 1, backgroundColor: shell.header },
+  bodyFill: { flex: 1, backgroundColor: shell.body },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -250,38 +242,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    backgroundColor: shell.header,
   },
   logo: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    marginRight: 12,
   },
-  headerTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
+  titleRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    overflow: 'hidden',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
-  avatarImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  titleRowText: {
+    fontSize: 22,
+    color: colors.textPrimary,
+    fontFamily: typography.heading,
   },
-  avatarText: {
-    color: colors.white,
-    fontWeight: '600',
-    fontSize: 16,
-  },
+  listFlex: { flex: 1 },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -299,10 +280,11 @@ const styles = StyleSheet.create({
   },
   retryText: { color: colors.white },
   emptyState: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
+    minHeight: 320,
   },
   emptyIconContainer: {
     position: 'relative',
@@ -337,9 +319,9 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
     color: colors.textPrimary,
     marginBottom: 8,
+    fontFamily: typography.heading,
   },
   emptyText: {
     fontSize: 14,
@@ -372,7 +354,7 @@ const styles = StyleSheet.create({
   errorBanner: { color: colors.primary, paddingHorizontal: 16, marginBottom: 8 },
   list: { padding: 16, paddingTop: 0 },
   card: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.white,
     padding: 16,
     marginBottom: 12,
     borderRadius: 12,

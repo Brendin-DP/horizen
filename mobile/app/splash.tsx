@@ -1,10 +1,19 @@
 import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions, InteractionManager } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  Dimensions,
+  InteractionManager,
+} from 'react-native';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import { colors } from '../constants/theme';
+import TextureBg from '../assets/design/TextureBg.svg';
+import CirclesWhite from '../assets/design/CirclesWhite.svg';
 
 const SPLASH_DURATION = 2000;
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -80,8 +89,16 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
     outputRange: [0.05, 0.15],
   });
 
+  const circleSize = Math.min(width, height) * 0.95;
+
   return (
     <View style={styles.container}>
+      <View style={styles.textureLayer} pointerEvents="none">
+        <TextureBg width={width} height={height} preserveAspectRatio="xMidYMid slice" />
+      </View>
+      <View style={styles.circlesLayer} pointerEvents="none">
+        <CirclesWhite width={circleSize} height={circleSize} />
+      </View>
       <Animated.View
         style={[
           styles.circle,
@@ -122,12 +139,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  textureLayer: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  circlesLayer: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   circle: {
     position: 'absolute',
     backgroundColor: 'rgba(255,255,255,0.3)',
   },
   content: {
     alignItems: 'center',
+    zIndex: 1,
   },
   brand: {
     fontSize: 36,
@@ -148,5 +175,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255,255,255,0.9)',
     letterSpacing: 2,
+    zIndex: 1,
   },
 });

@@ -1,3 +1,15 @@
+/** App shell: white header/footer strips, light grey scroll body (tab screens). */
+export const shell = {
+  header: '#FFFFFF',
+  body: '#F5F5F7',
+  footer: '#FFFFFF',
+} as const;
+
+export const typography = {
+  heading: 'Montserrat_700Bold',
+  headingSemibold: 'Montserrat_600SemiBold',
+} as const;
+
 export const colors = {
   primary: '#E74C3C',
   primaryDark: '#c0392b',

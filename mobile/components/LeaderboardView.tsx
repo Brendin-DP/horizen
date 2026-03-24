@@ -13,7 +13,7 @@ import {
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getLeaderboard, type LeaderboardEntry } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import { colors } from '../constants/theme';
+import { colors, shell, typography } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 function getInitials(name: string): string {
@@ -194,10 +194,12 @@ export function LeaderboardView() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading leaderboard...</Text>
+      <SafeAreaView style={styles.safeOuter} edges={['top']}>
+        <View style={styles.bodyFill}>
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Loading leaderboard...</Text>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -205,18 +207,20 @@ export function LeaderboardView() {
 
   if (error) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity
-            onPress={() => {
-              setLoading(true);
-              fetchLeaderboard();
-            }}
-            style={styles.retry}
-          >
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+      <SafeAreaView style={styles.safeOuter} edges={['top']}>
+        <View style={styles.bodyFill}>
+          <View style={styles.center}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setLoading(true);
+                fetchLeaderboard();
+              }}
+              style={styles.retry}
+            >
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -226,30 +230,21 @@ export function LeaderboardView() {
   const rest = data.slice(3);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safeOuter} edges={['top']}>
       {LEADERBOARD_COMING_SOON && <ComingSoonOverlay />}
       <View style={styles.header}>
         <Image source={require('../assets/logo.png')} style={styles.logo} />
         <Ionicons name="search-outline" size={22} color={colors.textMuted} style={styles.searchIcon} />
-        <View style={styles.avatar}>
-          {member?.avatarUrl ? (
-            <Image
-              source={{ uri: getAvatarUrl(member.avatarUrl) ?? member.avatarUrl }}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <Text style={styles.avatarText}>{getInitials(member?.name ?? '?')}</Text>
-          )}
+      </View>
+
+      <View style={styles.bodyFill}>
+        <View style={styles.titleRow}>
+          <Ionicons name="trophy" size={24} color={colors.primary} />
+          <Text style={styles.title}>Leaderboard</Text>
         </View>
-      </View>
 
-      <View style={styles.titleRow}>
-        <Ionicons name="trophy" size={24} color={colors.primary} />
-        <Text style={styles.title}>Leaderboard</Text>
-      </View>
-
-      <FlatList
+        <FlatList
+        style={styles.listFlex}
         data={rest}
         keyExtractor={(item) => item.memberId}
         contentContainerStyle={styles.list}
@@ -280,12 +275,15 @@ export function LeaderboardView() {
           ) : null
         }
       />
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.backgroundDark },
+  safeOuter: { flex: 1, backgroundColor: shell.header },
+  bodyFill: { flex: 1, backgroundColor: shell.body },
+  listFlex: { flex: 1 },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -307,7 +305,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: colors.white,
+    backgroundColor: shell.header,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -317,31 +315,16 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     marginRight: 12,
   },
-  searchIcon: { marginLeft: 'auto', marginRight: 12 },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  avatarText: { color: colors.white, fontWeight: '600', fontSize: 14 },
+  searchIcon: { marginLeft: 'auto' },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: colors.white,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
-  title: { fontSize: 22, fontWeight: 'bold', color: colors.textPrimary },
+  title: { fontSize: 22, color: colors.textPrimary, fontFamily: typography.heading },
   list: { padding: 16, paddingTop: 0 },
   top3: {
     flexDirection: 'row',

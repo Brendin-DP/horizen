@@ -17,29 +17,20 @@ import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { getExerciseLogs, deleteExerciseLog } from '../../lib/api';
 import type { ExerciseLog } from '../../types';
-import { colors } from '../../constants/theme';
+import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
     day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
 }
 
 export default function ExercisesScreen() {
   const posthog = usePostHog();
-  const { member, token, getAvatarUrl } = useAuth();
+  const { member, token } = useAuth();
   const router = useRouter();
   const [logs, setLogs] = useState<ExerciseLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,102 +105,93 @@ export default function ExercisesScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading exercises...</Text>
+      <SafeAreaView style={styles.safeOuter} edges={['top']}>
+        <View style={styles.bodyFill}>
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Loading exercises...</Text>
+          </View>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safeOuter} edges={['top']}>
       <View style={styles.header}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
-        <View style={styles.headerSpacer} />
-        <View style={styles.avatar}>
-          {member?.avatarUrl ? (
-            <Image
-              source={{ uri: getAvatarUrl(member.avatarUrl) ?? member.avatarUrl }}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <Text style={styles.avatarText}>{getInitials(member?.name ?? '?')}</Text>
-          )}
+      </View>
+
+      <View style={styles.bodyFill}>
+        <View style={styles.titleRow}>
+          <Ionicons name="barbell-outline" size={24} color={colors.primary} />
+          <Text style={styles.titleRowText}>Your Exercises</Text>
         </View>
-      </View>
 
-      <View style={styles.titleRow}>
-        <Ionicons name="barbell-outline" size={24} color={colors.primary} />
-        <Text style={styles.titleRowText}>Exercises</Text>
-      </View>
+        {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
 
-      {error && <Text style={styles.errorBanner}>{error}</Text>}
-
-      <FlatList
-        style={styles.listContainer}
-        data={logs}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.list, logs.length === 0 && styles.listEmpty]}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              fetchData();
-            }}
-            tintColor={colors.primary}
-          />
-        }
-        renderItem={({ item }) => (
-          <Swipeable
-            renderRightActions={() => renderRightActions(item)}
-            friction={2}
-          >
-            <View style={styles.card}>
+        <FlatList
+          style={styles.listContainer}
+          data={logs}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[styles.list, logs.length === 0 && styles.listEmpty]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                fetchData();
+              }}
+              tintColor={colors.primary}
+            />
+          }
+          renderItem={({ item }) => (
+            <Swipeable
+              renderRightActions={() => renderRightActions(item)}
+              friction={2}
+            >
               <Pressable
-                style={styles.cardMain}
+                style={styles.card}
                 onPress={() => router.push(`/exercise/${item.exerciseId}`)}
               >
-                <Text style={styles.cardName}>{item.exercise?.name ?? 'Exercise'}</Text>
-                <Text style={styles.cardMeta}>{formatDate(item.loggedAt)}</Text>
+                <View style={styles.cardMain}>
+                  <Text style={styles.cardName}>{item.exercise?.name ?? 'Exercise'}</Text>
+                  <Text style={styles.cardMeta}>
+                    🏆 {formatDate(item.loggedAt)}
+                  </Text>
+                </View>
+                <View style={styles.chevronWrap}>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                </View>
               </Pressable>
-              <Pressable
-                style={styles.editBtn}
-                onPress={() => router.push(`/log/edit/${item.id}`)}
-                hitSlop={8}
-              >
-                <Ionicons name="pencil-outline" size={20} color={colors.primary} />
-              </Pressable>
-            </View>
-          </Swipeable>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconContainer}>
-              <View style={styles.emptyCircle1} />
-              <View style={styles.emptyCircle2} />
-              <View style={styles.emptyIcon}>
-                <Ionicons name="barbell-outline" size={64} color={colors.accentDark} />
+            </Swipeable>
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconContainer}>
+                <View style={styles.emptyCircle1} />
+                <View style={styles.emptyCircle2} />
+                <View style={styles.emptyIcon}>
+                  <Ionicons name="barbell-outline" size={64} color={colors.accentDark} />
+                </View>
               </View>
+              <Text style={styles.emptyTitle}>Log Exercises</Text>
+              <Text style={styles.emptyText}>
+                You have no exercises logged yet. Tap the button below to log your first exercise and start
+                tracking your progress.
+              </Text>
             </View>
-            <Text style={styles.emptyTitle}>Log Exercises</Text>
-            <Text style={styles.emptyText}>
-              You have no exercises logged yet. Tap the button below to log your first exercise and start tracking your progress.
-            </Text>
-          </View>
-        }
-      />
+          }
+        />
+      </View>
 
       <View style={styles.addCtaContainer}>
         <Pressable
           style={styles.addCta}
           onPress={() => router.push('/exercise/log')}
         >
-          <Ionicons name="add" size={20} color={colors.white} />
           <Text style={styles.addCtaText}>Add Exercise</Text>
+          <Ionicons name="add" size={20} color={colors.white} />
         </Pressable>
       </View>
 
@@ -247,7 +229,7 @@ export default function ExercisesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safeOuter: { flex: 1, backgroundColor: shell.header },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -255,44 +237,31 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    backgroundColor: shell.header,
+  },
+  bodyFill: {
+    flex: 1,
+    backgroundColor: shell.body,
   },
   logo: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    marginRight: 12,
-  },
-  headerSpacer: { flex: 1 },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  avatarText: {
-    color: colors.white,
-    fontWeight: '600',
-    fontSize: 16,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingTop: 16,
+    paddingBottom: 12,
+    backgroundColor: shell.body,
   },
-  titleRowText: { fontSize: 22, fontWeight: 'bold', color: colors.textPrimary },
+  titleRowText: {
+    fontSize: 22,
+    color: colors.textPrimary,
+    fontFamily: typography.heading,
+  },
   listContainer: { flex: 1 },
   addCtaContainer: {
     paddingHorizontal: 16,
@@ -300,7 +269,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    backgroundColor: colors.background,
+    backgroundColor: shell.footer,
   },
   addCta: {
     flexDirection: 'row',
@@ -330,7 +299,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.white,
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     marginBottom: 12,
     borderRadius: 12,
     borderWidth: 1,
@@ -339,8 +309,13 @@ const styles = StyleSheet.create({
   cardMain: { flex: 1 },
   cardName: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
   cardMeta: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
-  editBtn: {
-    padding: 8,
+  chevronWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginLeft: 8,
   },
   deleteAction: {
@@ -439,13 +414,15 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
     color: colors.textPrimary,
     marginBottom: 8,
+    fontFamily: typography.heading,
   },
   emptyText: {
     fontSize: 14,
     color: colors.textMuted,
     textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 320,
   },
 });

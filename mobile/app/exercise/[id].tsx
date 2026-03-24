@@ -178,10 +178,9 @@ export default function ExerciseDetailScreen() {
                   style={[styles.pbCard, isPb && styles.pbCardHighlight]}
                 >
                   <View style={styles.pbCardHeader}>
-                    <Text style={styles.pbWeight}>{formatDate(log.loggedAt)}</Text>
+                    <Text style={styles.pbDate}>{formatDate(log.loggedAt)}</Text>
                     {isPb && (
                       <View style={styles.pbBadge}>
-                        <Ionicons name="trophy" size={14} color={colors.white} />
                         <Text style={styles.pbBadgeText}>PB</Text>
                       </View>
                     )}
@@ -280,17 +279,15 @@ const styles = StyleSheet.create({
   pbCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    gap: 10,
     marginBottom: 4,
   },
-  pbWeight: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  pbDate: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
   pbBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
     backgroundColor: colors.primary,
     paddingVertical: 4,
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
     borderRadius: 6,
   },
   pbBadgeText: {

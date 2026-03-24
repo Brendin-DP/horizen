@@ -36,8 +36,9 @@ export default function WelcomeScreen() {
       resizeMode="cover"
     >
       <View style={styles.overlay} pointerEvents="none" />
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.safe} edges={['bottom']}>
         <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
+          <View style={styles.sheetHandle} />
           <Image source={require('../assets/logo.png')} style={styles.logo} />
           <Text style={styles.greeting}>Welcome, {member?.name ?? 'there'}</Text>
           <Text style={styles.sub}>We're so glad you're here.</Text>
@@ -60,17 +61,30 @@ const styles = StyleSheet.create({
   },
   safe: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 8,
   },
   card: {
     backgroundColor: colors.white,
-    borderRadius: 24,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     padding: 32,
+    paddingTop: 12,
     alignItems: 'center',
     width: '100%',
-    maxWidth: 340,
+    maxWidth: 400,
+    marginBottom: 16,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    marginBottom: 16,
   },
   logo: {
     width: 64,

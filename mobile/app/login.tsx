@@ -8,7 +8,7 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { colors } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -54,18 +54,18 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Image source={require('../assets/logo.png')} style={styles.logo} />
-        <Text style={styles.title}>Sign in with Email</Text>
-        <Text style={styles.subtitle}>Enter your credentials</Text>
+        <Text style={styles.title}>Sign in</Text>
+        <Text style={styles.subtitle}>Use your email and password</Text>
 
         {displayError && <Text style={styles.error}>{displayError}</Text>}
 
-        <Text style={styles.label}>Login</Text>
+        <Text style={styles.label}>Email</Text>
         <TextInput
           style={[
             styles.input,
             emailFocused && styles.inputFocused,
           ]}
-          placeholder="chad@test.com"
+          placeholder="you@example.com"
           placeholderTextColor={colors.textMuted}
           value={email}
           onChangeText={setEmail}
@@ -82,7 +82,7 @@ export default function LoginScreen() {
             styles.input,
             passwordFocused && styles.inputFocused,
           ]}
-          placeholder="Your Password"
+          placeholder="Your password"
           placeholderTextColor={colors.textMuted}
           value={password}
           onChangeText={setPassword}
@@ -96,37 +96,12 @@ export default function LoginScreen() {
           onPress={handleSubmit}
           disabled={loading}
         >
-          <Text style={styles.buttonText}>Sign in Now</Text>
+          <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign in'}</Text>
         </Pressable>
 
         <Pressable style={styles.forgotLink}>
-          <Text style={styles.forgotText}>Forgot Password?</Text>
+          <Text style={styles.forgotText}>Forgot password?</Text>
         </Pressable>
-
-        <View style={styles.separator}>
-          <View style={styles.separatorLine} />
-          <Text style={styles.separatorText}>OR</Text>
-          <View style={styles.separatorLine} />
-        </View>
-
-        <Pressable style={styles.socialButton}>
-          <Text style={styles.socialText}>Sign in with Google</Text>
-        </Pressable>
-        <Pressable style={styles.socialButton}>
-          <Text style={styles.socialText}>Sign in with Apple</Text>
-        </Pressable>
-
-        <Text style={styles.footer}>
-          By using our services you are agreeing to our{' '}
-          <Text style={styles.footerLink}>Terms</Text> and{' '}
-          <Text style={styles.footerLink}>Privacy Policy</Text>
-        </Text>
-
-        <Link href="/register" asChild>
-          <Pressable style={styles.link}>
-            <Text style={styles.linkText}>Don't have an account? Sign up</Text>
-          </Pressable>
-        </Link>
       </ScrollView>
     </SafeAreaView>
   );
@@ -204,53 +179,6 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     color: colors.textMuted,
-    fontSize: 14,
-  },
-  separator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  separatorLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  separatorText: {
-    marginHorizontal: 16,
-    color: colors.textMuted,
-    fontSize: 14,
-  },
-  socialButton: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  socialText: {
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
-  footer: {
-    marginTop: 32,
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  footerLink: {
-    color: colors.primary,
-    textDecorationLine: 'underline',
-  },
-  link: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: colors.primary,
     fontSize: 14,
   },
 });
