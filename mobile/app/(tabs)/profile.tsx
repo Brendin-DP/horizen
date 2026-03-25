@@ -16,6 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { uploadAvatar, type Member } from '../../lib/api';
 import { colors, borderRadius, shell, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 function getInitials(name: string): string {
   return name
@@ -55,12 +56,14 @@ function ProfileV2Content({
   getAvatarUrl,
   handleChangePhoto,
   uploading,
+  onSettingsItemPress,
 }: {
   member: Member | null;
   logout: () => Promise<void>;
   getAvatarUrl: (url: string | null | undefined) => string | null;
   handleChangePhoto: () => Promise<void>;
   uploading: boolean;
+  onSettingsItemPress: (key: string) => void;
 }) {
   return (
     <>
@@ -102,7 +105,7 @@ function ProfileV2Content({
                   styles.v2SectionRow,
                   idx === group.items.length - 1 && styles.v2SectionRowLast,
                 ]}
-                onPress={showComingSoon}
+                onPress={() => onSettingsItemPress(item.key)}
               >
                 <Ionicons name={item.icon} size={22} color={colors.textSecondary} />
                 <Text style={styles.v2SectionLabel}>{item.label}</Text>
@@ -127,9 +130,18 @@ function ProfileV2Content({
 }
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const posthog = usePostHog();
   const { member, token, updateMember, logout, getAvatarUrl } = useAuth();
   const [uploading, setUploading] = useState(false);
+
+  function handleSettingsItemPress(key: string) {
+    if (key === 'privacy') {
+      router.push('/privacy');
+      return;
+    }
+    showComingSoon();
+  }
 
   async function handleChangePhoto() {
     if (!token) return;
@@ -167,6 +179,7 @@ export default function ProfileScreen() {
           getAvatarUrl={getAvatarUrl}
           handleChangePhoto={handleChangePhoto}
           uploading={uploading}
+          onSettingsItemPress={handleSettingsItemPress}
         />
       </ScrollView>
     </SafeAreaView>

@@ -7,6 +7,15 @@
     @apply m-0 font-sans text-slate-800 antialiased;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
 }
 
 @layer components {

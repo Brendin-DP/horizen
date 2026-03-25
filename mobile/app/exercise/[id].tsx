@@ -8,7 +8,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Line, Path } from 'react-native-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { getExercise, getExerciseHistory } from '../../lib/api';
@@ -104,7 +104,15 @@ type ChartSeries = {
   yMin: number;
   yMax: number;
   labelSuffix: string;
+  /** Arithmetic mean of the plotted values (same units as the series). */
+  avg: number;
 };
+
+function formatAvgCaption(avg: number, labelSuffix: string): string {
+  const isKg = labelSuffix.includes('kg');
+  const rounded = isKg ? (Math.round(avg * 10) / 10).toFixed(1) : String(Math.round(avg * 10) / 10);
+  return `Avg ${rounded}${labelSuffix}`;
+}
 
 function buildSeriesFromValues(values: number[], labelSuffix: string): ChartSeries | null {
   if (values.length === 0) return null;
@@ -115,11 +123,12 @@ function buildSeriesFromValues(values: number[], labelSuffix: string): ChartSeri
   const yMin = Math.max(0, minV - padding);
   const yMax = maxV + padding;
   const yRange = Math.max(yMax - yMin, 1e-6);
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
   const points = values.map((v, i) => ({
     x: (i / (values.length - 1 || 1)) * CHART_WIDTH,
     y: CHART_HEIGHT - ((v - yMin) / yRange) * CHART_HEIGHT,
   }));
-  return { points, yMin, yMax, labelSuffix };
+  return { points, yMin, yMax, labelSuffix, avg };
 }
 
 function LineChartSvg({ series }: { series: ChartSeries }) {
@@ -131,10 +140,23 @@ function LineChartSvg({ series }: { series: ChartSeries }) {
   const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   const fillPath = `${linePath} L ${pts[pts.length - 1].x} ${CHART_HEIGHT} L 0 ${CHART_HEIGHT} Z`;
 
+  const yRange = Math.max(series.yMax - series.yMin, 1e-6);
+  const avgY = CHART_HEIGHT - ((series.avg - series.yMin) / yRange) * CHART_HEIGHT;
+
   return (
     <View style={styles.chartContainer}>
       <Svg width={CHART_WIDTH} height={CHART_HEIGHT} viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}>
         <Path d={fillPath} fill="rgba(254, 205, 211, 0.6)" />
+        <Line
+          x1={0}
+          y1={avgY}
+          x2={CHART_WIDTH}
+          y2={avgY}
+          stroke={colors.textSecondary}
+          strokeWidth={1.5}
+          strokeDasharray="6 5"
+          opacity={0.85}
+        />
         <Path
           d={linePath}
           stroke={colors.primary}
@@ -149,6 +171,7 @@ function LineChartSvg({ series }: { series: ChartSeries }) {
           {Math.round(series.yMin * 10) / 10}
           {series.labelSuffix}
         </Text>
+        <Text style={styles.chartAvgCaption}>{formatAvgCaption(series.avg, series.labelSuffix)}</Text>
         <Text style={styles.chartLabelRight}>
           {Math.round(series.yMax * 10) / 10}
           {series.labelSuffix}
@@ -456,11 +479,20 @@ const styles = StyleSheet.create({
   chartLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 8,
     paddingHorizontal: 4,
   },
-  chartLabelLeft: { fontSize: 11, color: colors.textMuted },
-  chartLabelRight: { fontSize: 11, color: colors.textMuted },
+  chartLabelLeft: { fontSize: 11, color: colors.textMuted, flexShrink: 0 },
+  chartAvgCaption: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    flex: 1,
+    paddingHorizontal: 8,
+  },
+  chartLabelRight: { fontSize: 11, color: colors.textMuted, flexShrink: 0 },
   pbEmpty: {
     backgroundColor: colors.white,
     borderRadius: 12,
