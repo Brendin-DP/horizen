@@ -156,15 +156,6 @@ export default function Admins() {
     border: `1px solid ${colors.border}`,
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: 10,
-    marginBottom: 16,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    fontSize: 14,
-  };
-
   const labelStyle: React.CSSProperties = { display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500 };
 
   return (
@@ -298,7 +289,7 @@ export default function Admins() {
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               placeholder="Full name"
-              style={inputStyle}
+              className="hz-input mb-4 w-full"
             />
             <label style={labelStyle}>Email</label>
             <input
@@ -306,7 +297,7 @@ export default function Admins() {
               value={formEmail}
               onChange={(e) => setFormEmail(e.target.value)}
               placeholder="email@example.com"
-              style={inputStyle}
+              className="hz-input mb-4 w-full"
             />
             <label style={labelStyle}>Password</label>
             <input
@@ -314,7 +305,7 @@ export default function Admins() {
               value={formPassword}
               onChange={(e) => setFormPassword(e.target.value)}
               placeholder="Min 6 characters"
-              style={inputStyle}
+              className="hz-input mb-4 w-full"
             />
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
               <button
@@ -371,7 +362,11 @@ export default function Admins() {
               </div>
             )}
             <label style={labelStyle}>Plan</label>
-            <select value={formPlan} onChange={(e) => setFormPlan(e.target.value)} style={inputStyle}>
+            <select
+              value={formPlan}
+              onChange={(e) => setFormPlan(e.target.value)}
+              className="hz-select mb-4 w-full"
+            >
               <option value="free">Free</option>
               <option value="pro">Pro</option>
               <option value="elite">Elite</option>
@@ -381,7 +376,7 @@ export default function Admins() {
               type="date"
               value={formExpires}
               onChange={(e) => setFormExpires(e.target.value)}
-              style={inputStyle}
+              className="hz-input mb-4 w-full"
             />
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
               <button

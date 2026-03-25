@@ -9,6 +9,7 @@ import Admins from './pages/Admins';
 import PlansFeatures from './pages/PlansFeatures';
 import Fund from './pages/Fund';
 import ExerciseManagement from './pages/ExerciseManagement';
+import Settings from './pages/Settings';
 
 function App() {
   const { token } = useAuth();
@@ -26,6 +27,7 @@ function App() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="settings" element={<Settings />} />
         <Route path="members" element={<Navigate to="/users" replace />} />
         <Route path="users" element={<UserManagement />} />
         <Route path="admins" element={<Admins />} />

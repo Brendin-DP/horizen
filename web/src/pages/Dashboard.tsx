@@ -105,6 +105,7 @@ export default function Dashboard() {
           </p>
         </div>
       </div>
+
       <div style={cardStyle}>
         <h2 style={{ margin: '0 0 16px', fontSize: 18, color: colors.textPrimary }}>
           Members by Plan

@@ -1,39 +1,28 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
-import {
-  LayoutDashboard,
-  Shield,
-  Users,
-  SlidersHorizontal,
-  Dumbbell,
-  User,
-  ChevronDown,
-  LogOut,
-} from 'lucide-react';
+import { LayoutDashboard, User, ChevronDown, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
 
 const navItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admins', label: 'Admin Management', icon: Shield },
-  { to: '/users', label: 'User Management', icon: Users },
-  { to: '/plans-features', label: 'Feature Management', icon: SlidersHorizontal },
-  { to: '/exercises', label: 'Exercise Management', icon: Dumbbell },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
-function navItemClassName(isActive: boolean) {
-  return [
-    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-    isActive
-      ? 'bg-white/20 text-white shadow-sm'
-      : 'text-white/90 hover:bg-white/10 hover:text-white',
-  ].join(' ');
+/** Highlight Settings in the rail when viewing the hub or any management screen reached from it */
+const SETTINGS_HUB_PATHS = ['/settings', '/users', '/plans-features', '/admins', '/exercises'] as const;
+
+function isSettingsAreaActive(pathname: string) {
+  return SETTINGS_HUB_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
 }
 
 export default function Layout() {
   const { member, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -42,17 +31,13 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen min-h-dvh bg-slate-50">
-      {/* Sidebar — pattern from talent-projects app-layout / tenant-layout: fixed rail + branded column */}
-      <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-white/20 bg-primary text-white shadow-lg">
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/15 px-6">
+      <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-200 bg-white text-slate-800 shadow-sm">
+        <div className="flex h-16 shrink-0 items-center justify-center border-b border-slate-200 px-4">
           <img
-            src="/favicon.png"
+            src="/horizen-logo-full.png"
             alt="Horizen Gym"
-            className="h-9 w-9 shrink-0 brightness-0 invert"
+            className="h-9 w-auto max-w-[200px] object-contain object-center"
           />
-          <span className="text-lg font-semibold leading-tight tracking-tight text-white">
-            Horizen Gym
-          </span>
         </div>
 
         <nav className="flex flex-1 flex-col space-y-1 overflow-y-auto p-4" aria-label="Main">
@@ -61,31 +46,54 @@ export default function Layout() {
               key={to}
               to={to}
               end={end}
-              className={({ isActive }) => navItemClassName(isActive)}
+              className={({ isActive }) => {
+                const active =
+                  to === '/settings'
+                    ? isSettingsAreaActive(location.pathname)
+                    : isActive;
+                return [
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  active
+                    ? 'bg-primary/10 font-semibold text-primary shadow-sm'
+                    : 'text-slate-700 hover:bg-slate-50',
+                ].join(' ');
+              }}
             >
-              <Icon className="h-5 w-5 shrink-0 opacity-90" aria-hidden />
-              <span>{label}</span>
+              {({ isActive }) => {
+                const active =
+                  to === '/settings'
+                    ? isSettingsAreaActive(location.pathname)
+                    : isActive;
+                return (
+                  <>
+                    <Icon
+                      className={`h-5 w-5 shrink-0 ${active ? 'text-primary' : 'text-slate-500'}`}
+                      aria-hidden
+                    />
+                    <span>{label}</span>
+                  </>
+                );
+              }}
             </NavLink>
           ))}
         </nav>
 
-        {/* Profile block — inspired by talent-projects SideNav / app-layout dropdown footer */}
-        <div className="border-t border-white/20 p-4">
+        <div className="border-t border-slate-200 p-4">
           <details className="group relative">
-            <summary className="flex w-full cursor-pointer list-none items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-white/10 [&::-webkit-details-marker]:hidden">
+            <summary className="flex w-full cursor-pointer list-none items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
               <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 text-white"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
                 aria-hidden
               >
                 <User className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white" title={member?.name ?? ''}>
+                <p className="truncate text-sm font-medium text-slate-800" title={member?.name ?? ''}>
                   {member?.name ?? 'Admin'}
                 </p>
-                <p className="text-xs text-white/70">View profile</p>
+                <p className="text-xs text-slate-500">View profile</p>
               </div>
-              <ChevronDown className="h-4 w-4 shrink-0 text-white/70" aria-hidden />
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
             </summary>
             <div className="absolute bottom-full left-0 right-0 z-50 mb-2 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg ring-1 ring-black/5">
               <button
