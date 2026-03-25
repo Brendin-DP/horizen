@@ -8,6 +8,9 @@ export const shell = {
 export const typography = {
   heading: 'Montserrat_700Bold',
   headingSemibold: 'Montserrat_600SemiBold',
+  body: 'PlusJakartaSans_400Regular',
+  bodyMedium: 'PlusJakartaSans_500Medium',
+  bodySemibold: 'PlusJakartaSans_600SemiBold',
 } as const;
 
 export const colors = {

@@ -1,15 +1,22 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { View } from 'react-native';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import { useFonts, Montserrat_700Bold, Montserrat_600SemiBold } from '@expo-google-fonts/montserrat';
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import { PostHogProvider } from 'posthog-react-native';
 import { AuthProvider } from '../contexts/AuthContext';
 import { AuthGate } from '../components/AuthGate';
 import { PostHogAuthSync } from '../components/PostHogAuthSync';
 import SplashScreen from './splash';
 import { colors } from '../constants/theme';
+import { applyTypographyDefaults } from '../constants/typographyDefaults';
 
 const POSTHOG_KEY =
   (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_POSTHOG_KEY) ||
@@ -20,10 +27,19 @@ ExpoSplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
   const handleSplashComplete = useCallback(() => setSplashDone(true), []);
+  const typographyReady = useRef(false);
   const [fontsLoaded] = useFonts({
     Montserrat_700Bold,
     Montserrat_600SemiBold,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
   });
+
+  if (fontsLoaded && !typographyReady.current) {
+    typographyReady.current = true;
+    applyTypographyDefaults();
+  }
 
   if (!fontsLoaded) {
     return (
@@ -32,6 +48,7 @@ export default function RootLayout() {
   }
 
   return (
+    <SafeAreaProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PostHogProvider
         apiKey={POSTHOG_KEY}
@@ -69,5 +86,6 @@ export default function RootLayout() {
         </AuthProvider>
       </PostHogProvider>
     </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }

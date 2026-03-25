@@ -19,6 +19,9 @@ export default function WelcomeScreen() {
     }).start();
   }, []);
 
+  const firstName =
+    member?.name?.trim().split(/\s+/).filter(Boolean)[0] ?? 'there';
+
   function handleLetsGo() {
     completeWelcome();
     const role = member?.role;
@@ -40,7 +43,7 @@ export default function WelcomeScreen() {
         <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
           <View style={styles.sheetHandle} />
           <Image source={require('../assets/logo.png')} style={styles.logo} />
-          <Text style={styles.greeting}>Welcome, {member?.name ?? 'there'}</Text>
+          <Text style={styles.greeting}>Welcome back {firstName}</Text>
           <Text style={styles.sub}>We're so glad you're here.</Text>
           <Pressable style={styles.button} onPress={handleLetsGo}>
             <Text style={styles.buttonText}>Let's Go</Text>

@@ -2,15 +2,19 @@ import { useEffect, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   Animated,
   Dimensions,
   InteractionManager,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import { colors } from '../constants/theme';
 import TextureBg from '../assets/design/TextureBg.svg';
 import CirclesWhite from '../assets/design/CirclesWhite.svg';
+
+const LOGO_ASPECT = 265 / 62;
 
 const SPLASH_DURATION = 2000;
 const { width, height } = Dimensions.get('window');
@@ -20,6 +24,7 @@ interface SplashScreenProps {
 }
 
 export default function SplashScreen({ onComplete }: SplashScreenProps) {
+  const insets = useSafeAreaInsets();
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.8)).current;
   const circle1 = useRef(new Animated.Value(0)).current;
@@ -121,13 +126,27 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
           },
         ]}
       />
-      <Animated.View style={[styles.content, { opacity, transform: [{ scale }] }]}>
-        <Text style={styles.brand}>HORIZEN</Text>
-        <Text style={styles.gym}>GYM</Text>
+      <View style={styles.logoCenterWrap} pointerEvents="box-none">
+        <Animated.View style={[styles.content, { opacity, transform: [{ scale }] }]}>
+          <Image
+            source={require('../assets/design/HorizenWhiteFullLogo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+            accessibilityLabel="Horizen Gym"
+          />
+        </Animated.View>
+      </View>
+      <Animated.View
+        style={[
+          styles.taglineWrap,
+          {
+            opacity,
+            paddingBottom: Math.max(80, insets.bottom + 48),
+          },
+        ]}
+      >
+        <Text style={styles.tagline}>BETTER THAN YESTERDAY</Text>
       </Animated.View>
-      <Animated.Text style={[styles.tagline, { opacity }]}>
-        BETTER THAN YESTERDAY
-      </Animated.Text>
     </View>
   );
 }
@@ -152,29 +171,32 @@ const styles = StyleSheet.create({
     position: 'absolute',
     backgroundColor: 'rgba(255,255,255,0.3)',
   },
-  content: {
+  logoCenterWrap: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
   },
-  brand: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: colors.white,
-    letterSpacing: 4,
+  content: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  gym: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.white,
-    letterSpacing: 8,
-    marginTop: 4,
+  logoImage: {
+    width: width * 0.82,
+    height: (width * 0.82) / LOGO_ASPECT,
+  },
+  taglineWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    zIndex: 2,
   },
   tagline: {
-    position: 'absolute',
-    bottom: 80,
     fontSize: 14,
     color: 'rgba(255,255,255,0.9)',
     letterSpacing: 2,
-    zIndex: 1,
+    textAlign: 'center',
   },
 });
