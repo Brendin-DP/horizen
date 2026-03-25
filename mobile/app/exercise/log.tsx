@@ -125,7 +125,23 @@ function formatSetEntrySummary(s: SetEntry, exercise: Exercise): string {
   return '—';
 }
 
-/** Matches server max-reps: bodyweight sets (no weight), excluding a log. Falls back to history only if the request fails (e.g. older API without the route). */
+/** Max reps among bodyweight-only sets (no added weight) for weighted_or_bodyweight exercises. */
+function getSessionMaxBodyweightReps(sets: SetEntry[], exercise: Exercise): number {
+  if (exercise.loggingType !== 'weighted_or_bodyweight') return 0;
+  const repVals = sets
+    .filter((s) => {
+      if (!s.addedWeight) return true;
+      return s.weight.trim() === '';
+    })
+    .map((s) => parseInt(s.reps, 10))
+    .filter((n) => !isNaN(n) && n > 0);
+  return repVals.length > 0 ? Math.max(...repVals) : 0;
+}
+
+/**
+ * All-time max reps on bodyweight-only sets (null/zero weight), excluding the current log.
+ * Uses API when it returns a number; if null (no prior data or older API), computes from history — never treat null as 0 without checking history (avoids false PBs for weighted_or_bodyweight).
+ */
 async function getPreviousMaxBodyweightReps(
   memberId: string,
   exerciseId: string,
@@ -134,10 +150,11 @@ async function getPreviousMaxBodyweightReps(
 ): Promise<number> {
   try {
     const { maxReps } = await getExerciseMaxReps(memberId, exerciseId, { excludeLogId }, token);
-    return maxReps ?? 0;
+    if (maxReps != null) return maxReps;
   } catch {
-    // fall through
+    // network / route error — try history below
   }
+
   try {
     const hist = await getExerciseHistory(memberId, exerciseId, token);
     let max = 0;
@@ -323,34 +340,67 @@ export default function LogExerciseScreen() {
             return w;
           })
           .filter((w) => !isNaN(w) && w > 0);
-        const newMax = weights.length > 0 ? Math.max(...weights) : 0;
+        const newMaxWeight = weights.length > 0 ? Math.max(...weights) : 0;
 
-        if (newMax > 0) {
+        let showedPr = false;
+
+        if (newMaxWeight > 0) {
           const { maxWeightKg: previousMax } = await getExerciseMaxWeight(
             member.id,
             exercise.id,
             { excludeLogId: log.id },
             token
           );
-          const prev = previousMax ?? 0;
+          const prevW = previousMax ?? 0;
 
-          if (newMax > prev) {
+          if (newMaxWeight > prevW) {
             posthog?.capture('personal_best_achieved', {
               exerciseId: exercise.id,
               exerciseName: exercise.name,
-              weightKg: newMax,
+              weightKg: newMaxWeight,
             });
             pendingNavigationRef.current = targetRoute;
             setPrKind('weight');
-            setPrValue(newMax);
+            setPrValue(newMaxWeight);
             setSuccessModalVisible(true);
             InteractionManager.runAfterInteractions(() => {
               setTimeout(() => confettiRef.current?.start(), 80);
             });
-          } else {
-            router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
+            showedPr = true;
           }
-        } else {
+        }
+
+        if (
+          !showedPr &&
+          exercise.loggingType === 'weighted_or_bodyweight'
+        ) {
+          const newMaxReps = getSessionMaxBodyweightReps(sets, exercise);
+          if (newMaxReps > 0) {
+            const prev = await getPreviousMaxBodyweightReps(
+              member.id,
+              exercise.id,
+              log.id,
+              token
+            );
+            if (newMaxReps > prev) {
+              posthog?.capture('personal_best_achieved', {
+                exerciseId: exercise.id,
+                exerciseName: exercise.name,
+                reps: newMaxReps,
+              });
+              pendingNavigationRef.current = targetRoute;
+              setPrKind('reps');
+              setPrValue(newMaxReps);
+              setSuccessModalVisible(true);
+              InteractionManager.runAfterInteractions(() => {
+                setTimeout(() => confettiRef.current?.start(), 80);
+              });
+              showedPr = true;
+            }
+          }
+        }
+
+        if (!showedPr) {
           router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
         }
       } else if (exercise.unit === 'weight_reps' && exercise.loggingType === 'bodyweight') {

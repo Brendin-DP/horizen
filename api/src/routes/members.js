@@ -390,7 +390,9 @@ router.get('/:id/exercise-history/:exerciseId/max-reps', async (req, res) => {
     return res.status(404).json({ error: 'Exercise not found' });
   }
 
-  if ((exercise.logging_type ?? 'weighted') !== 'bodyweight') {
+  const lt = exercise.logging_type ?? 'weighted';
+  // All-time max reps on unloaded (bodyweight) sets — same notion for pure BW and BW+weight exercises.
+  if (lt !== 'bodyweight' && lt !== 'weighted_or_bodyweight') {
     return res.json({ maxReps: null });
   }
 

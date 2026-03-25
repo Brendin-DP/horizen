@@ -1,28 +1,43 @@
-import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated, Image, ImageBackground } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Image,
+  ImageBackground,
+  Dimensions,
+} from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { SHOW_WORKOUTS } from '../lib/featureFlags';
 import { colors } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+const { height: WINDOW_HEIGHT } = Dimensions.get('window');
+const CARD_INITIAL_OFFSET = Math.min(480, WINDOW_HEIGHT * 0.45);
+const DISMISS_DISTANCE_PX = -72;
+const DISMISS_VELOCITY_Y = -650;
+
 export default function WelcomeScreen() {
   const router = useRouter();
   const { member, completeWelcome } = useAuth();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const translateY = useSharedValue(CARD_INITIAL_OFFSET);
+  const dragY = useSharedValue(0);
+  const opacity = useSharedValue(0);
+  const [isExiting, setIsExiting] = useState(false);
+  const [entryDone, setEntryDone] = useState(false);
 
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  const firstName =
-    member?.name?.trim().split(/\s+/).filter(Boolean)[0] ?? 'there';
-
-  function handleLetsGo() {
+  const navigateAfterExit = useCallback(() => {
     completeWelcome();
     const role = member?.role;
     if (role === 'admin' || role === 'instructor') {
@@ -30,7 +45,70 @@ export default function WelcomeScreen() {
     } else {
       router.replace(SHOW_WORKOUTS ? '/(tabs)/workouts' : '/(tabs)/exercises');
     }
-  }
+  }, [member?.role, router, completeWelcome]);
+
+  const runExit = useCallback(() => {
+    if (isExiting) return;
+    setIsExiting(true);
+    translateY.value = translateY.value + dragY.value;
+    dragY.value = 0;
+    translateY.value = withTiming(
+      -WINDOW_HEIGHT,
+      { duration: 380, easing: Easing.in(Easing.cubic) },
+      (finished) => {
+        if (finished) {
+          runOnJS(navigateAfterExit)();
+        }
+      }
+    );
+    opacity.value = withTiming(0, {
+      duration: 320,
+      easing: Easing.in(Easing.cubic),
+    });
+  }, [isExiting, navigateAfterExit, translateY, dragY, opacity]);
+
+  useEffect(() => {
+    translateY.value = withTiming(
+      0,
+      { duration: 520, easing: Easing.out(Easing.cubic) },
+      (finished) => {
+        if (finished) {
+          runOnJS(setEntryDone)(true);
+        }
+      }
+    );
+    opacity.value = withTiming(1, { duration: 500 });
+  }, [translateY, opacity]);
+
+  const animatedCardStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value + dragY.value }],
+    opacity: opacity.value,
+  }));
+
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .enabled(entryDone && !isExiting)
+        .activeOffsetY([-12, 12])
+        .failOffsetX([-28, 28])
+        .onUpdate((e) => {
+          const ty = Math.min(0, e.translationY);
+          dragY.value = ty;
+        })
+        .onEnd((e) => {
+          const ty = Math.min(0, e.translationY);
+          const vy = e.velocityY;
+          if (ty <= DISMISS_DISTANCE_PX || vy < DISMISS_VELOCITY_Y) {
+            runOnJS(runExit)();
+          } else {
+            dragY.value = withSpring(0, { damping: 18, stiffness: 220 });
+          }
+        }),
+    [entryDone, isExiting, runExit]
+  );
+
+  const firstName =
+    member?.name?.trim().split(/\s+/).filter(Boolean)[0] ?? 'there';
 
   return (
     <ImageBackground
@@ -40,15 +118,21 @@ export default function WelcomeScreen() {
     >
       <View style={styles.overlay} pointerEvents="none" />
       <SafeAreaView style={styles.safe} edges={['bottom']}>
-        <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
-          <View style={styles.sheetHandle} />
-          <Image source={require('../assets/logo.png')} style={styles.logo} />
-          <Text style={styles.greeting}>Welcome back {firstName}</Text>
-          <Text style={styles.sub}>We're so glad you're here.</Text>
-          <Pressable style={styles.button} onPress={handleLetsGo}>
-            <Text style={styles.buttonText}>Let's Go</Text>
-          </Pressable>
-        </Animated.View>
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.card, animatedCardStyle]}>
+            <View style={styles.sheetHandle} />
+            <Image source={require('../assets/logo.png')} style={styles.logo} />
+            <Text style={styles.greeting}>Welcome back {firstName}</Text>
+            <Text style={styles.sub}>We're so glad you're here.</Text>
+            <Pressable
+              style={[styles.button, isExiting && styles.buttonDisabled]}
+              onPress={() => runExit()}
+              disabled={isExiting}
+            >
+              <Text style={styles.buttonText}>Let's Go</Text>
+            </Pressable>
+          </Animated.View>
+        </GestureDetector>
       </SafeAreaView>
     </ImageBackground>
   );
@@ -68,6 +152,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingBottom: 8,
+    overflow: 'visible',
   },
   card: {
     backgroundColor: colors.white,
@@ -111,6 +196,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 48,
     borderRadius: 12,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     color: colors.white,
