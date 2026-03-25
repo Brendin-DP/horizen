@@ -352,26 +352,30 @@ export default function ExerciseDetailScreen() {
                   onPress={() => router.push(`/log/${log.logId}`)}
                   android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
                 >
-                  <View style={styles.pbCardHeader}>
-                    <View style={styles.pbCardHeaderLeft}>
-                      <Text style={styles.pbHeadline} numberOfLines={1}>
+                  <View style={styles.pbCardRow}>
+                    <View style={styles.pbCardTextBlock}>
+                      <Text style={styles.pbHeadline} numberOfLines={2}>
                         {exercise ? formatPbHeadline(log, exercise) : ''}
                       </Text>
-                      {isPb ? (
-                        <View style={styles.pbBadge}>
-                          <Text style={styles.pbBadgeText}>PB</Text>
-                        </View>
-                      ) : null}
+                      <Text style={styles.pbMeta}>
+                        {exercise ? formatPbSubline(log, exercise) : ''}
+                      </Text>
                     </View>
-                    {setCount > 1 ? (
-                      <View style={styles.pbSetChip} accessibilityLabel={`${setCount} sets`}>
-                        <Text style={styles.pbSetChipText}>{setCount}</Text>
+                    {(isPb || setCount > 1) && (
+                      <View style={styles.pbCardBadges}>
+                        {isPb ? (
+                          <View style={styles.pbBadge}>
+                            <Text style={styles.pbBadgeText}>PB</Text>
+                          </View>
+                        ) : null}
+                        {setCount > 1 ? (
+                          <View style={styles.pbSetChip} accessibilityLabel={`${setCount} sets`}>
+                            <Text style={styles.pbSetChipText}>{setCount}</Text>
+                          </View>
+                        ) : null}
                       </View>
-                    ) : null}
+                    )}
                   </View>
-                  <Text style={styles.pbMeta}>
-                    {exercise ? formatPbSubline(log, exercise) : ''}
-                  </Text>
                 </Pressable>
               );
             })
@@ -466,21 +470,28 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     backgroundColor: 'rgba(254, 205, 211, 0.35)',
   },
-  pbCardHeader: {
+  pbCardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    marginBottom: 4,
+    gap: 12,
   },
-  pbCardHeaderLeft: {
+  pbCardTextBlock: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     minWidth: 0,
   },
-  pbHeadline: { flex: 1, fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  pbCardBadges: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 8,
+    flexShrink: 0,
+  },
+  pbHeadline: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
   pbSetChip: {
     minWidth: 28,
     height: 28,
@@ -507,5 +518,5 @@ const styles = StyleSheet.create({
     color: colors.white,
     letterSpacing: 0.5,
   },
-  pbMeta: { fontSize: 14, color: colors.textMuted },
+  pbMeta: { fontSize: 14, color: colors.textMuted, lineHeight: 20 },
 });
