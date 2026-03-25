@@ -209,7 +209,10 @@ export default function ExercisesScreen() {
                   <Text style={styles.cardName}>{item.exercise?.name ?? 'Exercise'}</Text>
                   <View style={styles.cardMetaRow}>
                     <Ionicons name="trophy-outline" size={16} color={colors.textMuted} style={styles.cardMetaIcon} />
-                    <Text style={styles.cardMeta}>{metaLine}</Text>
+                    <Text style={styles.cardMeta} numberOfLines={2}>
+                      {metaLine}
+                      <Text style={styles.cardMetaDate}> · {formatDate(item.loggedAt)}</Text>
+                    </Text>
                   </View>
                 </View>
                 <View style={styles.chevronWrap}>
@@ -377,6 +380,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontFamily: typography.body,
     flex: 1,
+  },
+  cardMetaDate: {
+    fontSize: 14,
+    color: colors.textMuted,
+    fontFamily: typography.body,
+    opacity: 0.92,
   },
   chevronWrap: {
     width: 32,

@@ -14,7 +14,8 @@ import { colors } from '../constants/theme';
 import TextureBg from '../assets/design/TextureBg.svg';
 import CirclesWhite from '../assets/design/CirclesWhite.svg';
 
-const LOGO_ASPECT = 265 / 62;
+/** HorizenWhiteFullLogo.png (HD asset 795×186) */
+const LOGO_ASPECT = 795 / 186;
 
 const SPLASH_DURATION = 2000;
 const { width, height } = Dimensions.get('window');

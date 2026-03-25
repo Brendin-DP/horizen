@@ -21,12 +21,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const CHART_WIDTH = Dimensions.get('window').width - 64;
 const CHART_HEIGHT = 180;
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+function formatLogDateShort(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
-function formatSetSummary(log: ExerciseHistory, ex: Exercise): string {
+/** Bold primary line: PB headline (kg, reps, or sets for time/distance). */
+function formatPbHeadline(log: ExerciseHistory, ex: Exercise): string {
   const n = log.sets.length;
   const best = log.bestSet;
   if (ex.unit === 'time' || ex.unit === 'distance') {
@@ -34,24 +38,42 @@ function formatSetSummary(log: ExerciseHistory, ex: Exercise): string {
   }
   const lt = ex.loggingType;
   if (lt === 'bodyweight') {
-    if (best?.reps != null) {
-      return `${n} set${n === 1 ? '' : 's'} — best: ${best.reps} reps`;
-    }
-    return `${n} set${n === 1 ? '' : 's'}`;
+    if (best?.reps != null) return `${best.reps} reps`;
+    return n > 0 ? `${n} set${n === 1 ? '' : 's'}` : '—';
   }
   if (lt === 'weighted') {
-    if (best?.weightKg != null && best?.reps != null) {
-      return `${n} set${n === 1 ? '' : 's'} — best: ${best.weightKg}kg × ${best.reps}`;
-    }
-    return `${n} set${n === 1 ? '' : 's'}`;
+    if (best?.weightKg != null && best.weightKg > 0) return `${best.weightKg}kg`;
+    if (best?.reps != null) return `${best.reps} reps`;
+    return n > 0 ? `${n} set${n === 1 ? '' : 's'}` : '—';
   }
-  if (best?.weightKg != null && best.weightKg > 0 && best.reps != null) {
-    return `${n} set${n === 1 ? '' : 's'} — best: ${best.weightKg}kg × ${best.reps}`;
+  const w = best?.weightKg;
+  if (w != null && w > 0) return `${w}kg`;
+  if (best?.reps != null) return `${best.reps} reps`;
+  return n > 0 ? `${n} set${n === 1 ? '' : 's'}` : '—';
+}
+
+/** Subline: reps and session date (or sets · date for time/distance). */
+function formatPbSubline(log: ExerciseHistory, ex: Exercise): string {
+  const dateStr = formatLogDateShort(log.loggedAt);
+  const best = log.bestSet;
+  const n = log.sets.length;
+  if (ex.unit === 'time' || ex.unit === 'distance') {
+    return dateStr;
   }
-  if (best?.reps != null) {
-    return `${n} set${n === 1 ? '' : 's'} — best: ${best.reps} reps (bodyweight)`;
+  const lt = ex.loggingType;
+  if (lt === 'bodyweight') {
+    if (best?.reps != null) return `${best.reps} reps · ${dateStr}`;
+    return dateStr;
   }
-  return `${n} set${n === 1 ? '' : 's'}`;
+  if (lt === 'weighted') {
+    if (best?.reps != null) return `${best.reps} reps · ${dateStr}`;
+    return dateStr;
+  }
+  if (best?.weightKg != null && best.weightKg > 0 && best?.reps != null) {
+    return `${best.reps} reps · ${dateStr}`;
+  }
+  if (best?.reps != null) return `${best.reps} reps · ${dateStr}`;
+  return dateStr;
 }
 
 function compareHistoryLogs(a: ExerciseHistory, b: ExerciseHistory, lt: LoggingType): number {
@@ -319,7 +341,7 @@ export default function ExerciseDetailScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Past Logs</Text>
+          <Text style={styles.sectionTitle}>Your PB Logs</Text>
           {pastLogs.length === 0 ? (
             <View style={styles.pbEmpty}>
               <Text style={styles.pbEmptyText}>No logs yet</Text>
@@ -338,7 +360,9 @@ export default function ExerciseDetailScreen() {
                   style={[styles.pbCard, isPb && styles.pbCardHighlight]}
                 >
                   <View style={styles.pbCardHeader}>
-                    <Text style={styles.pbDate}>{formatDate(log.loggedAt)}</Text>
+                    <Text style={styles.pbHeadline}>
+                      {exercise ? formatPbHeadline(log, exercise) : ''}
+                    </Text>
                     {isPb && (
                       <View style={styles.pbBadge}>
                         <Text style={styles.pbBadgeText}>PB</Text>
@@ -346,7 +370,7 @@ export default function ExerciseDetailScreen() {
                     )}
                   </View>
                   <Text style={styles.pbMeta}>
-                    {exercise ? formatSetSummary(log, exercise) : ''}
+                    {exercise ? formatPbSubline(log, exercise) : ''}
                   </Text>
                 </View>
               );
@@ -452,7 +476,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 4,
   },
-  pbDate: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  pbHeadline: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, flex: 1 },
   pbBadge: {
     backgroundColor: colors.primary,
     paddingVertical: 4,
