@@ -63,6 +63,7 @@ export function mapExercise(row) {
     id: row.id,
     name: row.name,
     category: row.category ?? null,
+    type: row.type ?? null,
     muscleGroups: row.muscle_groups ?? [],
     equipment: row.equipment ?? null,
     unit: row.unit ?? null,

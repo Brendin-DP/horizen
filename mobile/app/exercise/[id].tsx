@@ -15,6 +15,7 @@ import { getExercise, getExerciseHistory } from '../../lib/api';
 import type { Exercise, ExerciseHistory } from '../../types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '../../constants/theme';
+import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CHART_WIDTH = Dimensions.get('window').width - 64;
@@ -148,7 +149,7 @@ export default function ExerciseDetailScreen() {
 
         {exercise && (
           <View style={styles.metaSection}>
-            <Text style={styles.metaText}>{exercise.category} · {exercise.equipment ?? '—'}</Text>
+            <Text style={styles.metaText}>{formatExerciseCategoryType(exercise)}</Text>
             {exercise.muscleGroups?.length > 0 && (
               <Text style={styles.metaSub}>{exercise.muscleGroups.join(', ')}</Text>
             )}

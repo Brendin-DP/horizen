@@ -6,6 +6,8 @@ export interface Exercise {
   id: string;
   name: string;
   category: string;
+  /** Movement pattern (e.g. pull / push); former "category" in DB. */
+  type?: string | null;
   muscleGroups: string[];
   equipment: string;
   unit: ExerciseUnit;

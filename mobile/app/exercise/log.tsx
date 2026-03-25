@@ -26,6 +26,7 @@ import {
   getExerciseMaxWeight,
 } from '../../lib/api';
 import type { Exercise } from '../../types';
+import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -73,12 +74,15 @@ export default function LogExerciseScreen() {
     }
   }, [exerciseId]);
 
-  const filteredExercises = exercises.filter(
-    (e) =>
-      !search ||
-      e.name.toLowerCase().includes(search.toLowerCase()) ||
-      (e.category || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredExercises = exercises.filter((e) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      e.name.toLowerCase().includes(q) ||
+      (e.category || '').toLowerCase().includes(q) ||
+      (e.type || '').toLowerCase().includes(q)
+    );
+  });
 
   function addSet() {
     setSets((prev) => [
@@ -259,7 +263,7 @@ export default function LogExerciseScreen() {
               }}
             >
               <Text style={styles.pickerName}>{item.name}</Text>
-              <Text style={styles.pickerMeta}>{item.category} · {item.equipment ?? '—'}</Text>
+              <Text style={styles.pickerMeta}>{formatExerciseCategoryType(item)}</Text>
             </Pressable>
           )}
           ListEmptyComponent={<Text style={styles.empty}>No exercises found</Text>}

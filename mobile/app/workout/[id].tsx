@@ -27,6 +27,7 @@ import {
 } from '../../lib/api';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { WorkoutWithDetails, Exercise } from '../../types';
+import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Toast } from '../../components/Toast';
@@ -351,7 +352,7 @@ export default function WorkoutDetailScreen() {
                   disabled={addingExercise}
                 >
                   <Text style={styles.pickerName}>{item.name}</Text>
-                  <Text style={styles.pickerMeta}>{item.category} · {item.equipment ?? '—'}</Text>
+                  <Text style={styles.pickerMeta}>{formatExerciseCategoryType(item)}</Text>
                 </Pressable>
               )}
             />
