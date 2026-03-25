@@ -12,6 +12,8 @@ import {
   Modal,
   Dimensions,
   InteractionManager,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { usePostHog } from 'posthog-react-native';
@@ -30,7 +32,7 @@ import {
 import type { Exercise } from '../../types';
 import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
 import { weightOptional, weightRequired } from '../../lib/loggingType';
-import { colors } from '../../constants/theme';
+import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SetEntry {
@@ -52,6 +54,75 @@ function createEmptySet(_ex: Exercise): SetEntry {
     distance: '',
     addedWeight: false,
   };
+}
+
+function validateSetEntry(s: SetEntry, exercise: Exercise): string | null {
+  if (exercise.unit === 'weight_reps') {
+    const r = parseInt(s.reps, 10);
+    if (isNaN(r)) return 'Enter valid reps';
+    const lt = exercise.loggingType;
+    if (lt === 'bodyweight') return null;
+    if (weightRequired(lt)) {
+      const w = parseFloat(s.weight);
+      if (isNaN(w) || w <= 0) return 'Enter weight greater than 0';
+      return null;
+    }
+    if (weightOptional(lt)) {
+      if (!s.addedWeight) return null;
+      const trimmed = s.weight.trim();
+      if (trimmed === '') return null;
+      const w = parseFloat(trimmed);
+      if (isNaN(w) || w < 0) return 'Enter valid weight or leave blank for bodyweight';
+      return null;
+    }
+    return null;
+  }
+  if (exercise.unit === 'time') {
+    const d = parseInt(s.duration, 10);
+    if (isNaN(d) || d < 0) return 'Enter valid duration';
+    return null;
+  }
+  if (exercise.unit === 'distance') {
+    const d = parseFloat(s.distance);
+    if (isNaN(d) || d < 0) return 'Enter valid distance';
+    return null;
+  }
+  return null;
+}
+
+function formatSetEntrySummary(s: SetEntry, exercise: Exercise): string {
+  if (exercise.unit === 'weight_reps') {
+    const r = parseInt(s.reps, 10);
+    const lt = exercise.loggingType;
+    if (lt === 'bodyweight') {
+      return !isNaN(r) ? `${r} reps (bodyweight)` : '—';
+    }
+    if (weightRequired(lt)) {
+      const w = parseFloat(s.weight);
+      if (!isNaN(r) && !isNaN(w) && w > 0) return `${r} reps @ ${w}kg`;
+      return '—';
+    }
+    if (weightOptional(lt)) {
+      if (!s.addedWeight) {
+        return !isNaN(r) ? `${r} reps (bodyweight)` : '—';
+      }
+      const trimmed = s.weight.trim();
+      if (trimmed === '') return !isNaN(r) ? `${r} reps (bodyweight)` : '—';
+      const w = parseFloat(trimmed);
+      if (!isNaN(r) && !isNaN(w) && w > 0) return `${r} reps @ ${w}kg`;
+      return !isNaN(r) ? `${r} reps (bodyweight)` : '—';
+    }
+    return '—';
+  }
+  if (exercise.unit === 'time') {
+    const d = parseInt(s.duration, 10);
+    return !isNaN(d) ? `${d}s` : '—';
+  }
+  if (exercise.unit === 'distance') {
+    const d = parseFloat(s.distance);
+    return !isNaN(d) ? `${d} m` : '—';
+  }
+  return '—';
 }
 
 /** Matches server max-reps: bodyweight sets (no weight), excluding a log. Falls back to history only if the request fails (e.g. older API without the route). */
@@ -93,9 +164,10 @@ export default function LogExerciseScreen() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [search, setSearch] = useState('');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [sets, setSets] = useState<SetEntry[]>([
-    { id: '1', reps: '', weight: '', duration: '', distance: '', addedWeight: false },
-  ]);
+  const [sets, setSets] = useState<SetEntry[]>([]);
+  const [addSetModalVisible, setAddSetModalVisible] = useState(false);
+  const [draft, setDraft] = useState<SetEntry | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +182,7 @@ export default function LogExerciseScreen() {
       getExercise(exerciseId)
         .then((ex) => {
           setSelectedExercise(ex);
-          setSets([createEmptySet(ex)]);
+          setSets([]);
           setStep('sets');
         })
         .catch(() => setError('Exercise not found'))
@@ -133,19 +205,32 @@ export default function LogExerciseScreen() {
     );
   });
 
-  function addSet() {
+  function openAddSetModal() {
     if (!selectedExercise) return;
-    setSets((prev) => [...prev, createEmptySet(selectedExercise)]);
+    setDraft(createEmptySet(selectedExercise));
+    setModalError(null);
+    setAddSetModalVisible(true);
+  }
+
+  function handleConfirmAddSet() {
+    if (!selectedExercise || !draft) return;
+    const err = validateSetEntry(draft, selectedExercise);
+    if (err) {
+      setModalError(err);
+      return;
+    }
+    setSets((prev) => [...prev, { ...draft, id: createEmptySet(selectedExercise).id }]);
+    setAddSetModalVisible(false);
+    setDraft(null);
+    setModalError(null);
+  }
+
+  function patchDraft(field: keyof SetEntry, value: string | boolean) {
+    setDraft((d) => (d ? { ...d, [field]: value } : d));
   }
 
   function removeSet(id: string) {
     setSets((prev) => (prev.length > 1 ? prev.filter((s) => s.id !== id) : prev));
-  }
-
-  function updateSet(id: string, field: keyof SetEntry, value: string | boolean) {
-    setSets((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, [field]: value } : s))
-    );
   }
 
   function handlePrModalOkay() {
@@ -158,6 +243,11 @@ export default function LogExerciseScreen() {
   async function handleSaveLog() {
     if (!member?.id || !selectedExercise || saving) return;
     const exercise = selectedExercise;
+
+    if (sets.length === 0) {
+      setError('Add at least one set');
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -173,25 +263,21 @@ export default function LogExerciseScreen() {
 
       for (let i = 0; i < sets.length; i++) {
         const s = sets[i];
+        const verr = validateSetEntry(s, exercise);
+        if (verr) {
+          setError(verr);
+          setSaving(false);
+          return;
+        }
         const body: Record<string, number | boolean | null> = { setNumber: i + 1, completed: true };
         if (exercise.unit === 'weight_reps') {
           const r = parseInt(s.reps, 10);
-          if (isNaN(r)) {
-            setError('Enter valid reps for all sets');
-            setSaving(false);
-            return;
-          }
           body.reps = r;
           const lt = exercise.loggingType;
           if (lt === 'bodyweight') {
             body.weightKg = null;
           } else if (weightRequired(lt)) {
             const w = parseFloat(s.weight);
-            if (isNaN(w) || w <= 0) {
-              setError('Enter weight greater than 0 for all sets');
-              setSaving(false);
-              return;
-            }
             body.weightKg = w;
           } else if (weightOptional(lt)) {
             if (!s.addedWeight) {
@@ -202,31 +288,14 @@ export default function LogExerciseScreen() {
                 body.weightKg = null;
               } else {
                 const w = parseFloat(trimmed);
-                if (isNaN(w) || w < 0) {
-                  setError('Enter valid weight or leave blank for bodyweight');
-                  setSaving(false);
-                  return;
-                }
                 body.weightKg = w === 0 ? null : w;
               }
             }
           }
         } else if (exercise.unit === 'time') {
-          const d = parseInt(s.duration, 10);
-          if (isNaN(d) || d < 0) {
-            setError('Enter valid duration');
-            setSaving(false);
-            return;
-          }
-          body.durationSeconds = d;
+          body.durationSeconds = parseInt(s.duration, 10);
         } else if (exercise.unit === 'distance') {
-          const d = parseFloat(s.distance);
-          if (isNaN(d) || d < 0) {
-            setError('Enter valid distance');
-            setSaving(false);
-            return;
-          }
-          body.distanceMeters = d;
+          body.distanceMeters = parseFloat(s.distance);
         }
         setsPayload.push(body as (typeof setsPayload)[0]);
       }
@@ -359,7 +428,7 @@ export default function LogExerciseScreen() {
               style={styles.pickerRow}
               onPress={() => {
                 setSelectedExercise(item);
-                setSets([createEmptySet(item)]);
+                setSets([]);
                 setStep('sets');
               }}
             >
@@ -398,89 +467,36 @@ export default function LogExerciseScreen() {
         <Text style={styles.title}>Log: {exercise.name}</Text>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={[styles.scroll, { backgroundColor: shell.body }]}
+        contentContainerStyle={styles.scrollContent}
+      >
         {error && <Text style={styles.error}>{error}</Text>}
 
+        {sets.length === 0 ? (
+          <View style={styles.emptySetsHint}>
+            <Text style={styles.emptySetsText}>
+              No sets yet. Tap &quot;+ Add Set&quot; to log reps, weight, or time.
+            </Text>
+          </View>
+        ) : null}
+
         {sets.map((s) => (
-          <View key={s.id} style={styles.setBlock}>
-            <View style={styles.setHeader}>
-              <Text style={styles.setLabel}>Set {sets.indexOf(s) + 1}</Text>
-              {sets.length > 1 && (
-                <Pressable onPress={() => removeSet(s.id)}>
+          <View key={s.id} style={styles.setPanel}>
+            <View style={styles.setPanelHeader}>
+              <Text style={styles.setPanelLabel}>Set {sets.indexOf(s) + 1}</Text>
+              {sets.length > 1 ? (
+                <Pressable onPress={() => removeSet(s.id)} hitSlop={8}>
                   <Text style={styles.removeText}>Remove</Text>
                 </Pressable>
-              )}
+              ) : null}
             </View>
-            {isWeightReps && (
-              <>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Reps"
-                  value={s.reps}
-                  onChangeText={(v) => updateSet(s.id, 'reps', v)}
-                  keyboardType="number-pad"
-                  placeholderTextColor={colors.textMuted}
-                />
-                {exercise.loggingType === 'bodyweight' && sets[0]?.id === s.id ? (
-                  <Text style={styles.bodyweightHint}>
-                    Bodyweight only—log your reps. No added weight for this exercise.
-                  </Text>
-                ) : null}
-                {exercise.loggingType !== 'bodyweight' && weightOptional(exercise.loggingType) && (
-                  <View style={styles.bodyweightRow}>
-                    <Text style={styles.bodyweightLabel}>Added weight</Text>
-                    <Switch
-                      value={s.addedWeight}
-                      onValueChange={(v) => {
-                        updateSet(s.id, 'addedWeight', v);
-                        if (!v) updateSet(s.id, 'weight', '');
-                      }}
-                      trackColor={{ false: colors.border, true: colors.accent }}
-                      thumbColor={s.addedWeight ? colors.primary : colors.white}
-                    />
-                  </View>
-                )}
-                {(weightRequired(exercise.loggingType) ||
-                  (weightOptional(exercise.loggingType) && s.addedWeight)) && (
-                  <TextInput
-                    style={styles.input}
-                    placeholder={
-                      weightOptional(exercise.loggingType) ? 'Weight (kg), optional' : 'Weight (kg)'
-                    }
-                    value={s.weight}
-                    onChangeText={(v) => updateSet(s.id, 'weight', v)}
-                    keyboardType="decimal-pad"
-                    placeholderTextColor={colors.textMuted}
-                  />
-                )}
-              </>
-            )}
-            {isTime && (
-              <TextInput
-                style={styles.input}
-                placeholder="Duration (seconds)"
-                value={s.duration}
-                onChangeText={(v) => updateSet(s.id, 'duration', v)}
-                keyboardType="number-pad"
-                placeholderTextColor={colors.textMuted}
-              />
-            )}
-            {isDistance && (
-              <TextInput
-                style={styles.input}
-                placeholder="Distance (meters)"
-                value={s.distance}
-                onChangeText={(v) => updateSet(s.id, 'distance', v)}
-                keyboardType="decimal-pad"
-                placeholderTextColor={colors.textMuted}
-              />
-            )}
+            <Text style={styles.setPanelValue}>{formatSetEntrySummary(s, exercise)}</Text>
           </View>
         ))}
 
-        <Pressable style={styles.addSetBtn} onPress={addSet}>
-          <Ionicons name="add" size={20} color={colors.primary} />
-          <Text style={styles.addSetText}>Add Set</Text>
+        <Pressable style={styles.addSetTextBtn} onPress={openAddSetModal}>
+          <Text style={styles.addSetTextBtnLabel}>+ Add Set</Text>
         </Pressable>
 
         <Pressable
@@ -491,6 +507,111 @@ export default function LogExerciseScreen() {
           <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save Log'}</Text>
         </Pressable>
       </ScrollView>
+
+      <Modal
+        visible={addSetModalVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => {
+          setAddSetModalVisible(false);
+          setDraft(null);
+          setModalError(null);
+        }}
+      >
+        <KeyboardAvoidingView
+          style={styles.addSetModalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.addSetModalScroll}
+          >
+            <View style={styles.addSetModalCard}>
+              <Text style={styles.addSetModalTitle}>Add set</Text>
+              {modalError ? <Text style={styles.modalErrorText}>{modalError}</Text> : null}
+              {draft && isWeightReps && (
+                <>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Reps"
+                    value={draft.reps}
+                    onChangeText={(v) => patchDraft('reps', v)}
+                    keyboardType="number-pad"
+                    placeholderTextColor={colors.textMuted}
+                  />
+                  {exercise.loggingType === 'bodyweight' ? (
+                    <Text style={styles.bodyweightHint}>
+                      Bodyweight only—log your reps. No added weight for this exercise.
+                    </Text>
+                  ) : null}
+                  {exercise.loggingType !== 'bodyweight' && weightOptional(exercise.loggingType) ? (
+                    <View style={styles.bodyweightRow}>
+                      <Text style={styles.bodyweightLabel}>Added weight</Text>
+                      <Switch
+                        value={draft.addedWeight}
+                        onValueChange={(v) => {
+                          patchDraft('addedWeight', v);
+                          if (!v) patchDraft('weight', '');
+                        }}
+                        trackColor={{ false: colors.border, true: colors.accent }}
+                        thumbColor={draft.addedWeight ? colors.primary : colors.white}
+                      />
+                    </View>
+                  ) : null}
+                  {(weightRequired(exercise.loggingType) ||
+                    (weightOptional(exercise.loggingType) && draft.addedWeight)) && (
+                    <TextInput
+                      style={styles.input}
+                      placeholder={
+                        weightOptional(exercise.loggingType) ? 'Weight (kg), optional' : 'Weight (kg)'
+                      }
+                      value={draft.weight}
+                      onChangeText={(v) => patchDraft('weight', v)}
+                      keyboardType="decimal-pad"
+                      placeholderTextColor={colors.textMuted}
+                    />
+                  )}
+                </>
+              )}
+              {draft && isTime && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Duration (seconds)"
+                  value={draft.duration}
+                  onChangeText={(v) => patchDraft('duration', v)}
+                  keyboardType="number-pad"
+                  placeholderTextColor={colors.textMuted}
+                />
+              )}
+              {draft && isDistance && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Distance (meters)"
+                  value={draft.distance}
+                  onChangeText={(v) => patchDraft('distance', v)}
+                  keyboardType="decimal-pad"
+                  placeholderTextColor={colors.textMuted}
+                />
+              )}
+              <View style={styles.addSetModalActions}>
+                <Pressable
+                  style={styles.addSetModalCancel}
+                  onPress={() => {
+                    setAddSetModalVisible(false);
+                    setDraft(null);
+                    setModalError(null);
+                  }}
+                >
+                  <Text style={styles.addSetModalCancelText}>Cancel</Text>
+                </Pressable>
+                <Pressable style={styles.addSetModalConfirm} onPress={handleConfirmAddSet}>
+                  <Text style={styles.addSetModalConfirmText}>Add set</Text>
+                </Pressable>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Modal>
 
       <Modal visible={successModalVisible} animationType="fade" transparent>
         <View style={styles.successModalOverlay}>
@@ -574,16 +695,43 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 32 },
   error: { color: colors.primary, marginBottom: 16 },
-  setBlock: {
+  emptySetsHint: {
+    paddingVertical: 24,
+    paddingHorizontal: 8,
+    marginBottom: 8,
+  },
+  emptySetsText: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+    fontFamily: typography.body,
+  },
+  setPanel: {
     backgroundColor: colors.white,
-    padding: 16,
-    marginBottom: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  setHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  setLabel: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  setPanelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  setPanelLabel: {
+    fontSize: 18,
+    color: colors.textPrimary,
+    fontFamily: typography.heading,
+  },
+  setPanelValue: {
+    fontSize: 14,
+    color: colors.textMuted,
+    fontFamily: typography.body,
+  },
   removeText: { color: colors.primary, fontSize: 14 },
   input: {
     backgroundColor: colors.backgroundDark,
@@ -609,19 +757,74 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   bodyweightLabel: { fontSize: 14, color: colors.textPrimary },
-  addSetBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    padding: 14,
+  addSetTextBtn: {
+    paddingVertical: 14,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    borderStyle: 'dashed',
+    alignItems: 'center',
   },
-  addSetText: { color: colors.primary, fontWeight: '600' },
+  addSetTextBtnLabel: {
+    color: colors.primary,
+    fontWeight: '600',
+    fontSize: 16,
+    fontFamily: typography.bodySemibold,
+  },
+  addSetModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  addSetModalScroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  addSetModalCard: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+  },
+  addSetModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 12,
+    fontFamily: typography.headingSemibold,
+  },
+  modalErrorText: {
+    color: colors.primary,
+    fontSize: 14,
+    marginBottom: 12,
+    fontFamily: typography.body,
+  },
+  addSetModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 16,
+  },
+  addSetModalCancel: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  addSetModalCancelText: {
+    color: colors.textMuted,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  addSetModalConfirm: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+  },
+  addSetModalConfirmText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 16,
+  },
   saveBtn: {
     padding: 16,
     backgroundColor: colors.primary,

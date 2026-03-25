@@ -295,9 +295,26 @@ export default function ExerciseDetailScreen() {
     return () => { cancelled = true; };
   }, [id, member?.id, token]);
 
+  /** Best-performing session (for PB badge), independent of list order */
+  const pbLogId = useMemo(() => {
+    if (!exercise || history.length === 0) return null;
+    const sorted = [...history].sort((a, b) =>
+      compareHistoryLogs(a, b, exercise.loggingType)
+    );
+    const top = sorted[0];
+    if (!top) return null;
+    const hasPb =
+      top.bestSet?.reps != null ||
+      (top.bestSet?.weightKg != null && top.bestSet.weightKg > 0);
+    return hasPb ? top.logId : null;
+  }, [history, exercise]);
+
   const pastLogs = useMemo(() => {
     if (!exercise) return [];
-    return [...history].sort((a, b) => compareHistoryLogs(a, b, exercise.loggingType));
+    return [...history].sort(
+      (a, b) =>
+        new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
+    );
   }, [history, exercise]);
 
   if (loading) {
@@ -338,12 +355,9 @@ export default function ExerciseDetailScreen() {
               <Text style={styles.pbEmptySub}>Add from the Exercises tab to track your progress</Text>
             </View>
           ) : (
-            pastLogs.map((log, index) => {
+            pastLogs.map((log) => {
               const isPb =
-                index === 0 &&
-                exercise &&
-                (log.bestSet?.reps != null ||
-                  (log.bestSet?.weightKg != null && log.bestSet.weightKg > 0));
+                exercise != null && pbLogId != null && log.logId === pbLogId;
               const setCount = log.sets?.length ?? 0;
               return (
                 <Pressable
