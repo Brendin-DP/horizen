@@ -65,9 +65,30 @@ router.get('/', async (req, res) => {
     exerciseMap[e.id] = mapExercise(e);
   }
 
-  const result = (logs || []).map((row) => ({
+  const logList = logs || [];
+  const logIds = logList.map((l) => l.id);
+
+  let allSets = [];
+  if (logIds.length > 0) {
+    const { data: setsData } = await supabase
+      .from('sets')
+      .select('*')
+      .in('exercise_log_id', logIds)
+      .order('set_number', { ascending: true });
+    allSets = setsData || [];
+  }
+
+  const setsByLogId = {};
+  for (const s of allSets) {
+    const lid = s.exercise_log_id;
+    if (!setsByLogId[lid]) setsByLogId[lid] = [];
+    setsByLogId[lid].push(s);
+  }
+
+  const result = logList.map((row) => ({
     ...mapExerciseLog(row),
     exercise: exerciseMap[row.exercise_id] ?? null,
+    sets: (setsByLogId[row.id] || []).map(mapSet),
   }));
   res.json(result);
 });

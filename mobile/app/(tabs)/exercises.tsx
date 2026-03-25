@@ -16,7 +16,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { getExerciseLogs, deleteExerciseLog } from '../../lib/api';
-import type { ExerciseLog } from '../../types';
+import type { ExerciseLog, Set as LogSet } from '../../types';
 import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -26,6 +26,27 @@ function formatDate(iso: string) {
     month: 'short',
     year: 'numeric',
   });
+}
+
+function pickBetterPb(
+  best: { reps: number; weightKg: number } | undefined,
+  s: LogSet
+): { reps: number; weightKg: number } | undefined {
+  if (s.reps == null || s.weightKg == null || !(s.weightKg > 0)) return best;
+  if (!best) return { reps: s.reps, weightKg: s.weightKg };
+  if (s.weightKg > best.weightKg) return { reps: s.reps, weightKg: s.weightKg };
+  if (s.weightKg === best.weightKg && s.reps > best.reps) return { reps: s.reps, weightKg: s.weightKg };
+  return best;
+}
+
+/** Best weight set within a single exercise log session (not lifetime). */
+function sessionBestFromSets(sets: LogSet[] | undefined): { reps: number; weightKg: number } | undefined {
+  let best: { reps: number; weightKg: number } | undefined;
+  for (const s of sets ?? []) {
+    const next = pickBetterPb(best, s);
+    if (next) best = next;
+  }
+  return best;
 }
 
 export default function ExercisesScreen() {
@@ -145,7 +166,9 @@ export default function ExercisesScreen() {
               tintColor={colors.primary}
             />
           }
-          renderItem={({ item }) => (
+          renderItem={({ item }) => {
+            const sessionPb = sessionBestFromSets(item.sets);
+            return (
             <Swipeable
               renderRightActions={() => renderRightActions(item)}
               friction={2}
@@ -156,16 +179,24 @@ export default function ExercisesScreen() {
               >
                 <View style={styles.cardMain}>
                   <Text style={styles.cardName}>{item.exercise?.name ?? 'Exercise'}</Text>
-                  <Text style={styles.cardMeta}>
-                    🏆 {formatDate(item.loggedAt)}
-                  </Text>
+                  <View style={styles.cardMetaRow}>
+                    <Ionicons name="trophy-outline" size={16} color={colors.textMuted} style={styles.cardMetaIcon} />
+                    <Text style={styles.cardMeta}>
+                      {item.exercise?.unit === 'time' || item.exercise?.unit === 'distance'
+                        ? 'See history'
+                        : sessionPb
+                          ? `${sessionPb.reps} reps @ ${sessionPb.weightKg}kg`
+                          : 'No sets yet'}
+                    </Text>
+                  </View>
                 </View>
                 <View style={styles.chevronWrap}>
                   <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                 </View>
               </Pressable>
             </Swipeable>
-          )}
+            );
+          }}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <View style={styles.emptyIconContainer}>
@@ -307,8 +338,24 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   cardMain: { flex: 1 },
-  cardName: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
-  cardMeta: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
+  cardName: {
+    fontSize: 18,
+    color: colors.textPrimary,
+    fontFamily: typography.heading,
+  },
+  cardMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 6,
+  },
+  cardMetaIcon: { marginTop: 1 },
+  cardMeta: {
+    fontSize: 14,
+    color: colors.textMuted,
+    fontFamily: typography.body,
+    flex: 1,
+  },
   chevronWrap: {
     width: 32,
     height: 32,
