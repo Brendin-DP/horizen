@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { colors } from '../constants/theme';
 
@@ -9,15 +9,12 @@ export default function Login() {
   const [error, setError] = useState('');
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
     try {
       await login(email, password);
-      navigate(from, { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     }
@@ -58,22 +55,17 @@ export default function Login() {
         }}
       >
         <img
-          src="/favicon.png"
-          alt="Horizen"
+          src="/horizen-logo-full.png"
+          alt="Horizen Gym"
           style={{
-            width: 48,
-            height: 48,
+            width: '100%',
+            maxWidth: 220,
+            height: 'auto',
             objectFit: 'contain',
             display: 'block',
-            margin: '0 auto 16px',
+            margin: '0 auto 28px',
           }}
         />
-        <h1 style={{ margin: '0 0 8px', fontSize: 24, color: colors.textPrimary }}>
-          Horizen Gym
-        </h1>
-        <p style={{ margin: '0 0 24px', color: colors.textMuted, fontSize: 14 }}>
-          Back Office
-        </p>
         <form onSubmit={handleSubmit}>
           {error && (
             <div

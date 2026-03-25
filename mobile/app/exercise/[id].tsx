@@ -15,7 +15,6 @@ import { getExercise, getExerciseHistory } from '../../lib/api';
 import type { Exercise, ExerciseHistory, LoggingType } from '../../types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '../../constants/theme';
-import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CHART_WIDTH = Dimensions.get('window').width - 64;
@@ -324,15 +323,6 @@ export default function ExerciseDetailScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {error && <Text style={styles.error}>{error}</Text>}
 
-        {exercise && (
-          <View style={styles.metaSection}>
-            <Text style={styles.metaText}>{formatExerciseCategoryType(exercise)}</Text>
-            {exercise.muscleGroups?.length > 0 && (
-              <Text style={styles.metaSub}>{exercise.muscleGroups.join(', ')}</Text>
-            )}
-          </View>
-        )}
-
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Progress</Text>
           <View style={styles.card}>
@@ -354,25 +344,35 @@ export default function ExerciseDetailScreen() {
                 exercise &&
                 (log.bestSet?.reps != null ||
                   (log.bestSet?.weightKg != null && log.bestSet.weightKg > 0));
+              const setCount = log.sets?.length ?? 0;
               return (
-                <View
+                <Pressable
                   key={log.logId}
                   style={[styles.pbCard, isPb && styles.pbCardHighlight]}
+                  onPress={() => router.push(`/log/${log.logId}`)}
+                  android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
                 >
                   <View style={styles.pbCardHeader}>
-                    <Text style={styles.pbHeadline}>
-                      {exercise ? formatPbHeadline(log, exercise) : ''}
-                    </Text>
-                    {isPb && (
-                      <View style={styles.pbBadge}>
-                        <Text style={styles.pbBadgeText}>PB</Text>
+                    <View style={styles.pbCardHeaderLeft}>
+                      <Text style={styles.pbHeadline} numberOfLines={1}>
+                        {exercise ? formatPbHeadline(log, exercise) : ''}
+                      </Text>
+                      {isPb ? (
+                        <View style={styles.pbBadge}>
+                          <Text style={styles.pbBadgeText}>PB</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    {setCount > 1 ? (
+                      <View style={styles.pbSetChip} accessibilityLabel={`${setCount} sets`}>
+                        <Text style={styles.pbSetChipText}>{setCount}</Text>
                       </View>
-                    )}
+                    ) : null}
                   </View>
                   <Text style={styles.pbMeta}>
                     {exercise ? formatPbSubline(log, exercise) : ''}
                   </Text>
-                </View>
+                </Pressable>
               );
             })
           )}
@@ -406,9 +406,6 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 32 },
   error: { color: colors.primary, marginBottom: 16 },
-  metaSection: { marginBottom: 16 },
-  metaText: { fontSize: 14, color: colors.textMuted },
-  metaSub: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
   section: { marginBottom: 24 },
   sectionTitle: {
     fontSize: 18,
@@ -472,11 +469,32 @@ const styles = StyleSheet.create({
   pbCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     gap: 10,
     marginBottom: 4,
   },
-  pbHeadline: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, flex: 1 },
+  pbCardHeaderLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 0,
+  },
+  pbHeadline: { flex: 1, fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  pbSetChip: {
+    minWidth: 28,
+    height: 28,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pbSetChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textMuted,
+  },
   pbBadge: {
     backgroundColor: colors.primary,
     paddingVertical: 4,

@@ -7,6 +7,10 @@ export default {
         primary: '#E74C3C',
         primaryDark: '#c0392b',
       },
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        display: ['Montserrat', 'system-ui', 'sans-serif'],
+      },
     },
   },
   plugins: [],
