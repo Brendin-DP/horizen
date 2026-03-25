@@ -8,6 +8,88 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 import { limit } from '../config/features.js';
 
 const router = express.Router();
+
+/**
+ * Per-log best set for exercise logs, using logging_type when unit is weight_reps.
+ * weighted_or_bodyweight: prefer heaviest loaded set; if none, max reps among unloaded sets.
+ */
+function computeBestSetForExerciseLog(sets, loggingType, unit) {
+  if (unit !== 'weight_reps') {
+    let bestSet = { reps: null, weightKg: null };
+    let totalVolume = 0;
+    for (const s of sets) {
+      if (s.reps != null && s.weight_kg != null) {
+        totalVolume += s.reps * s.weight_kg;
+        if (
+          !bestSet.weightKg ||
+          s.weight_kg > bestSet.weightKg ||
+          (s.weight_kg === bestSet.weightKg && s.reps > (bestSet.reps ?? 0))
+        ) {
+          bestSet = { reps: s.reps, weightKg: s.weight_kg };
+        }
+      }
+    }
+    return { bestSet, totalVolume };
+  }
+
+  let totalVolume = 0;
+  for (const s of sets) {
+    if (s.reps != null && s.weight_kg != null && s.weight_kg > 0) {
+      totalVolume += s.reps * s.weight_kg;
+    }
+  }
+
+  if (loggingType === 'bodyweight') {
+    let bestReps = null;
+    for (const s of sets) {
+      if (s.reps != null && (s.weight_kg == null || s.weight_kg === 0)) {
+        if (bestReps == null || s.reps > bestReps) bestReps = s.reps;
+      }
+    }
+    return { bestSet: { reps: bestReps, weightKg: null }, totalVolume };
+  }
+
+  if (loggingType === 'weighted') {
+    let bestSet = { reps: null, weightKg: null };
+    for (const s of sets) {
+      if (s.reps != null && s.weight_kg != null && s.weight_kg > 0) {
+        if (
+          !bestSet.weightKg ||
+          s.weight_kg > bestSet.weightKg ||
+          (s.weight_kg === bestSet.weightKg && s.reps > (bestSet.reps ?? 0))
+        ) {
+          bestSet = { reps: s.reps, weightKg: s.weight_kg };
+        }
+      }
+    }
+    return { bestSet, totalVolume };
+  }
+
+  let bestWeighted = { reps: null, weightKg: null };
+  for (const s of sets) {
+    if (s.reps != null && s.weight_kg != null && s.weight_kg > 0) {
+      if (
+        !bestWeighted.weightKg ||
+        s.weight_kg > bestWeighted.weightKg ||
+        (s.weight_kg === bestWeighted.weightKg && s.reps > (bestWeighted.reps ?? 0))
+      ) {
+        bestWeighted = { reps: s.reps, weightKg: s.weight_kg };
+      }
+    }
+  }
+  if (bestWeighted.weightKg != null) {
+    return { bestSet: bestWeighted, totalVolume };
+  }
+
+  let bestReps = null;
+  for (const s of sets) {
+    if (s.reps != null && (s.weight_kg == null || s.weight_kg === 0)) {
+      if (bestReps == null || s.reps > bestReps) bestReps = s.reps;
+    }
+  }
+  return { bestSet: { reps: bestReps, weightKg: null }, totalVolume };
+}
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 },
@@ -187,12 +269,15 @@ router.get('/:id/exercise-history/:exerciseId', async (req, res) => {
 
   const { data: exercise } = await supabase
     .from('exercise_library')
-    .select('id')
+    .select('id, unit, logging_type')
     .eq('id', exerciseId)
     .single();
   if (!exercise) {
     return res.status(404).json({ error: 'Exercise not found' });
   }
+
+  const loggingType = exercise.logging_type ?? 'weighted';
+  const exerciseUnit = exercise.unit ?? 'weight_reps';
 
   let query = supabase
     .from('exercise_logs')
@@ -236,21 +321,7 @@ router.get('/:id/exercise-history/:exerciseId', async (req, res) => {
 
   const history = logList.map((log) => {
     const sets = setsByLogId[log.id] || [];
-    let bestSet = { reps: null, weightKg: null };
-    let totalVolume = 0;
-
-    for (const s of sets) {
-      if (s.reps != null && s.weight_kg != null) {
-        totalVolume += s.reps * s.weight_kg;
-        if (
-          !bestSet.weightKg ||
-          s.weight_kg > bestSet.weightKg ||
-          (s.weight_kg === bestSet.weightKg && s.reps > (bestSet.reps ?? 0))
-        ) {
-          bestSet = { reps: s.reps, weightKg: s.weight_kg };
-        }
-      }
-    }
+    const { bestSet, totalVolume } = computeBestSetForExerciseLog(sets, loggingType, exerciseUnit);
 
     return {
       logId: log.id,
@@ -302,6 +373,52 @@ router.get('/:id/exercise-history/:exerciseId/max-weight', async (req, res) => {
       : null;
 
   res.json({ maxWeightKg });
+});
+
+/** Max single-set reps for bodyweight sets (null/zero weight) on exercise logs for this exercise. */
+router.get('/:id/exercise-history/:exerciseId/max-reps', async (req, res) => {
+  const memberId = req.params.id;
+  const exerciseId = req.params.exerciseId;
+  const excludeLogId = req.query.excludeLogId;
+
+  const { data: exercise } = await supabase
+    .from('exercise_library')
+    .select('id, logging_type')
+    .eq('id', exerciseId)
+    .single();
+  if (!exercise) {
+    return res.status(404).json({ error: 'Exercise not found' });
+  }
+
+  if ((exercise.logging_type ?? 'weighted') !== 'bodyweight') {
+    return res.json({ maxReps: null });
+  }
+
+  const { data: logs } = await supabase
+    .from('exercise_logs')
+    .select('id')
+    .eq('member_id', memberId)
+    .eq('exercise_id', exerciseId);
+  const logIds = (logs || []).map((l) => l.id).filter((id) => !excludeLogId || id !== excludeLogId);
+
+  if (logIds.length === 0) {
+    return res.json({ maxReps: null });
+  }
+
+  const { data: sets } = await supabase
+    .from('sets')
+    .select('reps, weight_kg')
+    .in('exercise_log_id', logIds)
+    .not('reps', 'is', null);
+
+  const bodyweightSets = (sets || []).filter(
+    (s) => s.reps != null && (s.weight_kg == null || s.weight_kg === 0)
+  );
+
+  const maxReps =
+    bodyweightSets.length > 0 ? Math.max(...bodyweightSets.map((s) => s.reps)) : null;
+
+  res.json({ maxReps });
 });
 
 router.get('/:id/progress/:exerciseId', async (req, res) => {

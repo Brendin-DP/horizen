@@ -352,7 +352,7 @@ export async function addSet(
   body: {
     setNumber?: number;
     reps?: number;
-    weightKg?: number;
+    weightKg?: number | null;
     durationSeconds?: number;
     distanceMeters?: number;
     completed?: boolean;
@@ -459,7 +459,7 @@ export async function addSetToExerciseLog(
   payload: {
     setNumber: number;
     reps?: number;
-    weightKg?: number;
+    weightKg?: number | null;
     durationSeconds?: number;
     distanceMeters?: number;
     completed?: boolean;
@@ -480,7 +480,7 @@ export async function addSetsBatchToExerciseLog(
   sets: Array<{
     setNumber: number;
     reps?: number;
-    weightKg?: number;
+    weightKg?: number | null;
     durationSeconds?: number;
     distanceMeters?: number;
     completed?: boolean;
@@ -510,6 +510,23 @@ export async function getExerciseMaxWeight(
     { token }
   );
   if (!res.ok) throw new Error('Failed to fetch max weight');
+  return res.json();
+}
+
+export async function getExerciseMaxReps(
+  memberId: string,
+  exerciseId: string,
+  options?: { excludeLogId?: string },
+  token?: string | null
+): Promise<{ maxReps: number | null }> {
+  const params = new URLSearchParams();
+  if (options?.excludeLogId) params.set('excludeLogId', options.excludeLogId);
+  const q = params.toString() ? `?${params.toString()}` : '';
+  const res = await fetchApi(
+    `/members/${memberId}/exercise-history/${exerciseId}/max-reps${q}`,
+    { token }
+  );
+  if (!res.ok) throw new Error('Failed to fetch max reps');
   return res.json();
 }
 

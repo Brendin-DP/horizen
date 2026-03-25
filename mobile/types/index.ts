@@ -2,6 +2,8 @@
 
 export type ExerciseUnit = 'weight_reps' | 'time' | 'distance';
 
+export type LoggingType = 'weighted' | 'bodyweight' | 'weighted_or_bodyweight';
+
 export interface Exercise {
   id: string;
   name: string;
@@ -11,6 +13,7 @@ export interface Exercise {
   muscleGroups: string[];
   equipment: string;
   unit: ExerciseUnit;
+  loggingType: LoggingType;
   createdAt: string;
 }
 

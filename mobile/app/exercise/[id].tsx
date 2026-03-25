@@ -12,7 +12,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { getExercise, getExerciseHistory } from '../../lib/api';
-import type { Exercise, ExerciseHistory } from '../../types';
+import type { Exercise, ExerciseHistory, LoggingType } from '../../types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '../../constants/theme';
 import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
@@ -26,60 +26,214 @@ function formatDate(iso: string): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }
 
-function formatSetSummary(log: ExerciseHistory): string {
+function formatSetSummary(log: ExerciseHistory, ex: Exercise): string {
   const n = log.sets.length;
   const best = log.bestSet;
-  if (best?.weightKg != null && best?.reps != null) {
+  if (ex.unit === 'time' || ex.unit === 'distance') {
+    return `${n} set${n === 1 ? '' : 's'}`;
+  }
+  const lt = ex.loggingType;
+  if (lt === 'bodyweight') {
+    if (best?.reps != null) {
+      return `${n} set${n === 1 ? '' : 's'} — best: ${best.reps} reps`;
+    }
+    return `${n} set${n === 1 ? '' : 's'}`;
+  }
+  if (lt === 'weighted') {
+    if (best?.weightKg != null && best?.reps != null) {
+      return `${n} set${n === 1 ? '' : 's'} — best: ${best.weightKg}kg × ${best.reps}`;
+    }
+    return `${n} set${n === 1 ? '' : 's'}`;
+  }
+  if (best?.weightKg != null && best.weightKg > 0 && best.reps != null) {
     return `${n} set${n === 1 ? '' : 's'} — best: ${best.weightKg}kg × ${best.reps}`;
+  }
+  if (best?.reps != null) {
+    return `${n} set${n === 1 ? '' : 's'} — best: ${best.reps} reps (bodyweight)`;
   }
   return `${n} set${n === 1 ? '' : 's'}`;
 }
 
-function ProgressChart({ history }: { history: ExerciseHistory[] }) {
-  const chartData = useMemo(() => {
-    const withWeight = history.filter((h) => h.bestSet?.weightKg != null);
-    if (withWeight.length === 0) return null;
-    const weights = withWeight.map((h) => h.bestSet!.weightKg!);
-    const minW = Math.min(...weights);
-    const maxW = Math.max(...weights);
-    const range = maxW - minW || 1;
-    const padding = range * 0.1 || 1;
-    const yMin = Math.max(0, minW - padding);
-    const yMax = maxW + padding;
-    const yRange = yMax - yMin;
-
-    const points = withWeight.map((h, i) => ({
-      x: (i / (withWeight.length - 1 || 1)) * CHART_WIDTH,
-      y: CHART_HEIGHT - ((h.bestSet!.weightKg! - yMin) / yRange) * CHART_HEIGHT,
-      weight: h.bestSet!.weightKg!,
-      date: h.loggedAt,
-    }));
-    return { points, yMin, yMax };
-  }, [history]);
-
-  if (!chartData || chartData.points.length === 0) {
-    return (
-      <View style={styles.chartPlaceholder}>
-        <Text style={styles.chartPlaceholderText}>No weight data yet</Text>
-        <Text style={styles.chartPlaceholderSub}>Add sets with weight to see progress</Text>
-      </View>
-    );
+function compareHistoryLogs(a: ExerciseHistory, b: ExerciseHistory, lt: LoggingType): number {
+  if (lt === 'bodyweight') {
+    return (b.bestSet?.reps ?? 0) - (a.bestSet?.reps ?? 0);
   }
+  if (lt === 'weighted') {
+    return (b.bestSet?.weightKg ?? -1) - (a.bestSet?.weightKg ?? -1);
+  }
+  const aw = a.bestSet?.weightKg;
+  const bw = b.bestSet?.weightKg;
+  const aHas = aw != null && aw > 0;
+  const bHas = bw != null && bw > 0;
+  if (aHas && bHas) return (bw ?? 0) - (aw ?? 0);
+  if (aHas && !bHas) return -1;
+  if (!aHas && bHas) return 1;
+  return (b.bestSet?.reps ?? 0) - (a.bestSet?.reps ?? 0);
+}
 
-  const { points } = chartData;
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const fillPath = `${linePath} L ${points[points.length - 1].x} ${CHART_HEIGHT} L 0 ${CHART_HEIGHT} Z`;
+/** Chronological order for time-series charts (API usually returns ascending loggedAt). */
+function historyChronological(history: ExerciseHistory[]): ExerciseHistory[] {
+  return [...history].sort(
+    (a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime()
+  );
+}
+
+type ChartSeries = {
+  points: { x: number; y: number }[];
+  yMin: number;
+  yMax: number;
+  labelSuffix: string;
+};
+
+function buildSeriesFromValues(values: number[], labelSuffix: string): ChartSeries | null {
+  if (values.length === 0) return null;
+  const minV = Math.min(...values);
+  const maxV = Math.max(...values);
+  const range = maxV - minV || 1;
+  const padding = range * 0.1 || 1;
+  const yMin = Math.max(0, minV - padding);
+  const yMax = maxV + padding;
+  const yRange = Math.max(yMax - yMin, 1e-6);
+  const points = values.map((v, i) => ({
+    x: (i / (values.length - 1 || 1)) * CHART_WIDTH,
+    y: CHART_HEIGHT - ((v - yMin) / yRange) * CHART_HEIGHT,
+  }));
+  return { points, yMin, yMax, labelSuffix };
+}
+
+function LineChartSvg({ series }: { series: ChartSeries }) {
+  let pts = series.points;
+  if (pts.length === 1) {
+    const p = pts[0];
+    pts = [p, { x: p.x, y: p.y }];
+  }
+  const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const fillPath = `${linePath} L ${pts[pts.length - 1].x} ${CHART_HEIGHT} L 0 ${CHART_HEIGHT} Z`;
 
   return (
     <View style={styles.chartContainer}>
       <Svg width={CHART_WIDTH} height={CHART_HEIGHT} viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}>
         <Path d={fillPath} fill="rgba(254, 205, 211, 0.6)" />
-        <Path d={linePath} stroke={colors.primary} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <Path
+          d={linePath}
+          stroke={colors.primary}
+          strokeWidth={2.5}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </Svg>
       <View style={styles.chartLabels}>
-        <Text style={styles.chartLabelLeft}>{chartData.yMin} kg</Text>
-        <Text style={styles.chartLabelRight}>{chartData.yMax} kg</Text>
+        <Text style={styles.chartLabelLeft}>
+          {Math.round(series.yMin * 10) / 10}
+          {series.labelSuffix}
+        </Text>
+        <Text style={styles.chartLabelRight}>
+          {Math.round(series.yMax * 10) / 10}
+          {series.labelSuffix}
+        </Text>
       </View>
+    </View>
+  );
+}
+
+function ProgressChart({ history, exercise }: { history: ExerciseHistory[]; exercise: Exercise }) {
+  const chartContent = useMemo(() => {
+    if (exercise.unit !== 'weight_reps') {
+      return { kind: 'unsupported' as const };
+    }
+
+    const sorted = historyChronological(history);
+    const lt = exercise.loggingType;
+
+    if (lt === 'bodyweight') {
+      const vals = sorted
+        .map((h) => h.bestSet?.reps)
+        .filter((r): r is number => r != null);
+      const series = buildSeriesFromValues(vals, ' reps');
+      return series ? { kind: 'single' as const, series } : { kind: 'empty' as const, empty: 'reps' as const };
+    }
+
+    if (lt === 'weighted') {
+      const vals = sorted
+        .map((h) => h.bestSet?.weightKg)
+        .filter((w): w is number => w != null && w > 0);
+      const series = buildSeriesFromValues(vals, ' kg');
+      return series ? { kind: 'single' as const, series } : { kind: 'empty' as const, empty: 'weight' as const };
+    }
+
+    // weighted_or_bodyweight: server picks loaded sets when present, else max reps bodyweight-only.
+    const weightVals = sorted
+      .filter((h) => h.bestSet?.weightKg != null && h.bestSet.weightKg > 0)
+      .map((h) => h.bestSet!.weightKg!);
+    const repVals = sorted
+      .filter(
+        (h) =>
+          (h.bestSet?.weightKg == null || h.bestSet.weightKg === 0) &&
+          h.bestSet?.reps != null
+      )
+      .map((h) => h.bestSet!.reps!);
+
+    const weightSeries = buildSeriesFromValues(weightVals, ' kg');
+    const repSeries = buildSeriesFromValues(repVals, ' reps');
+
+    if (!weightSeries && !repSeries) {
+      return { kind: 'empty' as const, empty: 'mixed' as const };
+    }
+    return { kind: 'dual' as const, weightSeries, repSeries };
+  }, [history, exercise]);
+
+  if (chartContent.kind === 'unsupported') {
+    return (
+      <View style={styles.chartPlaceholder}>
+        <Text style={styles.chartPlaceholderText}>No chart for this metric</Text>
+        <Text style={styles.chartPlaceholderSub}>
+          Progress charts apply to rep and weight exercises
+        </Text>
+      </View>
+    );
+  }
+
+  if (chartContent.kind === 'empty') {
+    const e = chartContent.empty;
+    const title =
+      e === 'reps'
+        ? 'No rep data yet'
+        : e === 'weight'
+          ? 'No weight data yet'
+          : 'No progress data yet';
+    const sub =
+      e === 'reps'
+        ? 'Log sets to see rep progress'
+        : e === 'weight'
+          ? 'Add sets with weight to see progress'
+          : 'Log bodyweight or weighted sets to see progress';
+    return (
+      <View style={styles.chartPlaceholder}>
+        <Text style={styles.chartPlaceholderText}>{title}</Text>
+        <Text style={styles.chartPlaceholderSub}>{sub}</Text>
+      </View>
+    );
+  }
+
+  if (chartContent.kind === 'single') {
+    return <LineChartSvg series={chartContent.series} />;
+  }
+
+  return (
+    <View>
+      {chartContent.weightSeries ? (
+        <View>
+          <Text style={styles.chartBlockTitle}>Weight (loaded sets)</Text>
+          <LineChartSvg series={chartContent.weightSeries} />
+        </View>
+      ) : null}
+      {chartContent.repSeries ? (
+        <View style={chartContent.weightSeries ? styles.chartBlockSpaced : undefined}>
+          <Text style={styles.chartBlockTitle}>Reps (bodyweight)</Text>
+          <LineChartSvg series={chartContent.repSeries} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -120,6 +274,11 @@ export default function ExerciseDetailScreen() {
     return () => { cancelled = true; };
   }, [id, member?.id, token]);
 
+  const pastLogs = useMemo(() => {
+    if (!exercise) return [];
+    return [...history].sort((a, b) => compareHistoryLogs(a, b, exercise.loggingType));
+  }, [history, exercise]);
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -128,10 +287,6 @@ export default function ExerciseDetailScreen() {
       </View>
     );
   }
-
-  const pastLogs = [...history].sort(
-    (a, b) => (b.bestSet?.weightKg ?? -1) - (a.bestSet?.weightKg ?? -1)
-  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -159,7 +314,7 @@ export default function ExerciseDetailScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Progress</Text>
           <View style={styles.card}>
-            <ProgressChart history={history} />
+            {exercise ? <ProgressChart history={history} exercise={exercise} /> : null}
           </View>
         </View>
 
@@ -172,7 +327,11 @@ export default function ExerciseDetailScreen() {
             </View>
           ) : (
             pastLogs.map((log, index) => {
-              const isPb = index === 0 && log.bestSet?.weightKg != null;
+              const isPb =
+                index === 0 &&
+                exercise &&
+                (log.bestSet?.reps != null ||
+                  (log.bestSet?.weightKg != null && log.bestSet.weightKg > 0));
               return (
                 <View
                   key={log.logId}
@@ -186,7 +345,9 @@ export default function ExerciseDetailScreen() {
                       </View>
                     )}
                   </View>
-                  <Text style={styles.pbMeta}>{formatSetSummary(log)}</Text>
+                  <Text style={styles.pbMeta}>
+                    {exercise ? formatSetSummary(log, exercise) : ''}
+                  </Text>
                 </View>
               );
             })
@@ -239,6 +400,13 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   chartContainer: { position: 'relative' },
+  chartBlockSpaced: { marginTop: 20 },
+  chartBlockTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textMuted,
+    marginBottom: 8,
+  },
   chartPlaceholder: {
     height: CHART_HEIGHT,
     justifyContent: 'center',

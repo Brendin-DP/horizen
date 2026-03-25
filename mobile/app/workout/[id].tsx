@@ -28,6 +28,7 @@ import {
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { WorkoutWithDetails, Exercise } from '../../types';
 import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
+import { weightOptional, weightRequired } from '../../lib/loggingType';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Toast } from '../../components/Toast';
@@ -49,7 +50,7 @@ export default function WorkoutDetailScreen() {
   const [weight, setWeight] = useState('');
   const [duration, setDuration] = useState('');
   const [distance, setDistance] = useState('');
-  const [bodyweight, setBodyweight] = useState(false);
+  const [addedWeight, setAddedWeight] = useState(false);
   const [savingSet, setSavingSet] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
@@ -101,7 +102,7 @@ export default function WorkoutDetailScreen() {
     setWeight('');
     setDuration('');
     setDistance('');
-    setBodyweight(false);
+    setAddedWeight(false);
     setSetModalVisible(true);
   }
 
@@ -116,7 +117,7 @@ export default function WorkoutDetailScreen() {
     setSavingSet(true);
     setError(null);
     try {
-      const body: Record<string, number | boolean> = { completed: true };
+      const body: Record<string, number | boolean | null> = { completed: true };
       if (exercise.unit === 'weight_reps') {
         const r = parseInt(reps, 10);
         if (isNaN(r)) {
@@ -125,11 +126,34 @@ export default function WorkoutDetailScreen() {
           return;
         }
         body.reps = r;
-        body.weightKg = bodyweight ? 0 : parseFloat(weight);
-        if (!bodyweight && (isNaN(body.weightKg as number) || (body.weightKg as number) < 0)) {
-          setError('Enter valid weight');
-          setSavingSet(false);
-          return;
+        const lt = exercise.loggingType;
+        if (lt === 'bodyweight') {
+          body.weightKg = null;
+        } else if (weightRequired(lt)) {
+          const w = parseFloat(weight);
+          if (isNaN(w) || w <= 0) {
+            setError('Enter weight greater than 0');
+            setSavingSet(false);
+            return;
+          }
+          body.weightKg = w;
+        } else if (weightOptional(lt)) {
+          if (!addedWeight) {
+            body.weightKg = null;
+          } else {
+            const trimmed = weight.trim();
+            if (trimmed === '') {
+              body.weightKg = null;
+            } else {
+              const w = parseFloat(trimmed);
+              if (isNaN(w) || w < 0) {
+                setError('Enter valid weight or leave blank');
+                setSavingSet(false);
+                return;
+              }
+              body.weightKg = w === 0 ? null : w;
+            }
+          }
         }
       } else if (exercise.unit === 'time') {
         const d = parseInt(duration, 10);
@@ -287,8 +311,12 @@ export default function WorkoutDetailScreen() {
             {we.sets?.map((s) => (
               <View key={s.id} style={styles.setRow}>
                 <Text style={styles.setNum}>Set {s.setNumber}</Text>
-                {s.reps != null && s.weightKg != null && (
-                  <Text style={styles.setDetail}>{s.reps} reps × {s.weightKg} kg</Text>
+                {s.reps != null && we.exercise?.unit === 'weight_reps' && (
+                  <Text style={styles.setDetail}>
+                    {s.weightKg != null && s.weightKg > 0
+                      ? `${s.reps} reps × ${s.weightKg} kg`
+                      : `${s.reps} reps`}
+                  </Text>
                 )}
                 {s.durationSeconds != null && (
                   <Text style={styles.setDetail}>{s.durationSeconds}s</Text>
@@ -351,7 +379,18 @@ export default function WorkoutDetailScreen() {
                   onPress={() => handleAddExercise(item.id)}
                   disabled={addingExercise}
                 >
-                  <Text style={styles.pickerName}>{item.name}</Text>
+                  <View style={styles.pickerTitleRow}>
+                    <Text style={styles.pickerName}>{item.name}</Text>
+                    {item.loggingType === 'bodyweight' ? (
+                      <View style={styles.loggingBadge}>
+                        <Text style={styles.loggingBadgeText}>BW</Text>
+                      </View>
+                    ) : item.loggingType === 'weighted_or_bodyweight' ? (
+                      <View style={styles.loggingBadge}>
+                        <Text style={styles.loggingBadgeText}>BW+</Text>
+                      </View>
+                    ) : null}
+                  </View>
                   <Text style={styles.pickerMeta}>{formatExerciseCategoryType(item)}</Text>
                 </Pressable>
               )}
@@ -408,22 +447,33 @@ export default function WorkoutDetailScreen() {
                   keyboardType="number-pad"
                   placeholderTextColor={colors.textMuted}
                 />
-                <View style={styles.weightRow}>
-                  <Text style={styles.label}>Weight</Text>
-                  <View style={styles.bodyweightToggle}>
-                    <Text style={styles.bodyweightLabel}>Bodyweight</Text>
-                    <Switch
-                      value={bodyweight}
-                      onValueChange={setBodyweight}
-                      trackColor={{ false: colors.border, true: colors.accent }}
-                      thumbColor={bodyweight ? colors.primary : colors.white}
-                    />
-                  </View>
-                </View>
-                {!bodyweight && (
+                {selectedWe.exercise.loggingType !== 'bodyweight' &&
+                  weightOptional(selectedWe.exercise.loggingType) && (
+                    <View style={styles.weightRow}>
+                      <Text style={styles.label}>Load</Text>
+                      <View style={styles.bodyweightToggle}>
+                        <Text style={styles.bodyweightLabel}>Added weight</Text>
+                        <Switch
+                          value={addedWeight}
+                          onValueChange={(v) => {
+                            setAddedWeight(v);
+                            if (!v) setWeight('');
+                          }}
+                          trackColor={{ false: colors.border, true: colors.accent }}
+                          thumbColor={addedWeight ? colors.primary : colors.white}
+                        />
+                      </View>
+                    </View>
+                  )}
+                {(weightRequired(selectedWe.exercise.loggingType) ||
+                  (weightOptional(selectedWe.exercise.loggingType) && addedWeight)) && (
                   <TextInput
                     style={styles.input}
-                    placeholder="Add weight (kg)"
+                    placeholder={
+                      weightOptional(selectedWe.exercise.loggingType)
+                        ? 'Weight (kg), optional'
+                        : 'Add weight (kg)'
+                    }
                     value={weight}
                     onChangeText={setWeight}
                     keyboardType="decimal-pad"
@@ -577,7 +627,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  pickerName: { fontSize: 16, color: colors.textPrimary },
+  pickerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  pickerName: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, flex: 1 },
+  loggingBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: colors.backgroundDark,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  loggingBadgeText: { fontSize: 11, fontWeight: '600', color: colors.textMuted },
   pickerMeta: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
   pickerEmpty: { color: colors.textMuted, textAlign: 'center', padding: 24 },
   closeBtn: { marginTop: 16, padding: 12, alignItems: 'center' },

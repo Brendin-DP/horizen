@@ -24,9 +24,12 @@ import {
   createExerciseLog,
   addSetsBatchToExerciseLog,
   getExerciseMaxWeight,
+  getExerciseMaxReps,
+  getExerciseHistory,
 } from '../../lib/api';
 import type { Exercise } from '../../types';
 import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
+import { weightOptional, weightRequired } from '../../lib/loggingType';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -36,7 +39,49 @@ interface SetEntry {
   weight: string;
   duration: string;
   distance: string;
-  bodyweight: boolean;
+  /** For weighted_or_bodyweight: show weight field when true */
+  addedWeight: boolean;
+}
+
+function createEmptySet(_ex: Exercise): SetEntry {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    reps: '',
+    weight: '',
+    duration: '',
+    distance: '',
+    addedWeight: false,
+  };
+}
+
+/** Matches server max-reps: bodyweight sets (no weight), excluding a log. Falls back to history only if the request fails (e.g. older API without the route). */
+async function getPreviousMaxBodyweightReps(
+  memberId: string,
+  exerciseId: string,
+  excludeLogId: string,
+  token: string | null
+): Promise<number> {
+  try {
+    const { maxReps } = await getExerciseMaxReps(memberId, exerciseId, { excludeLogId }, token);
+    return maxReps ?? 0;
+  } catch {
+    // fall through
+  }
+  try {
+    const hist = await getExerciseHistory(memberId, exerciseId, token);
+    let max = 0;
+    for (const h of hist) {
+      if (h.logId === excludeLogId) continue;
+      for (const s of h.sets ?? []) {
+        if (s.reps != null && (s.weightKg == null || s.weightKg === 0)) {
+          if (s.reps > max) max = s.reps;
+        }
+      }
+    }
+    return max;
+  } catch {
+    return 0;
+  }
 }
 
 export default function LogExerciseScreen() {
@@ -48,12 +93,15 @@ export default function LogExerciseScreen() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [search, setSearch] = useState('');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
-  const [sets, setSets] = useState<SetEntry[]>([{ id: '1', reps: '', weight: '', duration: '', distance: '', bodyweight: false }]);
+  const [sets, setSets] = useState<SetEntry[]>([
+    { id: '1', reps: '', weight: '', duration: '', distance: '', addedWeight: false },
+  ]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [prWeightKg, setPrWeightKg] = useState<number>(0);
+  const [prKind, setPrKind] = useState<'weight' | 'reps'>('weight');
+  const [prValue, setPrValue] = useState(0);
   const confettiRef = useRef<ConfettiCannon>(null);
   const pendingNavigationRef = useRef<string | null>(null);
 
@@ -62,6 +110,7 @@ export default function LogExerciseScreen() {
       getExercise(exerciseId)
         .then((ex) => {
           setSelectedExercise(ex);
+          setSets([createEmptySet(ex)]);
           setStep('sets');
         })
         .catch(() => setError('Exercise not found'))
@@ -85,17 +134,8 @@ export default function LogExerciseScreen() {
   });
 
   function addSet() {
-    setSets((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        reps: '',
-        weight: '',
-        duration: '',
-        distance: '',
-        bodyweight: false,
-      },
-    ]);
+    if (!selectedExercise) return;
+    setSets((prev) => [...prev, createEmptySet(selectedExercise)]);
   }
 
   function removeSet(id: string) {
@@ -125,7 +165,7 @@ export default function LogExerciseScreen() {
       const setsPayload: Array<{
         setNumber: number;
         reps?: number;
-        weightKg?: number;
+        weightKg?: number | null;
         durationSeconds?: number;
         distanceMeters?: number;
         completed: boolean;
@@ -133,7 +173,7 @@ export default function LogExerciseScreen() {
 
       for (let i = 0; i < sets.length; i++) {
         const s = sets[i];
-        const body: Record<string, number | boolean> = { setNumber: i + 1, completed: true };
+        const body: Record<string, number | boolean | null> = { setNumber: i + 1, completed: true };
         if (exercise.unit === 'weight_reps') {
           const r = parseInt(s.reps, 10);
           if (isNaN(r)) {
@@ -142,11 +182,34 @@ export default function LogExerciseScreen() {
             return;
           }
           body.reps = r;
-          body.weightKg = s.bodyweight ? 0 : parseFloat(s.weight);
-          if (!s.bodyweight && (isNaN(body.weightKg as number) || (body.weightKg as number) < 0)) {
-            setError('Enter valid weight');
-            setSaving(false);
-            return;
+          const lt = exercise.loggingType;
+          if (lt === 'bodyweight') {
+            body.weightKg = null;
+          } else if (weightRequired(lt)) {
+            const w = parseFloat(s.weight);
+            if (isNaN(w) || w <= 0) {
+              setError('Enter weight greater than 0 for all sets');
+              setSaving(false);
+              return;
+            }
+            body.weightKg = w;
+          } else if (weightOptional(lt)) {
+            if (!s.addedWeight) {
+              body.weightKg = null;
+            } else {
+              const trimmed = s.weight.trim();
+              if (trimmed === '') {
+                body.weightKg = null;
+              } else {
+                const w = parseFloat(trimmed);
+                if (isNaN(w) || w < 0) {
+                  setError('Enter valid weight or leave blank for bodyweight');
+                  setSaving(false);
+                  return;
+                }
+                body.weightKg = w === 0 ? null : w;
+              }
+            }
           }
         } else if (exercise.unit === 'time') {
           const d = parseInt(s.duration, 10);
@@ -183,10 +246,13 @@ export default function LogExerciseScreen() {
 
       const targetRoute = exerciseId ? `/exercise/${exercise.id}` : '/(tabs)/exercises';
 
-      if (exercise.unit === 'weight_reps') {
+      if (exercise.unit === 'weight_reps' && exercise.loggingType !== 'bodyweight') {
         const weights = sets
-          .filter((s) => !s.bodyweight)
-          .map((s) => parseFloat(s.weight))
+          .map((s) => {
+            if (weightOptional(exercise.loggingType) && !s.addedWeight) return NaN;
+            const w = parseFloat(s.weight);
+            return w;
+          })
           .filter((w) => !isNaN(w) && w > 0);
         const newMax = weights.length > 0 ? Math.max(...weights) : 0;
 
@@ -206,7 +272,41 @@ export default function LogExerciseScreen() {
               weightKg: newMax,
             });
             pendingNavigationRef.current = targetRoute;
-            setPrWeightKg(newMax);
+            setPrKind('weight');
+            setPrValue(newMax);
+            setSuccessModalVisible(true);
+            InteractionManager.runAfterInteractions(() => {
+              setTimeout(() => confettiRef.current?.start(), 80);
+            });
+          } else {
+            router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
+          }
+        } else {
+          router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
+        }
+      } else if (exercise.unit === 'weight_reps' && exercise.loggingType === 'bodyweight') {
+        const repVals = sets
+          .map((s) => parseInt(s.reps, 10))
+          .filter((n) => !isNaN(n) && n > 0);
+        const newMaxReps = repVals.length > 0 ? Math.max(...repVals) : 0;
+
+        if (newMaxReps > 0) {
+          const prev = await getPreviousMaxBodyweightReps(
+            member.id,
+            exercise.id,
+            log.id,
+            token
+          );
+
+          if (newMaxReps > prev) {
+            posthog?.capture('personal_best_achieved', {
+              exerciseId: exercise.id,
+              exerciseName: exercise.name,
+              reps: newMaxReps,
+            });
+            pendingNavigationRef.current = targetRoute;
+            setPrKind('reps');
+            setPrValue(newMaxReps);
             setSuccessModalVisible(true);
             InteractionManager.runAfterInteractions(() => {
               setTimeout(() => confettiRef.current?.start(), 80);
@@ -259,10 +359,22 @@ export default function LogExerciseScreen() {
               style={styles.pickerRow}
               onPress={() => {
                 setSelectedExercise(item);
+                setSets([createEmptySet(item)]);
                 setStep('sets');
               }}
             >
-              <Text style={styles.pickerName}>{item.name}</Text>
+              <View style={styles.pickerTitleRow}>
+                <Text style={styles.pickerName}>{item.name}</Text>
+                {item.loggingType === 'bodyweight' ? (
+                  <View style={styles.loggingBadge}>
+                    <Text style={styles.loggingBadgeText}>BW</Text>
+                  </View>
+                ) : item.loggingType === 'weighted_or_bodyweight' ? (
+                  <View style={styles.loggingBadge}>
+                    <Text style={styles.loggingBadgeText}>BW+</Text>
+                  </View>
+                ) : null}
+              </View>
               <Text style={styles.pickerMeta}>{formatExerciseCategoryType(item)}</Text>
             </Pressable>
           )}
@@ -309,19 +421,32 @@ export default function LogExerciseScreen() {
                   keyboardType="number-pad"
                   placeholderTextColor={colors.textMuted}
                 />
-                <View style={styles.bodyweightRow}>
-                  <Text style={styles.bodyweightLabel}>Bodyweight</Text>
-                  <Switch
-                    value={s.bodyweight}
-                    onValueChange={(v) => updateSet(s.id, 'bodyweight', v)}
-                    trackColor={{ false: colors.border, true: colors.accent }}
-                    thumbColor={s.bodyweight ? colors.primary : colors.white}
-                  />
-                </View>
-                {!s.bodyweight && (
+                {exercise.loggingType === 'bodyweight' && sets[0]?.id === s.id ? (
+                  <Text style={styles.bodyweightHint}>
+                    Bodyweight only—log your reps. No added weight for this exercise.
+                  </Text>
+                ) : null}
+                {exercise.loggingType !== 'bodyweight' && weightOptional(exercise.loggingType) && (
+                  <View style={styles.bodyweightRow}>
+                    <Text style={styles.bodyweightLabel}>Added weight</Text>
+                    <Switch
+                      value={s.addedWeight}
+                      onValueChange={(v) => {
+                        updateSet(s.id, 'addedWeight', v);
+                        if (!v) updateSet(s.id, 'weight', '');
+                      }}
+                      trackColor={{ false: colors.border, true: colors.accent }}
+                      thumbColor={s.addedWeight ? colors.primary : colors.white}
+                    />
+                  </View>
+                )}
+                {(weightRequired(exercise.loggingType) ||
+                  (weightOptional(exercise.loggingType) && s.addedWeight)) && (
                   <TextInput
                     style={styles.input}
-                    placeholder="Weight (kg)"
+                    placeholder={
+                      weightOptional(exercise.loggingType) ? 'Weight (kg), optional' : 'Weight (kg)'
+                    }
                     value={s.weight}
                     onChangeText={(v) => updateSet(s.id, 'weight', v)}
                     keyboardType="decimal-pad"
@@ -381,9 +506,13 @@ export default function LogExerciseScreen() {
             <View style={styles.successIconCircle}>
               <Ionicons name="trophy-outline" size={40} color={colors.primary} />
             </View>
-            <Text style={styles.successTitle}>Record Broken!</Text>
+            <Text style={styles.successTitle}>
+              {prKind === 'reps' ? 'Rep record!' : 'Record Broken!'}
+            </Text>
             <Text style={styles.successSub}>
-              That's your heaviest {exercise.name} yet! {prWeightKg}kg
+              {prKind === 'weight'
+                ? `That's your heaviest ${exercise.name} yet! ${prValue}kg`
+                : `That's your best ${exercise.name} set yet — ${prValue} reps.`}
             </Text>
             <Pressable style={styles.successOkay} onPress={handlePrModalOkay}>
               <Text style={styles.successOkayText}>Okay</Text>
@@ -424,7 +553,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  pickerName: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  pickerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  pickerName: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, flex: 1 },
+  loggingBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: colors.backgroundDark,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  loggingBadgeText: { fontSize: 11, fontWeight: '600', color: colors.textMuted },
   pickerMeta: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
   empty: { padding: 24, color: colors.textMuted, textAlign: 'center' },
   scroll: { flex: 1 },
@@ -450,6 +594,13 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 16,
     marginBottom: 12,
+  },
+  bodyweightHint: {
+    fontSize: 13,
+    color: colors.textMuted,
+    lineHeight: 18,
+    marginBottom: 12,
+    marginTop: -4,
   },
   bodyweightRow: {
     flexDirection: 'row',

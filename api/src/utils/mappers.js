@@ -67,6 +67,7 @@ export function mapExercise(row) {
     muscleGroups: row.muscle_groups ?? [],
     equipment: row.equipment ?? null,
     unit: row.unit ?? null,
+    loggingType: row.logging_type ?? 'weighted',
     createdAt: row.created_at ?? null,
   };
 }

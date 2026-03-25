@@ -49,6 +49,16 @@ function sessionBestFromSets(sets: LogSet[] | undefined): { reps: number; weight
   return best;
 }
 
+function sessionMaxReps(sets: LogSet[] | undefined): number | undefined {
+  let best: number | undefined;
+  for (const s of sets ?? []) {
+    if (s.reps != null) {
+      if (best == null || s.reps > best) best = s.reps;
+    }
+  }
+  return best;
+}
+
 export default function ExercisesScreen() {
   const posthog = usePostHog();
   const { member, token } = useAuth();
@@ -168,6 +178,24 @@ export default function ExercisesScreen() {
           }
           renderItem={({ item }) => {
             const sessionPb = sessionBestFromSets(item.sets);
+            const maxReps = sessionMaxReps(item.sets);
+            const lt = item.exercise?.loggingType ?? 'weighted';
+            let metaLine = '';
+            if (item.exercise?.unit === 'time' || item.exercise?.unit === 'distance') {
+              metaLine = 'See history';
+            } else if (lt === 'bodyweight') {
+              metaLine = maxReps != null ? `${maxReps} reps` : 'No sets yet';
+            } else if (lt === 'weighted') {
+              metaLine = sessionPb
+                ? `${sessionPb.reps} reps @ ${sessionPb.weightKg}kg`
+                : 'No sets yet';
+            } else {
+              metaLine = sessionPb
+                ? `${sessionPb.reps} reps @ ${sessionPb.weightKg}kg`
+                : maxReps != null
+                  ? `${maxReps} reps (bodyweight)`
+                  : 'No sets yet';
+            }
             return (
             <Swipeable
               renderRightActions={() => renderRightActions(item)}
@@ -181,13 +209,7 @@ export default function ExercisesScreen() {
                   <Text style={styles.cardName}>{item.exercise?.name ?? 'Exercise'}</Text>
                   <View style={styles.cardMetaRow}>
                     <Ionicons name="trophy-outline" size={16} color={colors.textMuted} style={styles.cardMetaIcon} />
-                    <Text style={styles.cardMeta}>
-                      {item.exercise?.unit === 'time' || item.exercise?.unit === 'distance'
-                        ? 'See history'
-                        : sessionPb
-                          ? `${sessionPb.reps} reps @ ${sessionPb.weightKg}kg`
-                          : 'No sets yet'}
-                    </Text>
+                    <Text style={styles.cardMeta}>{metaLine}</Text>
                   </View>
                 </View>
                 <View style={styles.chevronWrap}>
