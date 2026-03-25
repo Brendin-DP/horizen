@@ -13,19 +13,18 @@ interface MemberWithStars extends Member {
   starCount: number;
 }
 
-export default function Users() {
+/** Back-office admin accounts only. */
+export default function Admins() {
   const { token } = useAuth();
-  const [users, setUsers] = useState<MemberWithStars[]>([]);
+  const [admins, setAdmins] = useState<MemberWithStars[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<MemberWithStars | null>(null);
   const [formName, setFormName] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [formPassword, setFormPassword] = useState('');
-  const [formRole, setFormRole] = useState<'member' | 'instructor' | 'admin'>('member');
   const [formPlan, setFormPlan] = useState('free');
   const [formExpires, setFormExpires] = useState('');
   const [saving, setSaving] = useState(false);
@@ -34,27 +33,25 @@ export default function Users() {
     if (!token) return;
     setError('');
     try {
-      const opts: { role?: string } = {};
-      if (roleFilter) opts.role = roleFilter;
-      const [allMembers, leaderboard] = await Promise.all([
-        getMembers(token, opts),
+      const [adminRows, leaderboard] = await Promise.all([
+        getMembers(token, { role: 'admin' }),
         getLeaderboard(token),
       ]);
       const starMap = new Map<string, number>();
       for (const e of leaderboard) {
         starMap.set(e.memberId, e.starCount);
       }
-      const merged: MemberWithStars[] = allMembers.map((m) => ({
+      const merged: MemberWithStars[] = adminRows.map((m) => ({
         ...m,
         starCount: starMap.get(m.id) ?? 0,
       }));
-      setUsers(merged);
+      setAdmins(merged);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load');
     } finally {
       setLoading(false);
     }
-  }, [token, roleFilter]);
+  }, [token]);
 
   useEffect(() => {
     fetchData();
@@ -64,7 +61,6 @@ export default function Users() {
     setFormName('');
     setFormEmail('');
     setFormPassword('');
-    setFormRole('member');
     setFormPlan('free');
     setFormExpires('');
     setAddModalOpen(true);
@@ -73,9 +69,6 @@ export default function Users() {
 
   function openEditModal(u: MemberWithStars) {
     setSelectedUser(u);
-    setFormName(u.name);
-    setFormEmail(u.email);
-    setFormRole(u.role);
     setFormPlan(u.plan || 'free');
     setFormExpires(u.planExpiresAt ? u.planExpiresAt.slice(0, 10) : '');
     setEditModalOpen(true);
@@ -96,13 +89,13 @@ export default function Users() {
     setError('');
     try {
       await createMember(
-        { name: formName.trim(), email: formEmail.trim(), password: formPassword, role: formRole },
+        { name: formName.trim(), email: formEmail.trim(), password: formPassword, role: 'admin' },
         token
       );
       setAddModalOpen(false);
       fetchData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create user');
+      setError(err instanceof Error ? err.message : 'Failed to create admin');
     } finally {
       setSaving(false);
     }
@@ -115,14 +108,14 @@ export default function Users() {
     try {
       await updateMember(
         selectedUser.id,
-        { role: formRole, plan: formPlan, planExpiresAt: formExpires.trim() || null },
+        { role: 'admin', plan: formPlan, planExpiresAt: formExpires.trim() || null },
         token
       );
       setEditModalOpen(false);
       setSelectedUser(null);
       fetchData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update user');
+      setError(err instanceof Error ? err.message : 'Failed to update admin');
     } finally {
       setSaving(false);
     }
@@ -186,42 +179,28 @@ export default function Users() {
           gap: 16,
         }}
       >
-        <h1 style={{ margin: 0, fontSize: 24, color: colors.textPrimary }}>User Management</h1>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: `1px solid ${colors.border}`,
-              borderRadius: 8,
-              fontSize: 14,
-              minWidth: 120,
-            }}
-          >
-            <option value="">All roles</option>
-            <option value="member">Member</option>
-            <option value="instructor">Instructor</option>
-            <option value="admin">Admin</option>
-          </select>
-          <button
-            type="button"
-            onClick={openAddModal}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: colors.primary,
-              color: colors.white,
-              border: 'none',
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: 'pointer',
-            }}
-          >
-            Add User
-          </button>
-        </div>
+        <h1 style={{ margin: 0, fontSize: 24, color: colors.textPrimary }}>Admins</h1>
+        <button
+          type="button"
+          onClick={openAddModal}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: colors.primary,
+            color: colors.white,
+            border: 'none',
+            borderRadius: 8,
+            fontWeight: 600,
+            fontSize: 14,
+            cursor: 'pointer',
+          }}
+        >
+          Add Admin
+        </button>
       </div>
+      <p style={{ margin: '0 0 16px', fontSize: 14, color: colors.textMuted, maxWidth: 560 }}>
+        Back-office accounts with admin access. Use{' '}
+        <strong style={{ color: colors.textPrimary }}>User Management</strong> for members and instructors.
+      </p>
       {error && !addModalOpen && !editModalOpen && (
         <div
           style={{
@@ -237,8 +216,8 @@ export default function Users() {
         </div>
       )}
       {loading ? (
-        <p style={{ color: colors.textMuted }}>Loading users...</p>
-      ) : users.length === 0 ? (
+        <p style={{ color: colors.textMuted }}>Loading admins...</p>
+      ) : admins.length === 0 ? (
         <div
           style={{
             padding: 48,
@@ -248,7 +227,7 @@ export default function Users() {
             border: `1px solid ${colors.border}`,
           }}
         >
-          <p style={{ color: colors.textMuted }}>No users found.</p>
+          <p style={{ color: colors.textMuted }}>No admin accounts yet.</p>
         </div>
       ) : (
         <table style={tableStyle}>
@@ -256,7 +235,6 @@ export default function Users() {
             <tr style={{ backgroundColor: colors.backgroundDark }}>
               <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>Name</th>
               <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>Email</th>
-              <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>Role</th>
               <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>Plan</th>
               <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>Expires</th>
               <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>Joined</th>
@@ -265,34 +243,10 @@ export default function Users() {
             </tr>
           </thead>
           <tbody>
-            {users.map((u) => (
+            {admins.map((u) => (
               <tr key={u.id} style={{ borderTop: `1px solid ${colors.border}` }}>
                 <td style={{ padding: 12 }}>{u.name}</td>
                 <td style={{ padding: 12, color: colors.textMuted }}>{u.email}</td>
-                <td style={{ padding: 12 }}>
-                  <span
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: 6,
-                      fontSize: 12,
-                      fontWeight: 500,
-                      backgroundColor:
-                        u.role === 'admin'
-                          ? colors.accent
-                          : u.role === 'instructor'
-                            ? '#e0f2fe'
-                            : '#f1f5f9',
-                      color:
-                        u.role === 'admin'
-                          ? colors.primary
-                          : u.role === 'instructor'
-                            ? '#0369a1'
-                            : colors.textSecondary,
-                    }}
-                  >
-                    {u.role}
-                  </span>
-                </td>
                 <td style={{ padding: 12 }}>{u.plan || 'free'}</td>
                 <td style={{ padding: 12 }}>{formatDate(u.planExpiresAt)}</td>
                 <td style={{ padding: 12 }}>{formatDate(u.createdAt)}</td>
@@ -320,11 +274,10 @@ export default function Users() {
         </table>
       )}
 
-      {/* Add User Modal */}
       {addModalOpen && (
         <div style={modalOverlay} onClick={() => !saving && setAddModalOpen(false)}>
           <div style={modalContent} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 20px' }}>Add User</h3>
+            <h3 style={{ margin: '0 0 20px' }}>Add Admin</h3>
             {error && (
               <div
                 style={{
@@ -363,16 +316,6 @@ export default function Users() {
               placeholder="Min 6 characters"
               style={inputStyle}
             />
-            <label style={labelStyle}>Role</label>
-            <select
-              value={formRole}
-              onChange={(e) => setFormRole(e.target.value as 'member' | 'instructor' | 'admin')}
-              style={inputStyle}
-            >
-              <option value="member">Member</option>
-              <option value="instructor">Instructor</option>
-              <option value="admin">Admin</option>
-            </select>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
               <button
                 type="button"
@@ -409,11 +352,10 @@ export default function Users() {
         </div>
       )}
 
-      {/* Edit User Modal */}
       {editModalOpen && selectedUser && (
         <div style={modalOverlay} onClick={() => !saving && setEditModalOpen(false)}>
           <div style={modalContent} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 20px' }}>Edit User — {selectedUser.name}</h3>
+            <h3 style={{ margin: '0 0 20px' }}>Edit Admin — {selectedUser.name}</h3>
             {error && (
               <div
                 style={{
@@ -428,16 +370,6 @@ export default function Users() {
                 {error}
               </div>
             )}
-            <label style={labelStyle}>Role</label>
-            <select
-              value={formRole}
-              onChange={(e) => setFormRole(e.target.value as 'member' | 'instructor' | 'admin')}
-              style={inputStyle}
-            >
-              <option value="member">Member</option>
-              <option value="instructor">Instructor</option>
-              <option value="admin">Admin</option>
-            </select>
             <label style={labelStyle}>Plan</label>
             <select value={formPlan} onChange={(e) => setFormPlan(e.target.value)} style={inputStyle}>
               <option value="free">Free</option>

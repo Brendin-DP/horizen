@@ -201,3 +201,42 @@ export async function updateFund(
   }
   return res.json();
 }
+
+export type ExerciseLoggingType = 'weighted' | 'bodyweight' | 'weighted_or_bodyweight';
+
+export interface Exercise {
+  id: string;
+  name: string;
+  category: string | null;
+  type?: string | null;
+  muscleGroups: string[];
+  equipment: string | null;
+  unit: string | null;
+  loggingType: ExerciseLoggingType;
+  createdAt: string | null;
+}
+
+export async function getExercises(_token?: string | null): Promise<Exercise[]> {
+  const res = await fetch(`${BASE_URL}/exercises`, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) throw new Error('Failed to fetch exercises');
+  return res.json();
+}
+
+export async function updateExerciseLoggingType(
+  exerciseId: string,
+  loggingType: ExerciseLoggingType,
+  token: string
+): Promise<Exercise> {
+  const res = await fetch(`${BASE_URL}/exercises/${encodeURIComponent(exerciseId)}`, {
+    method: 'PATCH',
+    headers: headersWithAuth(token),
+    body: JSON.stringify({ loggingType }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to update exercise');
+  }
+  return res.json();
+}

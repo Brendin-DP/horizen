@@ -42,17 +42,17 @@ export default function Layout() {
           <NavLink to="/dashboard" style={navStyle}>
             Dashboard
           </NavLink>
-          <NavLink to="/members" style={navStyle}>
-            Members
-          </NavLink>
           <NavLink to="/users" style={navStyle}>
-            Users
+            User Management
+          </NavLink>
+          <NavLink to="/admins" style={navStyle}>
+            Admins
           </NavLink>
           <NavLink to="/plans-features" style={navStyle}>
             Plans & Features
           </NavLink>
-          <NavLink to="/fund" style={navStyle}>
-            Fund
+          <NavLink to="/exercises" style={navStyle}>
+            Exercise Management
           </NavLink>
         </nav>
         </div>
