@@ -132,6 +132,30 @@ export async function updateProfile(
   return res.json();
 }
 
+export async function changePassword(
+  {
+    currentPassword,
+    newPassword,
+  }: {
+    currentPassword: string;
+    newPassword: string;
+  },
+  token?: string | null
+): Promise<void> {
+  const res = await fetchApi('/members/me/password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword }),
+    token,
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+    const msg = err.detail
+      ? `${err.error || 'Failed to change password'}: ${err.detail}`
+      : err.error || 'Failed to change password';
+    throw new Error(msg);
+  }
+}
+
 export async function uploadAvatar(uri: string, token: string | null): Promise<Member> {
   const formData = new FormData();
   formData.append('avatar', {

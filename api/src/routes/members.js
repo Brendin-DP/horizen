@@ -1,5 +1,6 @@
 import express from 'express';
 import multer from 'multer';
+import bcrypt from 'bcryptjs';
 import supabase from '../db.js';
 import { toPublicMember } from '../utils/members.js';
 import { mapMember, mapStarAward, mapSet } from '../utils/mappers.js';
@@ -8,6 +9,8 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 import { limit } from '../config/features.js';
 
 const router = express.Router();
+const PASSWORD_SALT_ROUNDS = 10;
+const MIN_NEW_PASSWORD_LENGTH = 8;
 
 /**
  * Per-log best set for exercise logs, using logging_type when unit is weight_reps.
@@ -153,6 +156,46 @@ router.patch('/me', requireAuth, async (req, res) => {
   }
   if (!updated) return res.status(404).json({ error: 'Member not found' });
   res.json(toPublicMember(mapMember(updated)));
+});
+
+router.post('/me/password', requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current password and new password are required' });
+  }
+  if (typeof newPassword !== 'string' || newPassword.length < MIN_NEW_PASSWORD_LENGTH) {
+    return res.status(400).json({
+      error: `New password must be at least ${MIN_NEW_PASSWORD_LENGTH} characters`,
+    });
+  }
+  if (newPassword === currentPassword) {
+    return res.status(400).json({ error: 'New password must be different from your current password' });
+  }
+  const { data: row, error: fetchErr } = await supabase
+    .from('members')
+    .select('password_hash')
+    .eq('id', req.member.id)
+    .single();
+  if (fetchErr || !row) {
+    return res.status(404).json({ error: 'Member not found' });
+  }
+  if (!row.password_hash) {
+    return res.status(400).json({ error: 'Password change is not available for this account' });
+  }
+  const valid = await bcrypt.compare(currentPassword, row.password_hash);
+  if (!valid) {
+    return res.status(401).json({ error: 'Current password is incorrect' });
+  }
+  const passwordHash = await bcrypt.hash(newPassword, PASSWORD_SALT_ROUNDS);
+  const { error: upErr } = await supabase
+    .from('members')
+    .update({ password_hash: passwordHash })
+    .eq('id', req.member.id);
+  if (upErr) {
+    console.error(upErr);
+    return res.status(500).json({ error: 'Database error', detail: upErr.message });
+  }
+  res.json({ ok: true });
 });
 
 router.post('/me/avatar', requireAuth, upload.single('avatar'), async (req, res) => {

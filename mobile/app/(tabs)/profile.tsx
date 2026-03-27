@@ -139,6 +139,10 @@ export default function ProfileScreen() {
       router.push('/privacy');
       return;
     }
+    if (key === 'account') {
+      router.push('/account');
+      return;
+    }
     showComingSoon();
   }
 
