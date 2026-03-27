@@ -821,10 +821,9 @@ const styles = StyleSheet.create({
   },
   addSetModalTitle: {
     fontSize: 18,
-    fontWeight: '600',
     color: colors.textPrimary,
     marginBottom: 12,
-    fontFamily: typography.headingSemibold,
+    fontFamily: typography.heading,
   },
   modalErrorText: {
     color: colors.primary,
@@ -892,9 +891,9 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
     color: colors.textPrimary,
     marginBottom: 8,
+    fontFamily: typography.heading,
   },
   successSub: {
     fontSize: 14,

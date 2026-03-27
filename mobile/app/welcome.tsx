@@ -20,7 +20,7 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { SHOW_WORKOUTS } from '../lib/featureFlags';
-import { colors } from '../constants/theme';
+import { colors, typography } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
@@ -182,8 +182,8 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 24,
-    fontWeight: 'bold',
     color: colors.textPrimary,
+    fontFamily: typography.heading,
   },
   sub: {
     fontSize: 16,

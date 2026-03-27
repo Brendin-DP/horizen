@@ -163,10 +163,9 @@ const styles = StyleSheet.create({
   block: { marginBottom: 28 },
   sectionTitle: {
     fontSize: 17,
-    fontWeight: '600',
     color: colors.textPrimary,
     marginBottom: 10,
-    fontFamily: typography.headingSemibold,
+    fontFamily: typography.heading,
   },
   paragraph: {
     fontSize: 15,

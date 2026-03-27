@@ -440,10 +440,9 @@ const styles = StyleSheet.create({
   sectionSpaced: { marginTop: 24 },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
     color: colors.textPrimary,
     marginBottom: 24,
-    fontFamily: typography.headingSemibold,
+    fontFamily: typography.heading,
   },
   card: {
     backgroundColor: colors.white,

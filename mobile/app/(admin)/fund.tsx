@@ -13,7 +13,7 @@ import {
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { getFund, updateFund } from '../../lib/api';
-import { colors } from '../../constants/theme';
+import { colors, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AdminFundScreen() {
@@ -149,7 +149,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: colors.textPrimary, flex: 1 },
+  headerTitle: {
+    fontSize: 20,
+    color: colors.textPrimary,
+    flex: 1,
+    fontFamily: typography.heading,
+  },
   avatar: {
     width: 36,
     height: 36,
@@ -168,7 +173,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  cardTitle: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
+  cardTitle: { fontSize: 18, color: colors.textPrimary, fontFamily: typography.heading },
   cardDesc: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
   row: {
     flexDirection: 'row',

@@ -13,7 +13,7 @@ import {
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { getMembers, getLeaderboard, awardStar, type Member, type LeaderboardEntry } from '../../lib/api';
-import { colors } from '../../constants/theme';
+import { colors, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 function getInitials(name: string): string {
@@ -230,7 +230,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: colors.textPrimary, flex: 1 },
+  headerTitle: {
+    fontSize: 20,
+    color: colors.textPrimary,
+    flex: 1,
+    fontFamily: typography.heading,
+  },
   avatar: {
     width: 36,
     height: 36,
@@ -268,7 +273,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 48,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, marginTop: 16 },
+  emptyTitle: {
+    fontSize: 18,
+    color: colors.textPrimary,
+    marginTop: 16,
+    fontFamily: typography.heading,
+  },
   emptyText: { fontSize: 14, color: colors.textMuted, marginTop: 8, textAlign: 'center' },
   row: {
     flexDirection: 'row',
@@ -320,7 +330,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  modalTitle: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, marginBottom: 16 },
+  modalTitle: {
+    fontSize: 18,
+    color: colors.textPrimary,
+    marginBottom: 16,
+    fontFamily: typography.heading,
+  },
   modalLabel: { fontSize: 14, fontWeight: '500', color: colors.textSecondary, marginBottom: 8 },
   input: {
     backgroundColor: colors.backgroundDark,

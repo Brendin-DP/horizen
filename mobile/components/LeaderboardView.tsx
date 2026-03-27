@@ -462,9 +462,9 @@ const styles = StyleSheet.create({
   },
   comingSoonTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
     color: colors.textPrimary,
     marginBottom: 8,
+    fontFamily: typography.heading,
   },
   comingSoonMessage: {
     fontSize: 15,

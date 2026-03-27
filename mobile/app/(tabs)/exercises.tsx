@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   titleRowText: {
     fontSize: 22,
     color: colors.textPrimary,
-    fontFamily: typography.headingSemibold,
+    fontFamily: typography.heading,
   },
   listContainer: { flex: 1 },
   addCtaContainer: {

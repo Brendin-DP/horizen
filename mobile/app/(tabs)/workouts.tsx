@@ -335,7 +335,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  cardName: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
+  cardName: {
+    fontSize: 18,
+    color: colors.textPrimary,
+    fontFamily: typography.headingMedium,
+  },
   cardDate: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
   cardMeta: { flexDirection: 'row', marginTop: 8 },
   badge: {

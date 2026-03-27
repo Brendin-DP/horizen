@@ -29,7 +29,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import type { WorkoutWithDetails, Exercise } from '../../types';
 import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
 import { weightOptional, weightRequired } from '../../lib/loggingType';
-import { colors } from '../../constants/theme';
+import { colors, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Toast } from '../../components/Toast';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
@@ -700,7 +700,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  emptyTitle: { fontSize: 22, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 8 },
+  emptyTitle: {
+    fontSize: 22,
+    color: colors.textPrimary,
+    marginBottom: 8,
+    fontFamily: typography.heading,
+  },
   emptyText: {
     fontSize: 14,
     color: colors.textMuted,
@@ -743,9 +748,9 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
     color: colors.textPrimary,
     marginBottom: 8,
+    fontFamily: typography.heading,
   },
   successSub: {
     fontSize: 14,

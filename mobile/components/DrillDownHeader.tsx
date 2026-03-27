@@ -57,9 +57,8 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '600',
     color: colors.textPrimary,
     textAlign: 'center',
-    fontFamily: typography.headingSemibold,
+    fontFamily: typography.heading,
   },
 });

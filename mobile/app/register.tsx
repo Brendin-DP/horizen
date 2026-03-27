@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
-import { colors } from '../constants/theme';
+import { colors, typography } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RegisterScreen() {
@@ -144,8 +144,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
     color: colors.textPrimary,
+    fontFamily: typography.heading,
   },
   subtitle: {
     fontSize: 14,

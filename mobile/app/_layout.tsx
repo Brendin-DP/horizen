@@ -4,7 +4,12 @@ import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as ExpoSplashScreen from 'expo-splash-screen';
-import { useFonts, Montserrat_700Bold, Montserrat_600SemiBold } from '@expo-google-fonts/montserrat';
+import {
+  useFonts,
+  Montserrat_700Bold,
+  Montserrat_600SemiBold,
+  Montserrat_500Medium,
+} from '@expo-google-fonts/montserrat';
 import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
@@ -31,6 +36,7 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Montserrat_700Bold,
     Montserrat_600SemiBold,
+    Montserrat_500Medium,
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,

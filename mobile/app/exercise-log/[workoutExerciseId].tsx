@@ -18,7 +18,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { getWorkoutExercise, addSet } from '../../lib/api';
 import type { WorkoutExercise } from '../../types';
-import { colors } from '../../constants/theme';
+import { colors, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 
@@ -390,9 +390,9 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
     color: colors.textPrimary,
     marginBottom: 8,
+    fontFamily: typography.heading,
   },
   successSub: {
     fontSize: 14,
