@@ -178,7 +178,7 @@ export default function EditLogScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <DrillDownHeader title={`Edit: ${exercise.name}`} onBack={() => router.back()} />
+      <DrillDownHeader title={`Edit ${exercise.name}`} onBack={() => router.back()} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {error && <Text style={styles.error}>{error}</Text>}

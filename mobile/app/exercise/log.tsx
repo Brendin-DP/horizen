@@ -509,7 +509,7 @@ export default function LogExerciseScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <DrillDownHeader
-        title={`Log: ${exercise.name}`}
+        title={`Log ${exercise.name}`}
         onBack={() => (exerciseId ? router.back() : setStep('pick'))}
       />
 
