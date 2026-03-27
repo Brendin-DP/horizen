@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { DrillDownHeader } from '../../../components/DrillDownHeader';
 import { useAuth } from '../../../contexts/AuthContext';
 import {
   getExerciseLog,
@@ -177,12 +178,7 @@ export default function EditLogScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
-        <Text style={styles.title}>Edit: {exercise.name}</Text>
-      </View>
+      <DrillDownHeader title={`Edit: ${exercise.name}`} onBack={() => router.back()} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {error && <Text style={styles.error}>{error}</Text>}
@@ -277,17 +273,6 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   loadingText: { color: colors.textMuted, marginTop: 12 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: { paddingRight: 16 },
-  backText: { color: colors.primary, fontSize: 16 },
-  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 32 },
   error: { color: colors.primary, marginBottom: 16 },

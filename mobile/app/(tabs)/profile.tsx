@@ -68,7 +68,6 @@ function ProfileV2Content({
   return (
     <>
       <View style={styles.titleRow}>
-        <Ionicons name="person-outline" size={24} color={colors.primary} />
         <Text style={styles.screenTitle}>Profile</Text>
       </View>
 
@@ -191,9 +190,6 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   container: { flexGrow: 1, padding: 24 },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     marginBottom: 24,
   },
   screenTitle: {

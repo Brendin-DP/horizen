@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors, typography } from '../constants/theme';
+import { DrillDownHeader } from '../components/DrillDownHeader';
 
 const SECTIONS: { title: string; body: string[] }[] = [
   {
@@ -116,15 +116,7 @@ export default function PrivacyScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          Privacy
-        </Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <DrillDownHeader title="Privacy" onBack={() => router.back()} />
 
       <ScrollView
         style={styles.scroll}
@@ -154,25 +146,6 @@ export default function PrivacyScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.backgroundDark },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: { padding: 8 },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    textAlign: 'center',
-    fontFamily: typography.headingSemibold,
-  },
-  headerSpacer: { width: 40 },
   scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 40 },
   docTitle: {

@@ -32,6 +32,7 @@ import { weightOptional, weightRequired } from '../../lib/loggingType';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Toast } from '../../components/Toast';
+import { DrillDownHeader } from '../../components/DrillDownHeader';
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -252,13 +253,11 @@ export default function WorkoutDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
-      </View>
+      <DrillDownHeader
+        title={workout.name || 'Workout'}
+        onBack={() => router.back()}
+      />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>{workout.name || 'Untitled Workout'}</Text>
         <Text style={styles.status}>{workout.status === 'completed' ? 'Completed' : 'In progress'}</Text>
 
         {error && <Text style={styles.error}>{error}</Text>}
@@ -533,9 +532,6 @@ export default function WorkoutDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn: { paddingVertical: 8, paddingRight: 16 },
-  backText: { color: colors.primary, fontSize: 16 },
   center: {
     flex: 1,
     backgroundColor: colors.background,
@@ -546,7 +542,6 @@ const styles = StyleSheet.create({
   loadingText: { color: colors.textMuted, marginTop: 12 },
   scroll: { flex: 1 },
   scrollContent: { padding: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', color: colors.textPrimary },
   status: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
   error: { color: colors.primary, marginTop: 12 },
   exerciseBlock: {

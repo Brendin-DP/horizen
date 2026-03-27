@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { DrillDownHeader } from '../../components/DrillDownHeader';
 import { useAuth } from '../../contexts/AuthContext';
 import { getExerciseLog } from '../../lib/api';
 import type { Exercise, ExerciseLog, Set } from '../../types';
@@ -79,21 +79,19 @@ export default function LogDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeOuter} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {exercise.name}
-        </Text>
-        <Pressable
-          onPress={() => router.push(`/log/edit/${log.id}`)}
-          hitSlop={8}
-          style={styles.editLink}
-        >
-          <Text style={styles.editLinkText}>Edit</Text>
-        </Pressable>
-      </View>
+      <DrillDownHeader
+        title={exercise.name}
+        onBack={() => router.back()}
+        right={
+          <Pressable
+            onPress={() => router.push(`/log/edit/${log.id}`)}
+            hitSlop={8}
+            style={styles.editLink}
+          >
+            <Text style={styles.editLinkText}>Edit</Text>
+          </Pressable>
+        }
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -101,7 +99,6 @@ export default function LogDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.titleRow}>
-          <Ionicons name="barbell-outline" size={24} color={colors.primary} />
           <Text style={styles.titleRowText}>Sets</Text>
         </View>
         <Text style={styles.subtitle}>
@@ -137,31 +134,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundDark,
   },
   loadingText: { color: colors.textMuted, marginTop: 12 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: shell.header,
-  },
-  backBtn: { paddingRight: 16 },
-  headerTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    fontFamily: typography.headingSemibold,
-  },
-  editLink: { paddingVertical: 4, paddingLeft: 8 },
+  editLink: { paddingVertical: 4 },
   editLinkText: { color: colors.primary, fontSize: 16, fontWeight: '600', fontFamily: typography.bodySemibold },
   scroll: { flex: 1, backgroundColor: shell.body },
-  scrollContent: { padding: 16, paddingBottom: 32 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 32 },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     marginBottom: 8,
   },
   titleRowText: {

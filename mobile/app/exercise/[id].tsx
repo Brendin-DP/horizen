@@ -14,8 +14,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getExercise, getExerciseHistory } from '../../lib/api';
 import type { Exercise, ExerciseHistory, LoggingType } from '../../types';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors } from '../../constants/theme';
+import { colors, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DrillDownHeader } from '../../components/DrillDownHeader';
 
 const CHART_WIDTH = Dimensions.get('window').width - 64;
 const CHART_HEIGHT = 180;
@@ -351,14 +352,10 @@ export default function ExerciseDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
-        </Pressable>
-        <Text style={styles.title} numberOfLines={1}>
-          {exercise?.name ?? 'Exercise'}
-        </Text>
-      </View>
+      <DrillDownHeader
+        title={exercise?.name ?? 'Exercise'}
+        onBack={() => router.back()}
+      />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {error && <Text style={styles.error}>{error}</Text>}
@@ -370,7 +367,7 @@ export default function ExerciseDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, styles.sectionSpaced]}>
           <Text style={styles.sectionTitle}>Your PB Logs</Text>
           {pastLogs.length === 0 ? (
             <View style={styles.pbEmpty}>
@@ -385,10 +382,18 @@ export default function ExerciseDetailScreen() {
               return (
                 <Pressable
                   key={log.logId}
-                  style={[styles.pbCard, isPb && styles.pbCardHighlight]}
+                  style={[styles.pbCard, isPb && styles.pbCardClip]}
                   onPress={() => router.push(`/log/${log.logId}`)}
                   android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
                 >
+                  {isPb ? (
+                    <View style={styles.pbRibbonWrap} pointerEvents="none">
+                      <View style={styles.pbRibbon}>
+                        <Ionicons name="trophy-outline" size={11} color={colors.white} />
+                        <Text style={styles.pbRibbonText}>Your Best</Text>
+                      </View>
+                    </View>
+                  ) : null}
                   <View style={styles.pbCardRow}>
                     <View style={styles.pbCardTextBlock}>
                       <Text style={styles.pbHeadline} numberOfLines={2}>
@@ -398,20 +403,11 @@ export default function ExerciseDetailScreen() {
                         {exercise ? formatPbSubline(log, exercise) : ''}
                       </Text>
                     </View>
-                    {(isPb || setCount > 1) && (
-                      <View style={styles.pbCardBadges}>
-                        {isPb ? (
-                          <View style={styles.pbBadge}>
-                            <Text style={styles.pbBadgeText}>PB</Text>
-                          </View>
-                        ) : null}
-                        {setCount > 1 ? (
-                          <View style={styles.pbSetChip} accessibilityLabel={`${setCount} sets`}>
-                            <Text style={styles.pbSetChipText}>{setCount}</Text>
-                          </View>
-                        ) : null}
+                    {setCount > 1 ? (
+                      <View style={styles.pbSetChip} accessibilityLabel={`${setCount} sets`}>
+                        <Text style={styles.pbSetChipText}>{setCount}</Text>
                       </View>
-                    )}
+                    ) : null}
                   </View>
                 </Pressable>
               );
@@ -433,26 +429,21 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   loadingText: { color: colors.textMuted, marginTop: 12 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: { paddingRight: 16 },
-  title: { fontSize: 20, fontWeight: '600', color: colors.textPrimary, flex: 1 },
   scroll: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 32 },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 32,
+  },
   error: { color: colors.primary, marginBottom: 16 },
-  section: { marginBottom: 24 },
+  section: { marginBottom: 0 },
+  sectionSpaced: { marginTop: 24 },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: colors.textPrimary,
-    marginBottom: 12,
+    marginBottom: 24,
+    fontFamily: typography.headingSemibold,
   },
   card: {
     backgroundColor: colors.white,
@@ -511,10 +502,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  pbCardHighlight: {
-    borderColor: colors.primary,
-    borderWidth: 2,
-    backgroundColor: 'rgba(254, 205, 211, 0.35)',
+  pbCardClip: {
+    overflow: 'hidden',
+  },
+  /** Vertical center in card + inset from right so ribbon clears set chip; inner strip rotates */
+  pbRibbonWrap: {
+    position: 'absolute',
+    top: 10,
+    bottom: 10,
+    right: '13%',
+    width: 148,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  pbRibbon: {
+    width: 148,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    transform: [{ rotate: '45deg' }],
+  },
+  pbRibbonText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   pbCardRow: {
     flexDirection: 'row',
@@ -524,13 +541,7 @@ const styles = StyleSheet.create({
   pbCardTextBlock: {
     flex: 1,
     minWidth: 0,
-  },
-  pbCardBadges: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    gap: 8,
-    flexShrink: 0,
+    paddingRight: 8,
   },
   pbHeadline: {
     fontSize: 16,
@@ -551,18 +562,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.textMuted,
-  },
-  pbBadge: {
-    backgroundColor: colors.primary,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-  },
-  pbBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: 0.5,
   },
   pbMeta: { fontSize: 14, color: colors.textMuted, lineHeight: 20 },
 });

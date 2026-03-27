@@ -155,7 +155,6 @@ export default function ExercisesScreen() {
 
       <View style={styles.bodyFill}>
         <View style={styles.titleRow}>
-          <Ionicons name="barbell-outline" size={24} color={colors.primary} />
           <Text style={styles.titleRowText}>Your Exercises</Text>
         </View>
 
@@ -225,10 +224,8 @@ export default function ExercisesScreen() {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <View style={styles.emptyIconContainer}>
-                <View style={styles.emptyCircle1} />
-                <View style={styles.emptyCircle2} />
-                <View style={styles.emptyIcon}>
-                  <Ionicons name="barbell-outline" size={64} color={colors.accentDark} />
+                <View style={styles.emptyCirclePink}>
+                  <Ionicons name="barbell-outline" size={40} color={colors.white} />
                 </View>
               </View>
               <Text style={styles.emptyTitle}>Log Exercises</Text>
@@ -305,18 +302,14 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
+    paddingVertical: 24,
     backgroundColor: shell.body,
   },
   titleRowText: {
     fontSize: 22,
     color: colors.textPrimary,
-    fontFamily: typography.heading,
+    fontFamily: typography.headingSemibold,
   },
   listContainer: { flex: 1 },
   addCtaContainer: {
@@ -349,7 +342,11 @@ const styles = StyleSheet.create({
   },
   loadingText: { color: colors.textMuted, marginTop: 12 },
   errorBanner: { color: colors.primary, paddingHorizontal: 16, marginBottom: 8 },
-  list: { padding: 16, paddingBottom: 32 },
+  list: {
+    paddingHorizontal: 16,
+    paddingTop: 0,
+    paddingBottom: 32,
+  },
   listEmpty: { flexGrow: 1 },
   card: {
     flexDirection: 'row',
@@ -366,7 +363,7 @@ const styles = StyleSheet.create({
   cardName: {
     fontSize: 18,
     color: colors.textPrimary,
-    fontFamily: typography.heading,
+    fontFamily: typography.headingSemibold,
   },
   cardMetaRow: {
     flexDirection: 'row',
@@ -460,35 +457,16 @@ const styles = StyleSheet.create({
     minHeight: 400,
   },
   emptyIconContainer: {
-    position: 'relative',
     marginBottom: 24,
+    alignItems: 'center',
   },
-  emptyCircle1: {
-    position: 'absolute',
+  emptyCirclePink: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.accent,
-    top: -20,
-    left: -20,
-  },
-  emptyCircle2: {
-    position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.accentDark,
-    top: 0,
-    left: 0,
-  },
-  emptyIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.white,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 10,
   },
   emptyTitle: {
     fontSize: 22,

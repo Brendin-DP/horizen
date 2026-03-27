@@ -239,7 +239,6 @@ export function LeaderboardView() {
 
       <View style={styles.bodyFill}>
         <View style={styles.titleRow}>
-          <Ionicons name="trophy" size={24} color={colors.primary} />
           <Text style={styles.title}>Leaderboard</Text>
         </View>
 
@@ -317,12 +316,8 @@ const styles = StyleSheet.create({
   },
   searchIcon: { marginLeft: 'auto' },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
+    paddingVertical: 24,
   },
   title: { fontSize: 22, color: colors.textPrimary, fontFamily: typography.heading },
   list: { padding: 16, paddingTop: 0 },

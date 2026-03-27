@@ -34,6 +34,7 @@ import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
 import { weightOptional, weightRequired } from '../../lib/loggingType';
 import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DrillDownHeader } from '../../components/DrillDownHeader';
 
 interface SetEntry {
   id: string;
@@ -457,12 +458,7 @@ export default function LogExerciseScreen() {
   if (step === 'pick') {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backText}>← Back</Text>
-          </Pressable>
-          <Text style={styles.title}>Select Exercise</Text>
-        </View>
+        <DrillDownHeader title="Select Exercise" onBack={() => router.back()} />
         <TextInput
           style={styles.search}
           placeholder="Search exercises..."
@@ -510,12 +506,10 @@ export default function LogExerciseScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => (exerciseId ? router.back() : setStep('pick'))} style={styles.backBtn}>
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
-        <Text style={styles.title}>Log: {exercise.name}</Text>
-      </View>
+      <DrillDownHeader
+        title={`Log: ${exercise.name}`}
+        onBack={() => (exerciseId ? router.back() : setStep('pick'))}
+      />
 
       <ScrollView
         style={[styles.scroll, { backgroundColor: shell.body }]}
@@ -698,17 +692,6 @@ export default function LogExerciseScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: { paddingRight: 16 },
-  backText: { color: colors.primary, fontSize: 16 },
-  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, flex: 1 },
   search: {
     margin: 16,
     padding: 14,

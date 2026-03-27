@@ -20,6 +20,7 @@ import { getWorkoutExercise, addSet } from '../../lib/api';
 import type { WorkoutExercise } from '../../types';
 import { colors } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DrillDownHeader } from '../../components/DrillDownHeader';
 
 export default function ExerciseLogScreen() {
   const { workoutExerciseId } = useLocalSearchParams<{ workoutExerciseId: string }>();
@@ -145,19 +146,15 @@ export default function ExerciseLogScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
-      </View>
+      <DrillDownHeader
+        title={exercise?.name ?? 'Exercise'}
+        onBack={() => router.back()}
+      />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {error && <Text style={styles.error}>{error}</Text>}
 
         <View style={styles.exerciseBlock}>
-          <View style={styles.exerciseHeader}>
-            <Text style={styles.exerciseName}>{exercise?.name ?? 'Exercise'}</Text>
-          </View>
           <Text style={styles.setCountSummary}>
             {sets.length} set{sets.length === 1 ? '' : 's'}
           </Text>
@@ -299,9 +296,6 @@ export default function ExerciseLogScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn: { paddingVertical: 8, paddingRight: 16 },
-  backText: { color: colors.primary, fontSize: 16 },
   center: {
     flex: 1,
     backgroundColor: colors.background,
@@ -321,12 +315,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  exerciseHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  exerciseName: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
   setCountSummary: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
   setRow: { flexDirection: 'row', marginTop: 8, gap: 12 },
   setNum: { color: colors.textMuted, width: 60 },
