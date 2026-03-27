@@ -30,6 +30,10 @@ export const colors = {
   white: '#FFFFFF',
   black: '#000000',
   gold: '#fbbf24',
+  /** Primary #E54F50 at ~15% opacity — empty state icon rings */
+  emptyStateCircle: '#E54F5026',
+  /** Record / PR success modal icon circle */
+  recordModalCircle: '#F6E0E0',
 } as const;
 
 export const spacing = {

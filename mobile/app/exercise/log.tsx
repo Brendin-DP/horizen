@@ -33,7 +33,7 @@ import type { Exercise } from '../../types';
 import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
 import { weightOptional, weightRequired } from '../../lib/loggingType';
 import { colors, shell, typography } from '../../constants/theme';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 
 interface SetEntry {
@@ -175,6 +175,7 @@ async function getPreviousMaxBodyweightReps(
 }
 
 export default function LogExerciseScreen() {
+  const insets = useSafeAreaInsets();
   const { exerciseId } = useLocalSearchParams<{ exerciseId?: string }>();
   const router = useRouter();
   const posthog = usePostHog();
@@ -512,46 +513,68 @@ export default function LogExerciseScreen() {
         onBack={() => (exerciseId ? router.back() : setStep('pick'))}
       />
 
-      <ScrollView
-        style={[styles.scroll, { backgroundColor: shell.body }]}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {error && <Text style={styles.error}>{error}</Text>}
-
-        {sets.length === 0 ? (
-          <View style={styles.emptySetsHint}>
-            <Text style={styles.emptySetsText}>
-              No sets yet. Tap &quot;+ Add Set&quot; to log reps, weight, or time.
+      {sets.length === 0 ? (
+        <View style={styles.emptySetsScreen}>
+          {error ? <Text style={[styles.error, styles.emptySetsError]}>{error}</Text> : null}
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
+              <View style={styles.emptyCirclePink}>
+                <Ionicons name="barbell-outline" size={40} color={colors.primary} />
+              </View>
+            </View>
+            <Text style={styles.emptySetsTitle}>Add Sets</Text>
+            <Text style={styles.emptySetsBody}>
+              You have not added a set yet. Tap the button below to get started.
             </Text>
           </View>
-        ) : null}
-
-        {sets.map((s) => (
-          <View key={s.id} style={styles.setPanel}>
-            <View style={styles.setPanelHeader}>
-              <Text style={styles.setPanelLabel}>Set {sets.indexOf(s) + 1}</Text>
-              {sets.length > 1 ? (
-                <Pressable onPress={() => removeSet(s.id)} hitSlop={8}>
-                  <Text style={styles.removeText}>Remove</Text>
-                </Pressable>
-              ) : null}
-            </View>
-            <Text style={styles.setPanelValue}>{formatSetEntrySummary(s, exercise)}</Text>
+          <View style={[styles.emptySetsFooter, { paddingBottom: Math.max(16, insets.bottom) }]}>
+            <Pressable style={styles.emptySetsPrimaryCta} onPress={openAddSetModal}>
+              <Text style={styles.emptySetsPrimaryCtaText}>Add Set</Text>
+              <Ionicons name="add" size={20} color={colors.white} />
+            </Pressable>
+            <Pressable
+              style={[styles.saveBtn, saving && styles.buttonDisabled, styles.emptySetsFooterSave]}
+              onPress={handleSaveLog}
+              disabled={saving}
+            >
+              <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save Log'}</Text>
+            </Pressable>
           </View>
-        ))}
-
-        <Pressable style={styles.addSetTextBtn} onPress={openAddSetModal}>
-          <Text style={styles.addSetTextBtnLabel}>+ Add Set</Text>
-        </Pressable>
-
-        <Pressable
-          style={[styles.saveBtn, saving && styles.buttonDisabled]}
-          onPress={handleSaveLog}
-          disabled={saving}
+        </View>
+      ) : (
+        <ScrollView
+          style={[styles.scroll, { backgroundColor: shell.body }]}
+          contentContainerStyle={styles.scrollContent}
         >
-          <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save Log'}</Text>
-        </Pressable>
-      </ScrollView>
+          {error && <Text style={styles.error}>{error}</Text>}
+
+          {sets.map((s) => (
+            <View key={s.id} style={styles.setPanel}>
+              <View style={styles.setPanelHeader}>
+                <Text style={styles.setPanelLabel}>Set {sets.indexOf(s) + 1}</Text>
+                {sets.length > 1 ? (
+                  <Pressable onPress={() => removeSet(s.id)} hitSlop={8}>
+                    <Text style={styles.removeText}>Remove</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              <Text style={styles.setPanelValue}>{formatSetEntrySummary(s, exercise)}</Text>
+            </View>
+          ))}
+
+          <Pressable style={styles.addSetTextBtn} onPress={openAddSetModal}>
+            <Text style={styles.addSetTextBtnLabel}>+ Add Set</Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.saveBtn, saving && styles.buttonDisabled]}
+            onPress={handleSaveLog}
+            disabled={saving}
+          >
+            <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save Log'}</Text>
+          </Pressable>
+        </ScrollView>
+      )}
 
       <Modal
         visible={addSetModalVisible}
@@ -784,17 +807,73 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 32 },
   error: { color: colors.primary, marginBottom: 16 },
-  emptySetsHint: {
-    paddingVertical: 24,
-    paddingHorizontal: 8,
-    marginBottom: 8,
+  emptySetsError: {
+    paddingHorizontal: 16,
+    marginTop: 8,
   },
-  emptySetsText: {
+  emptySetsScreen: {
+    flex: 1,
+    backgroundColor: shell.body,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+    minHeight: 280,
+  },
+  emptyIconContainer: {
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  emptyCirclePink: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.emptyStateCircle,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptySetsTitle: {
+    fontSize: 22,
+    color: colors.textPrimary,
+    marginBottom: 8,
+    fontFamily: typography.heading,
+    textAlign: 'center',
+  },
+  emptySetsBody: {
     fontSize: 14,
     color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 20,
+    maxWidth: 320,
     fontFamily: typography.body,
+  },
+  emptySetsFooter: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: shell.footer,
+    gap: 12,
+  },
+  emptySetsPrimaryCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+  },
+  emptySetsPrimaryCtaText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 16,
+    fontFamily: typography.bodySemibold,
+  },
+  emptySetsFooterSave: {
+    alignSelf: 'stretch',
   },
   setPanel: {
     backgroundColor: colors.white,
@@ -992,7 +1071,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.recordModalCircle,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,

@@ -271,7 +271,7 @@ export default function WorkoutDetailScreen() {
               <View style={styles.emptyCircle1} />
               <View style={styles.emptyCircle2} />
               <View style={styles.emptyIcon}>
-                <Ionicons name="barbell-outline" size={36} color={colors.accentDark} />
+                <Ionicons name="barbell-outline" size={36} color={colors.primary} />
               </View>
             </View>
             <Text style={styles.emptyTitle}>Add Exercises</Text>
@@ -791,7 +791,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.emptyStateCircle,
     top: 0,
     left: 0,
   },
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: colors.accentDark,
+    backgroundColor: colors.emptyStateCircle,
     top: 15,
     left: 15,
   },
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.recordModalCircle,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,

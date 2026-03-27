@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     bottom: 10,
-    right: '13%',
+    right: '8%',
     width: 148,
     justifyContent: 'center',
     alignItems: 'center',

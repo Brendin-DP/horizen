@@ -225,7 +225,7 @@ export default function ExercisesScreen() {
             <View style={styles.emptyState}>
               <View style={styles.emptyIconContainer}>
                 <View style={styles.emptyCirclePink}>
-                  <Ionicons name="barbell-outline" size={40} color={colors.white} />
+                  <Ionicons name="barbell-outline" size={40} color={colors.primary} />
                 </View>
               </View>
               <Text style={styles.emptyTitle}>Log Exercises</Text>
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.emptyStateCircle,
     justifyContent: 'center',
     alignItems: 'center',
   },
