@@ -20,7 +20,7 @@ import {
   deleteSet,
 } from '../../../lib/api';
 import type { ExerciseLog, Set } from '../../../types';
-import { colors } from '../../../constants/theme';
+import { colors, typography } from '../../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SetEntry {
@@ -290,7 +290,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  setLabel: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  setLabel: {
+    fontSize: 16,
+    color: colors.textPrimary,
+    fontFamily: typography.bodyMedium,
+  },
   removeText: { color: colors.primary, fontSize: 14 },
   input: {
     backgroundColor: colors.backgroundDark,

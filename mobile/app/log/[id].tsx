@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   titleRowText: {
-    fontSize: 18,
+    fontSize: 22,
     color: colors.textPrimary,
     fontFamily: typography.heading,
   },

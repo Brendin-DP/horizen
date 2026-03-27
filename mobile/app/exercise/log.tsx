@@ -571,6 +571,10 @@ export default function LogExerciseScreen() {
         >
           {error && <Text style={styles.error}>{error}</Text>}
 
+          <View style={styles.setsHeadingRow}>
+            <Text style={styles.setsHeadingText}>Sets</Text>
+          </View>
+
           {sets.map((s) => (
             <Swipeable
               key={s.id}
@@ -840,6 +844,14 @@ const styles = StyleSheet.create({
   empty: { padding: 24, color: colors.textMuted, textAlign: 'center' },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 32 },
+  setsHeadingRow: {
+    marginBottom: 24,
+  },
+  setsHeadingText: {
+    fontSize: 22,
+    color: colors.textPrimary,
+    fontFamily: typography.heading,
+  },
   error: { color: colors.primary, marginBottom: 16 },
   emptySetsError: {
     paddingHorizontal: 16,
@@ -930,7 +942,7 @@ const styles = StyleSheet.create({
   setPanelLabel: {
     fontSize: 18,
     color: colors.textPrimary,
-    fontFamily: typography.heading,
+    fontFamily: typography.bodyMedium,
     marginBottom: 4,
   },
   setPanelEditBtn: {
