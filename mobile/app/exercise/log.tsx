@@ -551,78 +551,85 @@ export default function LogExerciseScreen() {
             </Text>
           </View>
           <View style={[styles.emptySetsFooter, { paddingBottom: Math.max(16, insets.bottom) }]}>
-            <Pressable style={styles.emptySetsPrimaryCta} onPress={openAddSetModal}>
-              <Text style={styles.emptySetsPrimaryCtaText}>Add Set</Text>
-              <Ionicons name="add" size={20} color={colors.white} />
+            <Pressable style={[styles.addSetTextBtn, styles.addSetTextBtnInFooter]} onPress={openAddSetModal}>
+              <Ionicons name="add" size={20} color={colors.primary} />
+              <Text style={styles.addSetTextBtnLabel}>Add Set</Text>
             </Pressable>
             <Pressable
               style={[styles.saveBtn, saving && styles.buttonDisabled, styles.emptySetsFooterSave]}
               onPress={handleSaveLog}
               disabled={saving}
             >
-              <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save Log'}</Text>
+              <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save Exercise'}</Text>
+              {!saving ? <Ionicons name="arrow-forward" size={20} color={colors.white} /> : null}
             </Pressable>
           </View>
         </View>
       ) : (
-        <ScrollView
-          style={[styles.scroll, { backgroundColor: shell.body }]}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {error && <Text style={styles.error}>{error}</Text>}
-
-          <View style={styles.setsHeadingRow}>
-            <Text style={styles.setsHeadingText}>Sets</Text>
-          </View>
-
-          {sets.map((s) => (
-            <Swipeable
-              key={s.id}
-              renderRightActions={() => (
-                <Pressable
-                  style={styles.setDeleteAction}
-                  onPress={() => removeSet(s.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Delete set"
-                >
-                  <Ionicons name="trash-outline" size={22} color={colors.white} />
-                  <Text style={styles.setDeleteActionText}>Delete</Text>
-                </Pressable>
-              )}
-              friction={2}
-            >
-              <View style={styles.setPanel}>
-                <View style={styles.setPanelRow}>
-                  <View style={styles.setPanelTextBlock}>
-                    <Text style={styles.setPanelLabel}>Set {sets.indexOf(s) + 1}</Text>
-                    <Text style={styles.setPanelValue}>{formatSetEntrySummary(s, exercise)}</Text>
-                  </View>
-                  <Pressable
-                    style={styles.setPanelEditBtn}
-                    onPress={() => openEditSetModal(s)}
-                    hitSlop={8}
-                    accessibilityRole="button"
-                    accessibilityLabel="Edit set"
-                  >
-                    <Ionicons name="pencil" size={22} color={colors.textMuted} />
-                  </Pressable>
-                </View>
-              </View>
-            </Swipeable>
-          ))}
-
-          <Pressable style={styles.addSetTextBtn} onPress={openAddSetModal}>
-            <Text style={styles.addSetTextBtnLabel}>+ Add Set</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.saveBtn, saving && styles.buttonDisabled]}
-            onPress={handleSaveLog}
-            disabled={saving}
+        <View style={styles.setsWithListLayout}>
+          <ScrollView
+            style={[styles.scroll, { backgroundColor: shell.body }]}
+            contentContainerStyle={styles.scrollContentSetsList}
+            keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save Log'}</Text>
-          </Pressable>
-        </ScrollView>
+            {error && <Text style={styles.error}>{error}</Text>}
+
+            <View style={styles.setsHeadingRow}>
+              <Text style={styles.setsHeadingText}>Sets</Text>
+            </View>
+
+            {sets.map((s) => (
+              <Swipeable
+                key={s.id}
+                renderRightActions={() => (
+                  <Pressable
+                    style={styles.setDeleteAction}
+                    onPress={() => removeSet(s.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete set"
+                  >
+                    <Ionicons name="trash-outline" size={22} color={colors.white} />
+                    <Text style={styles.setDeleteActionText}>Delete</Text>
+                  </Pressable>
+                )}
+                friction={2}
+              >
+                <View style={styles.setPanel}>
+                  <View style={styles.setPanelRow}>
+                    <View style={styles.setPanelTextBlock}>
+                      <Text style={styles.setPanelLabel}>Set {sets.indexOf(s) + 1}</Text>
+                      <Text style={styles.setPanelValue}>{formatSetEntrySummary(s, exercise)}</Text>
+                    </View>
+                    <Pressable
+                      style={styles.setPanelEditBtn}
+                      onPress={() => openEditSetModal(s)}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel="Edit set"
+                    >
+                      <Ionicons name="pencil" size={22} color={colors.textMuted} />
+                    </Pressable>
+                  </View>
+                </View>
+              </Swipeable>
+            ))}
+          </ScrollView>
+
+          <View style={[styles.emptySetsFooter, { paddingBottom: Math.max(16, insets.bottom) }]}>
+            <Pressable style={[styles.addSetTextBtn, styles.addSetTextBtnInFooter]} onPress={openAddSetModal}>
+              <Ionicons name="add" size={20} color={colors.primary} />
+              <Text style={styles.addSetTextBtnLabel}>Add Set</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.saveBtn, saving && styles.buttonDisabled, styles.emptySetsFooterSave]}
+              onPress={handleSaveLog}
+              disabled={saving}
+            >
+              <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save Exercise'}</Text>
+              {!saving ? <Ionicons name="arrow-forward" size={20} color={colors.white} /> : null}
+            </Pressable>
+          </View>
+        </View>
       )}
 
       <Modal
@@ -844,6 +851,12 @@ const styles = StyleSheet.create({
   empty: { padding: 24, color: colors.textMuted, textAlign: 'center' },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 32 },
+  /** Sets list only (Add Set / Save Exercise live in fixed footer below) */
+  scrollContentSetsList: { padding: 16, paddingBottom: 24 },
+  setsWithListLayout: {
+    flex: 1,
+    backgroundColor: shell.body,
+  },
   setsHeadingRow: {
     marginBottom: 24,
   },
@@ -902,21 +915,6 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: shell.footer,
     gap: 12,
-  },
-  emptySetsPrimaryCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-  },
-  emptySetsPrimaryCtaText: {
-    color: colors.white,
-    fontWeight: '600',
-    fontSize: 16,
-    fontFamily: typography.bodySemibold,
   },
   emptySetsFooterSave: {
     alignSelf: 'stretch',
@@ -1049,9 +1047,16 @@ const styles = StyleSheet.create({
   },
   bodyweightLabel: { fontSize: 14, color: colors.textPrimary },
   addSetTextBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     paddingVertical: 14,
     marginBottom: 16,
-    alignItems: 'center',
+  },
+  /** Tertiary “Add Set” in empty-state footer (no extra bottom margin; sits above Save Exercise) */
+  addSetTextBtnInFooter: {
+    marginBottom: 0,
   },
   addSetTextBtnLabel: {
     color: colors.primary,
@@ -1116,10 +1121,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     padding: 16,
     backgroundColor: colors.primary,
     borderRadius: 12,
-    alignItems: 'center',
   },
   saveText: { color: colors.white, fontWeight: '600', fontSize: 16 },
   buttonDisabled: { opacity: 0.6 },
