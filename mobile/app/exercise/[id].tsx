@@ -8,7 +8,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import Svg, { Line, Path } from 'react-native-svg';
+import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { getExercise, getExerciseHistory } from '../../lib/api';
@@ -20,6 +20,20 @@ import { DrillDownHeader } from '../../components/DrillDownHeader';
 
 const CHART_WIDTH = Dimensions.get('window').width - 64;
 const CHART_HEIGHT = 180;
+/** Inset plot so line / circle markers (r≈6) aren’t clipped at SVG edges */
+const CHART_PAD_H = 10;
+const CHART_PAD_V = 8;
+const CHART_INNER_W = CHART_WIDTH - 2 * CHART_PAD_H;
+const CHART_INNER_H = CHART_HEIGHT - 2 * CHART_PAD_V;
+
+function chartXForIndex(i: number, count: number): number {
+  if (count <= 1) return CHART_PAD_H + CHART_INNER_W / 2;
+  return CHART_PAD_H + (i / (count - 1)) * CHART_INNER_W;
+}
+
+function chartYForValue(v: number, yMin: number, yRange: number): number {
+  return CHART_PAD_V + CHART_INNER_H - ((v - yMin) / yRange) * CHART_INNER_H;
+}
 
 function formatLogDateShort(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -125,33 +139,36 @@ function buildSeriesFromValues(values: number[], labelSuffix: string): ChartSeri
   const yMax = maxV + padding;
   const yRange = Math.max(yMax - yMin, 1e-6);
   const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  const n = values.length;
   const points = values.map((v, i) => ({
-    x: (i / (values.length - 1 || 1)) * CHART_WIDTH,
-    y: CHART_HEIGHT - ((v - yMin) / yRange) * CHART_HEIGHT,
+    x: chartXForIndex(i, n),
+    y: chartYForValue(v, yMin, yRange),
   }));
   return { points, yMin, yMax, labelSuffix, avg };
 }
 
 function LineChartSvg({ series }: { series: ChartSeries }) {
+  const singlePoint = series.points.length === 1 ? series.points[0] : null;
+
   let pts = series.points;
   if (pts.length === 1) {
     const p = pts[0];
     pts = [p, { x: p.x, y: p.y }];
   }
   const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const fillPath = `${linePath} L ${pts[pts.length - 1].x} ${CHART_HEIGHT} L 0 ${CHART_HEIGHT} Z`;
+  const fillPath = `${linePath} L ${pts[pts.length - 1].x} ${CHART_HEIGHT} L ${pts[0].x} ${CHART_HEIGHT} Z`;
 
   const yRange = Math.max(series.yMax - series.yMin, 1e-6);
-  const avgY = CHART_HEIGHT - ((series.avg - series.yMin) / yRange) * CHART_HEIGHT;
+  const avgY = chartYForValue(series.avg, series.yMin, yRange);
 
   return (
     <View style={styles.chartContainer}>
       <Svg width={CHART_WIDTH} height={CHART_HEIGHT} viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}>
         <Path d={fillPath} fill="rgba(254, 205, 211, 0.6)" />
         <Line
-          x1={0}
+          x1={CHART_PAD_H}
           y1={avgY}
-          x2={CHART_WIDTH}
+          x2={CHART_WIDTH - CHART_PAD_H}
           y2={avgY}
           stroke={colors.textSecondary}
           strokeWidth={1.5}
@@ -166,6 +183,16 @@ function LineChartSvg({ series }: { series: ChartSeries }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+        {singlePoint ? (
+          <Circle
+            cx={singlePoint.x}
+            cy={singlePoint.y}
+            r={6}
+            fill={colors.white}
+            stroke={colors.primary}
+            strokeWidth={2.5}
+          />
+        ) : null}
       </Svg>
       <View style={styles.chartLabels}>
         <Text style={styles.chartLabelLeft}>
