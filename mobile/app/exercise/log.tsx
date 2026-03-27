@@ -34,6 +34,7 @@ import { formatExerciseCategoryType } from '../../lib/exerciseDisplay';
 import { weightOptional, weightRequired } from '../../lib/loggingType';
 import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 
 interface SetEntry {
@@ -186,6 +187,8 @@ export default function LogExerciseScreen() {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [sets, setSets] = useState<SetEntry[]>([]);
   const [addSetModalVisible, setAddSetModalVisible] = useState(false);
+  /** When set, modal updates this set instead of appending a new one */
+  const [editingSetId, setEditingSetId] = useState<string | null>(null);
   const [draft, setDraft] = useState<SetEntry | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -227,9 +230,25 @@ export default function LogExerciseScreen() {
 
   function openAddSetModal() {
     if (!selectedExercise) return;
+    setEditingSetId(null);
     setDraft(createEmptySet(selectedExercise));
     setModalError(null);
     setAddSetModalVisible(true);
+  }
+
+  function openEditSetModal(s: SetEntry) {
+    if (!selectedExercise) return;
+    setEditingSetId(s.id);
+    setDraft({ ...s });
+    setModalError(null);
+    setAddSetModalVisible(true);
+  }
+
+  function closeAddSetModal() {
+    setAddSetModalVisible(false);
+    setDraft(null);
+    setModalError(null);
+    setEditingSetId(null);
   }
 
   function handleConfirmAddSet() {
@@ -239,10 +258,14 @@ export default function LogExerciseScreen() {
       setModalError(err);
       return;
     }
-    setSets((prev) => [...prev, { ...draft, id: createEmptySet(selectedExercise).id }]);
-    setAddSetModalVisible(false);
-    setDraft(null);
-    setModalError(null);
+    if (editingSetId) {
+      setSets((prev) =>
+        prev.map((row) => (row.id === editingSetId ? { ...draft, id: editingSetId } : row))
+      );
+    } else {
+      setSets((prev) => [...prev, { ...draft, id: createEmptySet(selectedExercise).id }]);
+    }
+    closeAddSetModal();
   }
 
   function patchDraft(field: keyof SetEntry, value: string | boolean) {
@@ -250,7 +273,7 @@ export default function LogExerciseScreen() {
   }
 
   function removeSet(id: string) {
-    setSets((prev) => (prev.length > 1 ? prev.filter((s) => s.id !== id) : prev));
+    setSets((prev) => prev.filter((s) => s.id !== id));
   }
 
   function handlePrModalOkay() {
@@ -549,17 +572,39 @@ export default function LogExerciseScreen() {
           {error && <Text style={styles.error}>{error}</Text>}
 
           {sets.map((s) => (
-            <View key={s.id} style={styles.setPanel}>
-              <View style={styles.setPanelHeader}>
-                <Text style={styles.setPanelLabel}>Set {sets.indexOf(s) + 1}</Text>
-                {sets.length > 1 ? (
-                  <Pressable onPress={() => removeSet(s.id)} hitSlop={8}>
-                    <Text style={styles.removeText}>Remove</Text>
+            <Swipeable
+              key={s.id}
+              renderRightActions={() => (
+                <Pressable
+                  style={styles.setDeleteAction}
+                  onPress={() => removeSet(s.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete set"
+                >
+                  <Ionicons name="trash-outline" size={22} color={colors.white} />
+                  <Text style={styles.setDeleteActionText}>Delete</Text>
+                </Pressable>
+              )}
+              friction={2}
+            >
+              <View style={styles.setPanel}>
+                <View style={styles.setPanelRow}>
+                  <View style={styles.setPanelTextBlock}>
+                    <Text style={styles.setPanelLabel}>Set {sets.indexOf(s) + 1}</Text>
+                    <Text style={styles.setPanelValue}>{formatSetEntrySummary(s, exercise)}</Text>
+                  </View>
+                  <Pressable
+                    style={styles.setPanelEditBtn}
+                    onPress={() => openEditSetModal(s)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Edit set"
+                  >
+                    <Ionicons name="pencil" size={22} color={colors.textMuted} />
                   </Pressable>
-                ) : null}
+                </View>
               </View>
-              <Text style={styles.setPanelValue}>{formatSetEntrySummary(s, exercise)}</Text>
-            </View>
+            </Swipeable>
           ))}
 
           <Pressable style={styles.addSetTextBtn} onPress={openAddSetModal}>
@@ -580,11 +625,7 @@ export default function LogExerciseScreen() {
         visible={addSetModalVisible}
         animationType="fade"
         transparent
-        onRequestClose={() => {
-          setAddSetModalVisible(false);
-          setDraft(null);
-          setModalError(null);
-        }}
+        onRequestClose={closeAddSetModal}
       >
         <KeyboardAvoidingView
           style={styles.addSetModalOverlay}
@@ -595,7 +636,7 @@ export default function LogExerciseScreen() {
             contentContainerStyle={styles.addSetModalScroll}
           >
             <View style={styles.addSetModalCard}>
-              <Text style={styles.addSetModalTitle}>Add set</Text>
+              <Text style={styles.addSetModalTitle}>{editingSetId ? 'Edit set' : 'Add set'}</Text>
               {modalError ? <Text style={styles.modalErrorText}>{modalError}</Text> : null}
               {draft && isWeightReps && (
                 <>
@@ -717,18 +758,11 @@ export default function LogExerciseScreen() {
                 />
               )}
               <View style={styles.addSetModalActions}>
-                <Pressable
-                  style={styles.addSetModalCancel}
-                  onPress={() => {
-                    setAddSetModalVisible(false);
-                    setDraft(null);
-                    setModalError(null);
-                  }}
-                >
+                <Pressable style={styles.addSetModalCancel} onPress={closeAddSetModal}>
                   <Text style={styles.addSetModalCancelText}>Cancel</Text>
                 </Pressable>
                 <Pressable style={styles.addSetModalConfirm} onPress={handleConfirmAddSet}>
-                  <Text style={styles.addSetModalConfirmText}>Add</Text>
+                  <Text style={styles.addSetModalConfirmText}>{editingSetId ? 'Save' : 'Add'}</Text>
                 </Pressable>
               </View>
             </View>
@@ -884,23 +918,48 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  setPanelHeader: {
+  setPanelRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    gap: 12,
+  },
+  setPanelTextBlock: {
+    flex: 1,
+    minWidth: 0,
   },
   setPanelLabel: {
     fontSize: 18,
     color: colors.textPrimary,
     fontFamily: typography.heading,
+    marginBottom: 4,
+  },
+  setPanelEditBtn: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    paddingVertical: 4,
+    paddingLeft: 4,
   },
   setPanelValue: {
     fontSize: 14,
     color: colors.textMuted,
     fontFamily: typography.body,
   },
-  removeText: { color: colors.primary, fontSize: 14 },
+  setDeleteAction: {
+    backgroundColor: '#dc2626',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    marginBottom: 12,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  setDeleteActionText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 14,
+    marginTop: 4,
+  },
   input: {
     backgroundColor: colors.backgroundDark,
     borderWidth: 1,
