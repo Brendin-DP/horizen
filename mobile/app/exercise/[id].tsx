@@ -209,6 +209,59 @@ function LineChartSvg({ series }: { series: ChartSeries }) {
   );
 }
 
+type DualTab = 'weight' | 'bodyweight';
+
+function DualChartTabs({
+  weightSeries,
+  repSeries,
+}: {
+  weightSeries: ChartSeries | null;
+  repSeries: ChartSeries | null;
+}) {
+  const [tab, setTab] = useState<DualTab>('weight');
+
+  useEffect(() => {
+    if (weightSeries && !repSeries) setTab('weight');
+    else if (!weightSeries && repSeries) setTab('bodyweight');
+  }, [weightSeries, repSeries]);
+
+  if (weightSeries && repSeries) {
+    return (
+      <View>
+        <View style={styles.chartTabRow}>
+          <Pressable
+            onPress={() => setTab('weight')}
+            style={[styles.chartTab, tab === 'weight' && styles.chartTabActive]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === 'weight' }}
+            accessibilityLabel="Loaded weight chart"
+          >
+            <Text style={[styles.chartTabText, tab === 'weight' && styles.chartTabTextActive]}>
+              Loaded weight
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setTab('bodyweight')}
+            style={[styles.chartTab, tab === 'bodyweight' && styles.chartTabActive]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === 'bodyweight' }}
+            accessibilityLabel="Bodyweight chart"
+          >
+            <Text style={[styles.chartTabText, tab === 'bodyweight' && styles.chartTabTextActive]}>
+              Bodyweight
+            </Text>
+          </Pressable>
+        </View>
+        {tab === 'weight' ? <LineChartSvg series={weightSeries} /> : <LineChartSvg series={repSeries} />}
+      </View>
+    );
+  }
+
+  if (weightSeries) return <LineChartSvg series={weightSeries} />;
+  if (repSeries) return <LineChartSvg series={repSeries} />;
+  return null;
+}
+
 function ProgressChart({ history, exercise }: { history: ExerciseHistory[]; exercise: Exercise }) {
   const chartContent = useMemo(() => {
     if (exercise.unit !== 'weight_reps') {
@@ -292,22 +345,16 @@ function ProgressChart({ history, exercise }: { history: ExerciseHistory[]; exer
     return <LineChartSvg series={chartContent.series} />;
   }
 
-  return (
-    <View>
-      {chartContent.weightSeries ? (
-        <View>
-          <Text style={styles.chartBlockTitle}>Weight (loaded sets)</Text>
-          <LineChartSvg series={chartContent.weightSeries} />
-        </View>
-      ) : null}
-      {chartContent.repSeries ? (
-        <View style={chartContent.weightSeries ? styles.chartBlockSpaced : undefined}>
-          <Text style={styles.chartBlockTitle}>Reps (bodyweight)</Text>
-          <LineChartSvg series={chartContent.repSeries} />
-        </View>
-      ) : null}
-    </View>
-  );
+  if (chartContent.kind === 'dual') {
+    return (
+      <DualChartTabs
+        weightSeries={chartContent.weightSeries}
+        repSeries={chartContent.repSeries}
+      />
+    );
+  }
+
+  return null;
 }
 
 export default function ExerciseDetailScreen() {
@@ -479,12 +526,34 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   chartContainer: { position: 'relative' },
-  chartBlockSpaced: { marginTop: 20 },
-  chartBlockTitle: {
-    fontSize: 13,
-    fontWeight: '600',
+  chartTabRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    borderRadius: 10,
+    backgroundColor: colors.backgroundDark,
+    padding: 3,
+    gap: 4,
+  },
+  chartTab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  chartTabActive: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  chartTabText: {
+    fontSize: 14,
     color: colors.textMuted,
-    marginBottom: 8,
+    fontFamily: typography.body,
+  },
+  chartTabTextActive: {
+    color: colors.textPrimary,
+    fontFamily: typography.bodySemibold,
   },
   chartPlaceholder: {
     height: CHART_HEIGHT,
