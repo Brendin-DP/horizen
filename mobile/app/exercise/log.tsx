@@ -42,18 +42,19 @@ interface SetEntry {
   weight: string;
   duration: string;
   distance: string;
-  /** For weighted_or_bodyweight: show weight field when true */
+  /** For weighted_or_bodyweight: true = loaded/weight mode, false = bodyweight-only */
   addedWeight: boolean;
 }
 
-function createEmptySet(_ex: Exercise): SetEntry {
+function createEmptySet(ex: Exercise): SetEntry {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     reps: '',
     weight: '',
     duration: '',
     distance: '',
-    addedWeight: false,
+    /** Hybrid exercises: start in loaded mode (Bodyweight switch off). */
+    addedWeight: weightOptional(ex.loggingType),
   };
 }
 
@@ -575,45 +576,100 @@ export default function LogExerciseScreen() {
               {modalError ? <Text style={styles.modalErrorText}>{modalError}</Text> : null}
               {draft && isWeightReps && (
                 <>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Reps"
-                    value={draft.reps}
-                    onChangeText={(v) => patchDraft('reps', v)}
-                    keyboardType="number-pad"
-                    placeholderTextColor={colors.textMuted}
-                  />
                   {exercise.loggingType === 'bodyweight' ? (
-                    <Text style={styles.bodyweightHint}>
-                      Bodyweight only—log your reps. No added weight for this exercise.
-                    </Text>
-                  ) : null}
-                  {exercise.loggingType !== 'bodyweight' && weightOptional(exercise.loggingType) ? (
-                    <View style={styles.bodyweightRow}>
-                      <Text style={styles.bodyweightLabel}>Added weight</Text>
-                      <Switch
-                        value={draft.addedWeight}
-                        onValueChange={(v) => {
-                          patchDraft('addedWeight', v);
-                          if (!v) patchDraft('weight', '');
-                        }}
-                        trackColor={{ false: colors.border, true: colors.accent }}
-                        thumbColor={draft.addedWeight ? colors.primary : colors.white}
-                      />
-                    </View>
-                  ) : null}
-                  {(weightRequired(exercise.loggingType) ||
-                    (weightOptional(exercise.loggingType) && draft.addedWeight)) && (
-                    <TextInput
-                      style={styles.input}
-                      placeholder={
-                        weightOptional(exercise.loggingType) ? 'Weight (kg), optional' : 'Weight (kg)'
-                      }
-                      value={draft.weight}
-                      onChangeText={(v) => patchDraft('weight', v)}
-                      keyboardType="decimal-pad"
-                      placeholderTextColor={colors.textMuted}
-                    />
+                    <>
+                      <Text style={styles.fieldLabel}>Reps</Text>
+                      <View style={styles.inputWithSuffixRow}>
+                        <TextInput
+                          style={styles.inputSuffixField}
+                          placeholder="Add reps"
+                          value={draft.reps}
+                          onChangeText={(v) => patchDraft('reps', v)}
+                          keyboardType="number-pad"
+                          placeholderTextColor={colors.textMuted}
+                        />
+                        <Text style={styles.inputSuffix}>reps</Text>
+                      </View>
+                      <Text style={styles.bodyweightHint}>
+                        Bodyweight only—log your reps. No added weight for this exercise.
+                      </Text>
+                    </>
+                  ) : weightOptional(exercise.loggingType) ? (
+                    <>
+                      <View style={styles.weightHeaderRow}>
+                        <Text style={styles.weightHeaderTitle}>Weight</Text>
+                        <View style={styles.bodyweightToggleRight}>
+                          <Text style={styles.bodyweightLabel}>Bodyweight</Text>
+                          <View style={styles.switchCompact}>
+                            <Switch
+                              value={!draft.addedWeight}
+                              onValueChange={(v) => {
+                                patchDraft('addedWeight', !v);
+                                if (v) patchDraft('weight', '');
+                              }}
+                              trackColor={{ false: colors.border, true: colors.accent }}
+                              thumbColor={!draft.addedWeight ? colors.primary : colors.white}
+                            />
+                          </View>
+                        </View>
+                      </View>
+                      <View
+                        style={[
+                          styles.inputWithSuffixRow,
+                          !draft.addedWeight && styles.inputWithSuffixRowDisabled,
+                        ]}
+                      >
+                        <TextInput
+                          style={[styles.inputSuffixField, !draft.addedWeight && styles.inputSuffixFieldDisabled]}
+                          placeholder={draft.addedWeight ? 'Add weight' : ''}
+                          value={draft.weight}
+                          onChangeText={(v) => patchDraft('weight', v)}
+                          keyboardType="decimal-pad"
+                          placeholderTextColor={colors.textMuted}
+                          editable={draft.addedWeight}
+                        />
+                        <Text style={styles.inputSuffix}>kg</Text>
+                      </View>
+                      <Text style={styles.fieldLabel}>Reps</Text>
+                      <View style={styles.inputWithSuffixRow}>
+                        <TextInput
+                          style={styles.inputSuffixField}
+                          placeholder="Add reps"
+                          value={draft.reps}
+                          onChangeText={(v) => patchDraft('reps', v)}
+                          keyboardType="number-pad"
+                          placeholderTextColor={colors.textMuted}
+                        />
+                        <Text style={styles.inputSuffix}>reps</Text>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.fieldLabel}>Weight</Text>
+                      <View style={styles.inputWithSuffixRow}>
+                        <TextInput
+                          style={styles.inputSuffixField}
+                          placeholder="Add weight"
+                          value={draft.weight}
+                          onChangeText={(v) => patchDraft('weight', v)}
+                          keyboardType="decimal-pad"
+                          placeholderTextColor={colors.textMuted}
+                        />
+                        <Text style={styles.inputSuffix}>kg</Text>
+                      </View>
+                      <Text style={styles.fieldLabel}>Reps</Text>
+                      <View style={styles.inputWithSuffixRow}>
+                        <TextInput
+                          style={styles.inputSuffixField}
+                          placeholder="Add reps"
+                          value={draft.reps}
+                          onChangeText={(v) => patchDraft('reps', v)}
+                          keyboardType="number-pad"
+                          placeholderTextColor={colors.textMuted}
+                        />
+                        <Text style={styles.inputSuffix}>reps</Text>
+                      </View>
+                    </>
                   )}
                 </>
               )}
@@ -649,7 +705,7 @@ export default function LogExerciseScreen() {
                   <Text style={styles.addSetModalCancelText}>Cancel</Text>
                 </Pressable>
                 <Pressable style={styles.addSetModalConfirm} onPress={handleConfirmAddSet}>
-                  <Text style={styles.addSetModalConfirmText}>Add set</Text>
+                  <Text style={styles.addSetModalConfirmText}>Add</Text>
                 </Pressable>
               </View>
             </View>
@@ -783,11 +839,63 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: -4,
   },
-  bodyweightRow: {
+  fieldLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 6,
+    fontFamily: typography.body,
+  },
+  weightHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
+  },
+  weightHeaderTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    fontFamily: typography.bodySemibold,
+  },
+  bodyweightToggleRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  switchCompact: {
+    transform: [{ scale: 0.82 }],
+  },
+  inputWithSuffixRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.backgroundDark,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
     marginBottom: 12,
+    paddingLeft: 14,
+    paddingRight: 12,
+    minHeight: 48,
+  },
+  inputWithSuffixRowDisabled: {
+    backgroundColor: colors.border,
+    opacity: 0.9,
+  },
+  inputSuffixField: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: colors.textPrimary,
+    fontFamily: typography.body,
+  },
+  inputSuffixFieldDisabled: {
+    color: colors.textMuted,
+  },
+  inputSuffix: {
+    fontSize: 15,
+    color: colors.textMuted,
+    fontFamily: typography.body,
+    paddingLeft: 4,
   },
   bodyweightLabel: { fontSize: 14, color: colors.textPrimary },
   addSetTextBtn: {

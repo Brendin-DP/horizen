@@ -51,7 +51,8 @@ export default function WorkoutDetailScreen() {
   const [weight, setWeight] = useState('');
   const [duration, setDuration] = useState('');
   const [distance, setDistance] = useState('');
-  const [addedWeight, setAddedWeight] = useState(false);
+  /** Default true so hybrid “Add set” opens with Bodyweight switch off (loaded mode). */
+  const [addedWeight, setAddedWeight] = useState(true);
   const [savingSet, setSavingSet] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
@@ -103,7 +104,8 @@ export default function WorkoutDetailScreen() {
     setWeight('');
     setDuration('');
     setDistance('');
-    setAddedWeight(false);
+    const ex = we.exercise;
+    setAddedWeight(ex != null && weightOptional(ex.loggingType));
     setSetModalVisible(true);
   }
 
@@ -435,52 +437,108 @@ export default function WorkoutDetailScreen() {
             <Text style={styles.modalTitle}>
               Add Set {selectedWe?.exercise?.name ? `— ${selectedWe.exercise.name}` : ''}
             </Text>
-            {selectedWe?.exercise?.unit === 'weight_reps' && (
-              <>
-                <Text style={styles.label}>Reps</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Add reps"
-                  value={reps}
-                  onChangeText={setReps}
-                  keyboardType="number-pad"
-                  placeholderTextColor={colors.textMuted}
-                />
-                {selectedWe.exercise.loggingType !== 'bodyweight' &&
-                  weightOptional(selectedWe.exercise.loggingType) && (
-                    <View style={styles.weightRow}>
-                      <Text style={styles.label}>Load</Text>
-                      <View style={styles.bodyweightToggle}>
-                        <Text style={styles.bodyweightLabel}>Added weight</Text>
-                        <Switch
-                          value={addedWeight}
-                          onValueChange={(v) => {
-                            setAddedWeight(v);
-                            if (!v) setWeight('');
-                          }}
-                          trackColor={{ false: colors.border, true: colors.accent }}
-                          thumbColor={addedWeight ? colors.primary : colors.white}
+            {selectedWe?.exercise?.unit === 'weight_reps' &&
+              (() => {
+                const ex = selectedWe.exercise!;
+                if (ex.loggingType === 'bodyweight') {
+                  return (
+                    <>
+                      <Text style={styles.fieldLabel}>Reps</Text>
+                      <View style={styles.inputWithSuffixRow}>
+                        <TextInput
+                          style={styles.inputSuffixField}
+                          placeholder="Add reps"
+                          value={reps}
+                          onChangeText={setReps}
+                          keyboardType="number-pad"
+                          placeholderTextColor={colors.textMuted}
                         />
+                        <Text style={styles.inputSuffix}>reps</Text>
                       </View>
+                    </>
+                  );
+                }
+                if (weightOptional(ex.loggingType)) {
+                  return (
+                    <>
+                      <View style={styles.weightHeaderRow}>
+                        <Text style={styles.weightHeaderTitle}>Weight</Text>
+                        <View style={styles.bodyweightToggleRight}>
+                          <Text style={styles.bodyweightLabelStrong}>Bodyweight</Text>
+                          <View style={styles.switchCompact}>
+                            <Switch
+                              value={!addedWeight}
+                              onValueChange={(v) => {
+                                setAddedWeight(!v);
+                                if (v) setWeight('');
+                              }}
+                              trackColor={{ false: colors.border, true: colors.accent }}
+                              thumbColor={!addedWeight ? colors.primary : colors.white}
+                            />
+                          </View>
+                        </View>
+                      </View>
+                      <View
+                        style={[
+                          styles.inputWithSuffixRow,
+                          !addedWeight && styles.inputWithSuffixRowDisabled,
+                        ]}
+                      >
+                        <TextInput
+                          style={[styles.inputSuffixField, !addedWeight && styles.inputSuffixFieldDisabled]}
+                          placeholder={addedWeight ? 'Add weight' : ''}
+                          value={weight}
+                          onChangeText={setWeight}
+                          keyboardType="decimal-pad"
+                          placeholderTextColor={colors.textMuted}
+                          editable={addedWeight}
+                        />
+                        <Text style={styles.inputSuffix}>kg</Text>
+                      </View>
+                      <Text style={styles.fieldLabel}>Reps</Text>
+                      <View style={styles.inputWithSuffixRow}>
+                        <TextInput
+                          style={styles.inputSuffixField}
+                          placeholder="Add reps"
+                          value={reps}
+                          onChangeText={setReps}
+                          keyboardType="number-pad"
+                          placeholderTextColor={colors.textMuted}
+                        />
+                        <Text style={styles.inputSuffix}>reps</Text>
+                      </View>
+                    </>
+                  );
+                }
+                return (
+                  <>
+                    <Text style={styles.fieldLabel}>Weight</Text>
+                    <View style={styles.inputWithSuffixRow}>
+                      <TextInput
+                        style={styles.inputSuffixField}
+                        placeholder="Add weight"
+                        value={weight}
+                        onChangeText={setWeight}
+                        keyboardType="decimal-pad"
+                        placeholderTextColor={colors.textMuted}
+                      />
+                      <Text style={styles.inputSuffix}>kg</Text>
                     </View>
-                  )}
-                {(weightRequired(selectedWe.exercise.loggingType) ||
-                  (weightOptional(selectedWe.exercise.loggingType) && addedWeight)) && (
-                  <TextInput
-                    style={styles.input}
-                    placeholder={
-                      weightOptional(selectedWe.exercise.loggingType)
-                        ? 'Weight (kg), optional'
-                        : 'Add weight (kg)'
-                    }
-                    value={weight}
-                    onChangeText={setWeight}
-                    keyboardType="decimal-pad"
-                    placeholderTextColor={colors.textMuted}
-                  />
-                )}
-              </>
-            )}
+                    <Text style={styles.fieldLabel}>Reps</Text>
+                    <View style={styles.inputWithSuffixRow}>
+                      <TextInput
+                        style={styles.inputSuffixField}
+                        placeholder="Add reps"
+                        value={reps}
+                        onChangeText={setReps}
+                        keyboardType="number-pad"
+                        placeholderTextColor={colors.textMuted}
+                      />
+                      <Text style={styles.inputSuffix}>reps</Text>
+                    </View>
+                  </>
+                );
+              })()}
             {selectedWe?.exercise?.unit === 'time' && (
               <>
                 <Text style={styles.label}>Duration (seconds)</Text>
@@ -614,9 +672,65 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, marginBottom: 16 },
   label: { fontSize: 14, fontWeight: '500', color: colors.textPrimary, marginBottom: 8 },
-  weightRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  bodyweightToggle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  bodyweightLabel: { fontSize: 14, color: colors.textSecondary },
+  fieldLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 6,
+    fontFamily: typography.body,
+  },
+  weightHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  weightHeaderTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    fontFamily: typography.bodySemibold,
+  },
+  bodyweightToggleRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bodyweightLabelStrong: { fontSize: 14, color: colors.textPrimary },
+  switchCompact: {
+    transform: [{ scale: 0.82 }],
+  },
+  inputWithSuffixRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.backgroundDark,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    marginBottom: 12,
+    paddingLeft: 14,
+    paddingRight: 12,
+    minHeight: 48,
+  },
+  inputWithSuffixRowDisabled: {
+    backgroundColor: colors.border,
+    opacity: 0.9,
+  },
+  inputSuffixField: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: colors.textPrimary,
+    fontFamily: typography.body,
+  },
+  inputSuffixFieldDisabled: {
+    color: colors.textMuted,
+  },
+  inputSuffix: {
+    fontSize: 15,
+    color: colors.textMuted,
+    fontFamily: typography.body,
+    paddingLeft: 4,
+  },
   pickerItem: {
     padding: 16,
     borderBottomWidth: 1,
