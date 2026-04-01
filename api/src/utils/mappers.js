@@ -57,6 +57,13 @@ export function mapStarAward(row) {
   };
 }
 
+function normalizeMuscleGroups(raw) {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'object') return Object.values(raw);
+  return [];
+}
+
 export function mapExercise(row) {
   if (!row) return null;
   return {
@@ -64,10 +71,14 @@ export function mapExercise(row) {
     name: row.name,
     category: row.category ?? null,
     type: row.type ?? null,
-    muscleGroups: row.muscle_groups ?? [],
+    muscleGroups: normalizeMuscleGroups(row.muscle_groups),
     equipment: row.equipment ?? null,
     unit: row.unit ?? null,
     loggingType: row.logging_type ?? 'weighted',
+    status: row.status ?? 'active',
+    requestedBy: row.requested_by ?? null,
+    requestNotes: row.request_notes ?? null,
+    rejectionReason: row.rejection_reason ?? null,
     createdAt: row.created_at ?? null,
   };
 }
@@ -92,7 +103,7 @@ export function mapWorkoutExercise(row) {
     id: row.id,
     workoutId: row.workout_id,
     exerciseId: row.exercise_id,
-    order: row.order_index ?? row.order ?? 0,
+    order: row.order_index ?? 0,
     notes: row.notes ?? null,
     createdAt: row.created_at ?? null,
   };

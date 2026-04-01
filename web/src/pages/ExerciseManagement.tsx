@@ -4,8 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   getExercises,
   updateExerciseLoggingType,
+  getExerciseRequests,
+  approveExercise,
+  rejectExercise,
   type Exercise,
   type ExerciseLoggingType,
+  type ExerciseRequestRow,
 } from '../api/client';
 import { colors } from '../constants/theme';
 
@@ -15,9 +19,59 @@ const LOGGING_OPTIONS: { value: ExerciseLoggingType; label: string }[] = [
   { value: 'weighted_or_bodyweight', label: 'Weighted or bodyweight' },
 ];
 
+const CATEGORY_OPTIONS = [
+  'Upper Body',
+  'Lower Body',
+  'Full Body',
+  'Core',
+  'Cardio',
+  'Mobility',
+] as const;
+
+const TYPE_OPTIONS = [
+  'Push',
+  'Pull',
+  'Squat',
+  'Hinge',
+  'Lunge',
+  'Core',
+  'Cardio',
+  'Olympic',
+  'Compound',
+  'Carry',
+  'Mobility',
+  'Plyometric',
+  'Isolation',
+] as const;
+
+const EQUIPMENT_OPTIONS = [
+  'Barbell',
+  'Dumbbell',
+  'Bodyweight',
+  'Cable',
+  'Machine',
+  'Kettlebell',
+] as const;
+
+const UNIT_OPTIONS: { value: 'weight_reps' | 'time' | 'distance'; label: string }[] = [
+  { value: 'weight_reps', label: 'Weight × reps' },
+  { value: 'time', label: 'Time' },
+  { value: 'distance', label: 'Distance' },
+];
+
 function formatLoggingLabel(v: string): string {
   const o = LOGGING_OPTIONS.find((x) => x.value === v);
   return o?.label ?? v;
+}
+
+function formatRequestDate(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  } catch {
+    return iso;
+  }
 }
 
 export default function ExerciseManagement() {
@@ -29,6 +83,22 @@ export default function ExerciseManagement() {
   const [rowError, setRowError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [listTab, setListTab] = useState<'active' | 'requested'>('active');
+
+  const [requests, setRequests] = useState<ExerciseRequestRow[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [requestsError, setRequestsError] = useState('');
+  const [requestSuccess, setRequestSuccess] = useState('');
+
+  const [approveRow, setApproveRow] = useState<ExerciseRequestRow | null>(null);
+  const [apName, setApName] = useState('');
+  const [apCategory, setApCategory] = useState('');
+  const [apType, setApType] = useState('');
+  const [apMuscleGroups, setApMuscleGroups] = useState('');
+  const [apEquipment, setApEquipment] = useState('');
+  const [apUnit, setApUnit] = useState<'weight_reps' | 'time' | 'distance'>('weight_reps');
+  const [apLoggingType, setApLoggingType] = useState<ExerciseLoggingType>('weighted');
+  const [approveSaving, setApproveSaving] = useState(false);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setError('');
@@ -43,9 +113,29 @@ export default function ExerciseManagement() {
     }
   }, []);
 
+  const fetchRequests = useCallback(async () => {
+    if (!token) return;
+    setRequestsError('');
+    setRequestsLoading(true);
+    try {
+      const data = await getExerciseRequests(token);
+      setRequests(data);
+    } catch (err) {
+      setRequestsError(err instanceof Error ? err.message : 'Failed to load requests');
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (listTab === 'requested' && token) {
+      fetchRequests();
+    }
+  }, [listTab, token, fetchRequests]);
 
   async function handleLoggingChange(exercise: Exercise, loggingType: ExerciseLoggingType) {
     if (!token || savingId) return;
@@ -60,6 +150,73 @@ export default function ExerciseManagement() {
       setRowError(err instanceof Error ? err.message : 'Update failed');
     } finally {
       setSavingId(null);
+    }
+  }
+
+  function openApprove(row: ExerciseRequestRow) {
+    setRequestSuccess('');
+    setApproveRow(row);
+    setApName(row.name);
+    setApCategory(row.category ?? 'General');
+    setApType(row.type ?? '');
+    setApMuscleGroups('');
+    setApEquipment('');
+    setApUnit('weight_reps');
+    setApLoggingType('weighted');
+  }
+
+  function closeApprove() {
+    if (approveSaving) return;
+    setApproveRow(null);
+  }
+
+  async function handleApproveSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !approveRow) return;
+    setApproveSaving(true);
+    setRequestsError('');
+    try {
+      const muscleGroups = apMuscleGroups
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      await approveExercise(
+        approveRow.id,
+        {
+          name: apName.trim(),
+          category: apCategory.trim(),
+          type: apType.trim() || null,
+          muscleGroups,
+          equipment: apEquipment.trim() || null,
+          unit: apUnit,
+          loggingType: apLoggingType,
+        },
+        token
+      );
+      setRequests((prev) => prev.filter((r) => r.id !== approveRow.id));
+      setApproveRow(null);
+      setRequestSuccess('Exercise approved and added to the library.');
+      fetchData();
+    } catch (err) {
+      setRequestsError(err instanceof Error ? err.message : 'Approve failed');
+    } finally {
+      setApproveSaving(false);
+    }
+  }
+
+  async function handleReject(id: string) {
+    if (!token || rejectingId) return;
+    if (!window.confirm('Reject this exercise request?')) return;
+    setRejectingId(id);
+    setRequestsError('');
+    try {
+      await rejectExercise(id, token);
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+      setRequestSuccess('Request rejected.');
+    } catch (err) {
+      setRequestsError(err instanceof Error ? err.message : 'Reject failed');
+    } finally {
+      setRejectingId(null);
     }
   }
 
@@ -85,6 +242,14 @@ export default function ExerciseManagement() {
       boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
     }),
     []
+  );
+
+  const requestTableStyle: React.CSSProperties = useMemo(
+    () => ({
+      ...tableStyle,
+      fontSize: 14,
+    }),
+    [tableStyle]
   );
 
   return (
@@ -134,6 +299,7 @@ export default function ExerciseManagement() {
           gap: 4,
           marginBottom: 16,
           borderBottom: `1px solid ${colors.border}`,
+          alignItems: 'center',
         }}
       >
         <button
@@ -174,27 +340,157 @@ export default function ExerciseManagement() {
             color: listTab === 'requested' ? colors.primary : colors.textMuted,
             borderBottom:
               listTab === 'requested' ? `2px solid ${colors.primary}` : '2px solid transparent',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
           }}
         >
           Requested
+          {requests.length > 0 ? (
+            <span
+              style={{
+                backgroundColor: colors.primary,
+                color: colors.white,
+                fontSize: 12,
+                fontWeight: 700,
+                padding: '2px 8px',
+                borderRadius: 999,
+              }}
+            >
+              {requests.length}
+            </span>
+          ) : null}
         </button>
       </div>
 
       {listTab === 'requested' ? (
-        <div
-          role="tabpanel"
-          aria-labelledby="tab-requested"
-          style={{
-            padding: 48,
-            textAlign: 'center',
-            backgroundColor: colors.white,
-            borderRadius: 12,
-            border: `1px solid ${colors.border}`,
-          }}
-        >
-          <p style={{ margin: 0, color: colors.textMuted, fontSize: 14 }}>
-            No requested exercises yet.
-          </p>
+        <div role="tabpanel" aria-labelledby="tab-requested">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <h2 style={{ margin: 0, fontSize: 18, color: colors.textPrimary }}>Exercise Requests</h2>
+            <span
+              style={{
+                backgroundColor: colors.backgroundDark,
+                color: colors.textMuted,
+                fontSize: 13,
+                fontWeight: 600,
+                padding: '4px 10px',
+                borderRadius: 999,
+              }}
+            >
+              {requests.length} pending
+            </span>
+          </div>
+
+          {requestSuccess ? (
+            <div
+              style={{
+                padding: 12,
+                marginBottom: 16,
+                backgroundColor: '#ecfdf5',
+                color: '#065f46',
+                borderRadius: 8,
+                fontSize: 14,
+              }}
+            >
+              {requestSuccess}
+            </div>
+          ) : null}
+
+          {requestsError ? (
+            <div
+              style={{
+                padding: 12,
+                marginBottom: 16,
+                backgroundColor: colors.accent,
+                color: colors.primary,
+                borderRadius: 8,
+                fontSize: 14,
+              }}
+            >
+              {requestsError}
+            </div>
+          ) : null}
+
+          {!token ? (
+            <p style={{ color: colors.textMuted }}>Sign in as an admin to view requests.</p>
+          ) : requestsLoading ? (
+            <p style={{ color: colors.textMuted }}>Loading requests…</p>
+          ) : requests.length === 0 ? (
+            <div
+              style={{
+                padding: 48,
+                textAlign: 'center',
+                backgroundColor: colors.white,
+                borderRadius: 12,
+                border: `1px solid ${colors.border}`,
+              }}
+            >
+              <p style={{ margin: 0, color: colors.textMuted, fontSize: 14 }}>
+                No pending exercise requests.
+              </p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={requestTableStyle}>
+                <thead>
+                  <tr style={{ backgroundColor: colors.backgroundDark }}>
+                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Name</th>
+                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Requested By</th>
+                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Category</th>
+                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Type</th>
+                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Notes</th>
+                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Date</th>
+                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {requests.map((row) => (
+                    <tr key={row.id} style={{ borderTop: `1px solid ${colors.border}` }}>
+                      <td style={{ padding: 12, fontWeight: 500 }}>{row.name}</td>
+                      <td style={{ padding: 12, color: colors.textMuted }}>
+                        {row.requestedBy ? (
+                          <>
+                            {row.requestedBy.name}
+                            <br />
+                            <span style={{ fontSize: 12 }}>{row.requestedBy.email}</span>
+                          </>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td style={{ padding: 12, color: colors.textMuted }}>{row.category ?? '—'}</td>
+                      <td style={{ padding: 12, color: colors.textMuted }}>{row.type ?? '—'}</td>
+                      <td style={{ padding: 12, color: colors.textMuted, maxWidth: 200 }}>
+                        {row.requestNotes ?? '—'}
+                      </td>
+                      <td style={{ padding: 12, color: colors.textMuted, whiteSpace: 'nowrap' }}>
+                        {formatRequestDate(row.createdAt)}
+                      </td>
+                      <td style={{ padding: 12 }}>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            className="hz-btn hz-btn-primary text-sm"
+                            onClick={() => openApprove(row)}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            className="hz-btn text-sm"
+                            disabled={rejectingId === row.id}
+                            onClick={() => handleReject(row.id)}
+                          >
+                            {rejectingId === row.id ? '…' : 'Reject'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       ) : loading ? (
         <p style={{ color: colors.textMuted }}>Loading exercises...</p>
@@ -294,6 +590,128 @@ export default function ExerciseManagement() {
           )}
         </>
       )}
+
+      {approveRow ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="approve-dialog-title"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+          }}
+          onClick={closeApprove}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 480,
+              maxHeight: '90vh',
+              overflow: 'auto',
+              backgroundColor: colors.white,
+              borderRadius: 12,
+              padding: 24,
+              border: `1px solid ${colors.border}`,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="approve-dialog-title" style={{ margin: '0 0 16px', fontSize: 18 }}>
+              Approve exercise
+            </h3>
+            <form onSubmit={handleApproveSubmit}>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Name</label>
+              <input
+                className="hz-input mb-4 w-full"
+                value={apName}
+                onChange={(e) => setApName(e.target.value)}
+                required
+              />
+              <label className="mb-2 block text-sm font-medium text-slate-700">Category</label>
+              <select
+                className="hz-select mb-4 w-full"
+                value={apCategory}
+                onChange={(e) => setApCategory(e.target.value)}
+              >
+                {CATEGORY_OPTIONS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Type</label>
+              <select className="hz-select mb-4 w-full" value={apType} onChange={(e) => setApType(e.target.value)}>
+                <option value="">—</option>
+                {TYPE_OPTIONS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Muscle groups (comma-separated)
+              </label>
+              <input
+                className="hz-input mb-4 w-full"
+                value={apMuscleGroups}
+                onChange={(e) => setApMuscleGroups(e.target.value)}
+                placeholder="e.g. chest, triceps"
+              />
+              <label className="mb-2 block text-sm font-medium text-slate-700">Equipment</label>
+              <select
+                className="hz-select mb-4 w-full"
+                value={apEquipment}
+                onChange={(e) => setApEquipment(e.target.value)}
+              >
+                <option value="">—</option>
+                {EQUIPMENT_OPTIONS.map((eq) => (
+                  <option key={eq} value={eq}>
+                    {eq}
+                  </option>
+                ))}
+              </select>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Unit</label>
+              <select
+                className="hz-select mb-4 w-full"
+                value={apUnit}
+                onChange={(e) => setApUnit(e.target.value as 'weight_reps' | 'time' | 'distance')}
+              >
+                {UNIT_OPTIONS.map((u) => (
+                  <option key={u.value} value={u.value}>
+                    {u.label}
+                  </option>
+                ))}
+              </select>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Logging type</label>
+              <select
+                className="hz-select mb-6 w-full"
+                value={apLoggingType}
+                onChange={(e) => setApLoggingType(e.target.value as ExerciseLoggingType)}
+              >
+                {LOGGING_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button type="button" className="hz-btn" onClick={closeApprove} disabled={approveSaving}>
+                  Cancel
+                </button>
+                <button type="submit" className="hz-btn hz-btn-primary" disabled={approveSaving}>
+                  {approveSaving ? 'Saving…' : 'Approve & Add to Library'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

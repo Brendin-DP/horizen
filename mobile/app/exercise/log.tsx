@@ -36,6 +36,7 @@ import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
+import { RequestExerciseModal } from '../../components/RequestExerciseModal';
 
 interface SetEntry {
   id: string;
@@ -199,6 +200,7 @@ export default function LogExerciseScreen() {
   const [prValue, setPrValue] = useState(0);
   const confettiRef = useRef<ConfettiCannon>(null);
   const pendingNavigationRef = useRef<string | null>(null);
+  const [requestModalVisible, setRequestModalVisible] = useState(false);
 
   useEffect(() => {
     if (exerciseId) {
@@ -480,6 +482,17 @@ export default function LogExerciseScreen() {
     );
   }
 
+  function openRequestModal() {
+    if (!member?.id) return;
+    setRequestModalVisible(true);
+  }
+
+  function handleRequestSuccess() {
+    getExercises()
+      .then(setExercises)
+      .catch(() => {});
+  }
+
   if (step === 'pick') {
     const searchTrimmed = search.trim();
     const showRequestEmpty = searchTrimmed.length > 0 && filteredExercises.length === 0;
@@ -548,7 +561,7 @@ export default function LogExerciseScreen() {
                 </Text>
                 <Pressable
                   style={styles.requestPrimaryBtn}
-                  onPress={() => {}}
+                  onPress={openRequestModal}
                   accessibilityRole="button"
                   accessibilityLabel="Request exercise"
                 >
@@ -560,7 +573,29 @@ export default function LogExerciseScreen() {
               <Text style={styles.pickEmptyFallback}>No exercises available yet.</Text>
             )
           }
+          ListFooterComponent={
+            member && filteredExercises.length > 0 ? (
+              <Pressable
+                style={styles.requestListFooterBtn}
+                onPress={openRequestModal}
+                accessibilityRole="button"
+                accessibilityLabel="Request a missing exercise"
+              >
+                <Text style={styles.requestListFooterText}>Can't find an exercise? Request one</Text>
+              </Pressable>
+            ) : null
+          }
         />
+        {member ? (
+          <RequestExerciseModal
+            visible={requestModalVisible}
+            onClose={() => setRequestModalVisible(false)}
+            memberId={member.id}
+            token={token}
+            initialName={searchTrimmed}
+            onSuccess={handleRequestSuccess}
+          />
+        ) : null}
       </SafeAreaView>
     );
   }
@@ -936,6 +971,17 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: '600',
     fontSize: 16,
+    fontFamily: typography.bodySemibold,
+  },
+  requestListFooterBtn: {
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  requestListFooterText: {
+    fontSize: 15,
+    color: colors.primary,
+    fontWeight: '600',
     fontFamily: typography.bodySemibold,
   },
   pickEmptyFallback: {

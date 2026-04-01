@@ -240,3 +240,63 @@ export async function updateExerciseLoggingType(
   }
   return res.json();
 }
+
+export interface ExerciseRequestRow {
+  id: string;
+  name: string;
+  category: string | null;
+  type: string | null;
+  requestNotes: string | null;
+  requestedBy: { id: string; name: string; email: string } | null;
+  createdAt: string;
+}
+
+export async function getExerciseRequests(token: string): Promise<ExerciseRequestRow[]> {
+  const res = await fetch(`${BASE_URL}/exercises/requests`, {
+    headers: headersWithAuth(token),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to fetch requests');
+  }
+  return res.json();
+}
+
+export type ApproveExerciseBody = {
+  name?: string;
+  category?: string;
+  type?: string | null;
+  muscleGroups?: string[];
+  equipment?: string | null;
+  unit?: 'weight_reps' | 'time' | 'distance';
+  loggingType?: ExerciseLoggingType;
+};
+
+export async function approveExercise(
+  id: string,
+  updates: ApproveExerciseBody,
+  token: string
+): Promise<Exercise> {
+  const res = await fetch(`${BASE_URL}/exercises/${encodeURIComponent(id)}/approve`, {
+    method: 'PATCH',
+    headers: headersWithAuth(token),
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to approve exercise');
+  }
+  return res.json();
+}
+
+export async function rejectExercise(id: string, token: string): Promise<Exercise> {
+  const res = await fetch(`${BASE_URL}/exercises/${encodeURIComponent(id)}/reject`, {
+    method: 'PATCH',
+    headers: headersWithAuth(token),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to reject exercise');
+  }
+  return res.json();
+}

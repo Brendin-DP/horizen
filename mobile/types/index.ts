@@ -8,13 +8,25 @@ export interface Exercise {
   id: string;
   name: string;
   category: string;
-  /** Movement pattern (e.g. pull / push); former "category" in DB. */
+  /** Movement pattern (e.g. pull / push). */
   type?: string | null;
   muscleGroups: string[];
-  equipment: string;
+  equipment: string | null;
   unit: ExerciseUnit;
   loggingType: LoggingType;
+  status?: 'active' | 'requested' | 'rejected';
+  requestedBy?: string | null;
+  requestNotes?: string | null;
   createdAt: string;
+}
+
+/** Body for POST /exercises/request (memberId must match JWT member). */
+export interface ExerciseRequestPayload {
+  memberId: string;
+  name: string;
+  category?: string;
+  type?: string;
+  requestNotes?: string;
 }
 
 export interface Workout {

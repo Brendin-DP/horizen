@@ -272,6 +272,23 @@ export async function getExercise(id: string): Promise<import('../types').Exerci
   return res.json();
 }
 
+export async function requestExercise(
+  payload: import('../types').ExerciseRequestPayload,
+  token: string
+): Promise<import('../types').Exercise> {
+  const res = await fetchApi('/exercises/request', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    token,
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+    const msg = err.detail ? `${err.error || 'Request failed'}: ${err.detail}` : (err.error || 'Failed to submit request');
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
 export async function getWorkouts(userId: string, token?: string | null): Promise<import('../types').Workout[]> {
   const res = await fetchApi(`/workouts?userId=${encodeURIComponent(userId)}`, { token });
   if (!res.ok) throw new Error('Failed to fetch workouts');
