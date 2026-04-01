@@ -28,6 +28,7 @@ export default function ExerciseManagement() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [listTab, setListTab] = useState<'active' | 'requested'>('active');
 
   const fetchData = useCallback(async () => {
     setError('');
@@ -125,10 +126,82 @@ export default function ExerciseManagement() {
         </div>
       )}
 
-      {loading ? (
+      <div
+        role="tablist"
+        aria-label="Exercise lists"
+        style={{
+          display: 'flex',
+          gap: 4,
+          marginBottom: 16,
+          borderBottom: `1px solid ${colors.border}`,
+        }}
+      >
+        <button
+          type="button"
+          role="tab"
+          id="tab-active"
+          aria-selected={listTab === 'active'}
+          onClick={() => setListTab('active')}
+          style={{
+            padding: '10px 16px',
+            marginBottom: -1,
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: 'pointer',
+            border: 'none',
+            background: 'none',
+            color: listTab === 'active' ? colors.primary : colors.textMuted,
+            borderBottom:
+              listTab === 'active' ? `2px solid ${colors.primary}` : '2px solid transparent',
+          }}
+        >
+          Active
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-requested"
+          aria-selected={listTab === 'requested'}
+          onClick={() => setListTab('requested')}
+          style={{
+            padding: '10px 16px',
+            marginBottom: -1,
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: 'pointer',
+            border: 'none',
+            background: 'none',
+            color: listTab === 'requested' ? colors.primary : colors.textMuted,
+            borderBottom:
+              listTab === 'requested' ? `2px solid ${colors.primary}` : '2px solid transparent',
+          }}
+        >
+          Requested
+        </button>
+      </div>
+
+      {listTab === 'requested' ? (
+        <div
+          role="tabpanel"
+          aria-labelledby="tab-requested"
+          style={{
+            padding: 48,
+            textAlign: 'center',
+            backgroundColor: colors.white,
+            borderRadius: 12,
+            border: `1px solid ${colors.border}`,
+          }}
+        >
+          <p style={{ margin: 0, color: colors.textMuted, fontSize: 14 }}>
+            No requested exercises yet.
+          </p>
+        </div>
+      ) : loading ? (
         <p style={{ color: colors.textMuted }}>Loading exercises...</p>
       ) : exercises.length === 0 ? (
         <div
+          role="tabpanel"
+          aria-labelledby="tab-active"
           style={{
             padding: 48,
             textAlign: 'center',
@@ -157,6 +230,8 @@ export default function ExerciseManagement() {
           </div>
           {filteredExercises.length === 0 ? (
             <div
+              role="tabpanel"
+              aria-labelledby="tab-active"
               style={{
                 padding: 48,
                 textAlign: 'center',
@@ -168,7 +243,7 @@ export default function ExerciseManagement() {
               <p style={{ color: colors.textMuted }}>No exercises match your search.</p>
             </div>
           ) : (
-            <table style={tableStyle}>
+            <table role="tabpanel" aria-labelledby="tab-active" style={tableStyle}>
               <thead>
                 <tr style={{ backgroundColor: colors.backgroundDark }}>
                   <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>Name</th>

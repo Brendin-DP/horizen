@@ -481,19 +481,33 @@ export default function LogExerciseScreen() {
   }
 
   if (step === 'pick') {
+    const searchTrimmed = search.trim();
+    const showRequestEmpty = searchTrimmed.length > 0 && filteredExercises.length === 0;
+
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <DrillDownHeader title="Select Exercise" onBack={() => router.back()} />
-        <TextInput
-          style={styles.search}
-          placeholder="Search exercises..."
-          value={search}
-          onChangeText={setSearch}
-          placeholderTextColor={colors.textMuted}
-        />
+      <SafeAreaView style={styles.pickContainer} edges={['top']}>
+        <DrillDownHeader title="Add Exercise" onBack={() => router.back()} />
+        <View style={styles.searchRow}>
+          <Ionicons name="search-outline" size={20} color={colors.textMuted} style={styles.searchRowIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search exercises..."
+            value={search}
+            onChangeText={setSearch}
+            placeholderTextColor={colors.textMuted}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+        </View>
+        <View style={styles.searchDivider} />
         <FlatList
           data={filteredExercises}
           keyExtractor={(item) => item.id}
+          style={styles.pickList}
+          contentContainerStyle={
+            filteredExercises.length === 0 ? styles.pickListContentEmpty : styles.pickListContent
+          }
+          keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <Pressable
               style={styles.pickerRow}
@@ -518,7 +532,34 @@ export default function LogExerciseScreen() {
               <Text style={styles.pickerMeta}>{formatExerciseCategoryType(item)}</Text>
             </Pressable>
           )}
-          ListEmptyComponent={<Text style={styles.empty}>No exercises found</Text>}
+          ListEmptyComponent={
+            showRequestEmpty ? (
+              <View style={styles.requestEmptyState}>
+                <View style={styles.requestEmptyIconWrap}>
+                  <View style={styles.emptyCirclePink}>
+                    <View style={styles.requestDumbbellTilt}>
+                      <Ionicons name="barbell-outline" size={36} color={colors.primary} />
+                    </View>
+                  </View>
+                </View>
+                <Text style={styles.requestEmptyTitle}>Request Exercises</Text>
+                <Text style={styles.requestEmptyBody}>
+                  This exercise does currently not exist in this list. Click the button below to request it.
+                </Text>
+                <Pressable
+                  style={styles.requestPrimaryBtn}
+                  onPress={() => {}}
+                  accessibilityRole="button"
+                  accessibilityLabel="Request exercise"
+                >
+                  <Ionicons name="add-circle" size={22} color={colors.white} />
+                  <Text style={styles.requestPrimaryBtnText}>Request</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Text style={styles.pickEmptyFallback}>No exercises available yet.</Text>
+            )
+          }
         />
       </SafeAreaView>
     );
@@ -815,16 +856,93 @@ export default function LogExerciseScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  pickContainer: { flex: 1, backgroundColor: colors.white },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  search: {
-    margin: 16,
-    padding: 14,
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     backgroundColor: colors.backgroundDark,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.border,
-    color: colors.textPrimary,
+    gap: 10,
+  },
+  searchRowIcon: { marginTop: 1 },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 2,
     fontSize: 16,
+    color: colors.textPrimary,
+    fontFamily: typography.body,
+  },
+  searchDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginTop: 12,
+    marginHorizontal: 0,
+  },
+  pickList: { flex: 1, backgroundColor: colors.white },
+  pickListContent: {
+    paddingBottom: 24,
+  },
+  pickListContentEmpty: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingBottom: 32,
+  },
+  requestEmptyState: {
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    maxWidth: 400,
+    alignSelf: 'center',
+  },
+  requestEmptyIconWrap: {
+    marginBottom: 24,
+  },
+  requestDumbbellTilt: {
+    transform: [{ rotate: '45deg' }],
+  },
+  requestEmptyTitle: {
+    fontSize: 22,
+    color: colors.textPrimary,
+    fontFamily: typography.heading,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  requestEmptyBody: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 28,
+    fontFamily: typography.body,
+  },
+  requestPrimaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 28,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+  },
+  requestPrimaryBtnText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 16,
+    fontFamily: typography.bodySemibold,
+  },
+  pickEmptyFallback: {
+    padding: 24,
+    color: colors.textMuted,
+    textAlign: 'center',
+    fontFamily: typography.body,
   },
   pickerRow: {
     padding: 16,
@@ -848,7 +966,6 @@ const styles = StyleSheet.create({
   },
   loggingBadgeText: { fontSize: 11, fontWeight: '600', color: colors.textMuted },
   pickerMeta: { fontSize: 14, color: colors.textMuted, marginTop: 4 },
-  empty: { padding: 24, color: colors.textMuted, textAlign: 'center' },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 32 },
   /** Sets list only (Add Set / Save Exercise live in fixed footer below) */
