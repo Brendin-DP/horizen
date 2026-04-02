@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,10 @@ import {
   Modal,
 } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import { trackStartedStandaloneLog } from '../../lib/analytics';
 import { getExercise, getSessions } from '../../lib/api';
 import type { Exercise, ExerciseHistory, LoggingType, Session, Set, ExerciseUnit } from '../../types';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -465,38 +467,50 @@ function ProgressChart({ history, exercise }: { history: ExerciseHistory[]; exer
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const posthog = usePostHog();
   const insets = useSafeAreaInsets();
   const { member, token } = useAuth();
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [history, setHistory] = useState<ExerciseHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isFirstFocusRef = useRef(true);
 
   useEffect(() => {
-    if (!id || !member?.id) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    Promise.all([getExercise(id), getSessions(member.id, token, { exerciseId: id })])
-      .then(([ex, sessions]) => {
-        if (cancelled) return;
-        setExercise(ex);
-        setHistory(sessionsToHistory(sessions, ex));
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed to load');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [id, member?.id, token]);
+    isFirstFocusRef.current = true;
+  }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!id || !member?.id) {
+        setLoading(false);
+        return;
+      }
+      let cancelled = false;
+      const showSpinner = isFirstFocusRef.current;
+      if (showSpinner) setLoading(true);
+      setError(null);
+      Promise.all([getExercise(id), getSessions(member.id, token, { exerciseId: id })])
+        .then(([ex, sessions]) => {
+          if (cancelled) return;
+          setExercise(ex);
+          setHistory(sessionsToHistory(sessions, ex));
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          setError(err instanceof Error ? err.message : 'Failed to load');
+        })
+        .finally(() => {
+          if (!cancelled) {
+            if (showSpinner) setLoading(false);
+            isFirstFocusRef.current = false;
+          }
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [id, member?.id, token])
+  );
 
   /** Best-performing session (for PB badge), independent of list order */
   const pbLogId = useMemo(() => {
@@ -630,7 +644,10 @@ export default function ExerciseDetailScreen() {
         >
           <Pressable
             style={styles.footerCta}
-            onPress={() => router.push(`/exercise/log?exerciseId=${id}`)}
+            onPress={() => {
+              trackStartedStandaloneLog(posthog, { source: 'exercise_detail' });
+              router.push(`/exercise/log?exerciseId=${id}`);
+            }}
             accessibilityRole="button"
             accessibilityLabel="Add session"
           >

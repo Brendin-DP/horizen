@@ -22,7 +22,10 @@ export default function LoadingScreen() {
     executeAuthRequest(authRequest)
       .then(() => {
         const event = authRequest.type === 'register' ? 'signed_up' : 'logged_in';
-        posthog?.capture(event, { email: authRequest.email, name: authRequest.name });
+        posthog?.capture(event, {
+          email: authRequest.email,
+          ...(authRequest.name != null && authRequest.name !== '' ? { name: authRequest.name } : {}),
+        });
         router.replace('/welcome');
       })
       .catch(() => router.replace('/login'));

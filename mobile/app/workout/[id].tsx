@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { usePostHog } from 'posthog-react-native';
+import { trackSavedSet } from '../../lib/analytics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -85,7 +86,7 @@ export default function WorkoutDetailScreen() {
       posthog?.capture('added_exercise_to_workout', {
         workoutId: id,
         exerciseId,
-        exerciseName: exercise?.name,
+        ...(exercise?.name != null && exercise.name !== '' ? { exerciseName: exercise.name } : {}),
       });
       setPickerVisible(false);
       fetchWorkout();
@@ -177,10 +178,11 @@ export default function WorkoutDetailScreen() {
       }
 
       await addSet(selectedWe.id, body, token);
-      posthog?.capture('saved_set', {
+      trackSavedSet(posthog, {
         workoutId: id,
         exerciseName: exercise.name,
         workoutExerciseId: selectedWe.id,
+        context: 'workout_detail',
       });
       setSetModalVisible(false);
       setSelectedWe(null);
@@ -205,7 +207,10 @@ export default function WorkoutDetailScreen() {
         { status: 'completed', completedAt: new Date().toISOString() },
         token
       );
-      posthog?.capture('completed_workout', { workoutId: id, workoutName: workout?.name });
+      posthog?.capture('completed_workout', {
+        workoutId: id,
+        ...(workout?.name != null && workout.name !== '' ? { workoutName: workout.name } : {}),
+      });
       fetchWorkout();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to complete');

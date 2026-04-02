@@ -138,6 +138,11 @@ router.delete('/:id', async (req, res) => {
   if (!existing) {
     return res.status(404).json({ error: 'Session not found' });
   }
+  const { error: setsErr } = await supabase.from('sets').delete().eq('session_id', req.params.id);
+  if (setsErr) {
+    console.error(setsErr);
+    return res.status(500).json({ error: 'Database error', detail: setsErr.message });
+  }
   const { error } = await supabase.from('sessions').delete().eq('id', req.params.id);
   if (error) {
     console.error(error);

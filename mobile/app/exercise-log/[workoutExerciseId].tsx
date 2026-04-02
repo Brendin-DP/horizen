@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { usePostHog } from 'posthog-react-native';
+import { trackSavedSet } from '../../lib/analytics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -111,10 +112,11 @@ export default function ExerciseLogScreen() {
       }
 
       await addSet(we.id, body, token);
-      posthog?.capture('saved_set', {
+      trackSavedSet(posthog, {
         workoutId: we.workoutId,
         workoutExerciseId: we.id,
         exerciseName: exercise?.name,
+        context: 'workout_exercise_screen',
       });
       setSetModalVisible(false);
       fetchData();

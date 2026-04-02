@@ -504,6 +504,19 @@ export async function deleteSession(id: string, token?: string | null): Promise<
   if (!res.ok) throw new Error('Failed to delete session');
 }
 
+/** Deletes every standalone session (and sets) for this member + exercise. */
+export async function deleteAllSessionsForExercise(
+  memberId: string,
+  exerciseId: string,
+  token?: string | null
+): Promise<number> {
+  const sessions = await getSessions(memberId, token, { exerciseId });
+  for (const s of sessions) {
+    await deleteSession(s.id, token);
+  }
+  return sessions.length;
+}
+
 export async function addSetToSession(
   sessionId: string,
   payload: {

@@ -79,7 +79,10 @@ export default function WorkoutsScreen() {
     const name = workoutName.trim() || undefined;
     try {
       const workout = await createWorkout(member.id, name || null, token);
-      posthog?.capture('created_workout', { workoutId: workout.id, workoutName: workout.name ?? undefined });
+      posthog?.capture('created_workout', {
+        workoutId: workout.id,
+        ...(workout.name != null && workout.name !== '' ? { workoutName: workout.name } : {}),
+      });
       router.push(`/workout/${workout.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create workout');

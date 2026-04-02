@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { usePostHog } from 'posthog-react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,6 +25,11 @@ import {
   validateSetEntry,
   setEntryToPatchBody,
 } from '../../lib/setEntryForm';
+import {
+  trackOpenedSessionEdit,
+  trackSessionSetDeleted,
+  trackSessionSetSaved,
+} from '../../lib/analytics';
 
 function formatLogDateShort(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -110,6 +116,7 @@ export default function LogDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { member, token } = useAuth();
+  const posthog = usePostHog();
   const [log, setLog] = useState<Session | null>(null);
   const [history, setHistory] = useState<ExerciseHistory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,6 +223,14 @@ export default function LogDetailScreen() {
         const nextSets = (prev.sets ?? []).map((x) => (x.id === updated.id ? updated : x));
         return { ...prev, sets: nextSets };
       });
+      if (log?.id) {
+        trackSessionSetSaved(posthog, {
+          sessionId: log.id,
+          exerciseId: exercise.id,
+          setId: updated.id,
+          source: 'session_detail_modal',
+        });
+      }
       if (member?.id) {
         getExerciseHistory(member.id, exercise.id, token)
           .then(setHistory)
@@ -233,6 +248,14 @@ export default function LogDetailScreen() {
     if (!token || !member?.id || !exercise?.id) return;
     try {
       await deleteSet(setId, token);
+      if (log?.id) {
+        trackSessionSetDeleted(posthog, {
+          sessionId: log.id,
+          exerciseId: exercise.id,
+          setId,
+          source: 'session_detail_swipe',
+        });
+      }
       setLog((prev) => {
         if (!prev) return prev;
         return {
@@ -361,7 +384,13 @@ export default function LogDetailScreen() {
       >
         <Pressable
           style={styles.footerCta}
-          onPress={() => router.push(`/log/edit/${log.id}`)}
+          onPress={() => {
+            trackOpenedSessionEdit(posthog, {
+              sessionId: log.id,
+              source: 'session_detail_footer',
+            });
+            router.push(`/log/edit/${log.id}`);
+          }}
           accessibilityRole="button"
           accessibilityLabel="Add set"
         >

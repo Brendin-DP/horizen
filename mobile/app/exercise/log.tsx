@@ -37,6 +37,7 @@ import { RequestExerciseModal } from '../../components/RequestExerciseModal';
 import { SetLogModal } from '../../components/SetLogModal';
 import { defaultSetLocalDateIso } from '../../lib/setDate';
 import { type SetEntry, createEmptySet, validateSetEntry } from '../../lib/setEntryForm';
+import { trackLoggedExercise, trackPersonalBest } from '../../lib/analytics';
 
 function formatSetEntrySummary(s: SetEntry, exercise: Exercise): string {
   let base: string;
@@ -347,10 +348,12 @@ export default function LogExerciseScreen() {
 
       await addSetsBatchToSession(log.id, setsPayload, token);
 
-      posthog?.capture('logged_exercise', {
+      trackLoggedExercise(posthog, {
+        sessionId: log.id,
         exerciseId: exercise.id,
         exerciseName: exercise.name,
         setCount: sets.length,
+        source: 'standalone_log',
       });
 
       const targetRoute = `/log/${log.id}`;
@@ -379,10 +382,13 @@ export default function LogExerciseScreen() {
           const prevW = previousMax ?? 0;
 
           if (newMaxWeight > prevW) {
-            posthog?.capture('personal_best_achieved', {
+            trackPersonalBest(posthog, {
               exerciseId: exercise.id,
               exerciseName: exercise.name,
+              pbType: 'weight',
               weightKg: newMaxWeight,
+              sessionId: log.id,
+              source: 'standalone_log',
             });
             pendingNavigationRef.current = targetRoute;
             setPrKind('weight');
@@ -408,10 +414,13 @@ export default function LogExerciseScreen() {
               token
             );
             if (newMaxReps > prev) {
-              posthog?.capture('personal_best_achieved', {
+              trackPersonalBest(posthog, {
                 exerciseId: exercise.id,
                 exerciseName: exercise.name,
+                pbType: 'reps',
                 reps: newMaxReps,
+                sessionId: log.id,
+                source: 'standalone_log',
               });
               pendingNavigationRef.current = targetRoute;
               setPrKind('reps');
@@ -443,10 +452,13 @@ export default function LogExerciseScreen() {
           );
 
           if (newMaxReps > prev) {
-            posthog?.capture('personal_best_achieved', {
+            trackPersonalBest(posthog, {
               exerciseId: exercise.id,
               exerciseName: exercise.name,
+              pbType: 'reps',
               reps: newMaxReps,
+              sessionId: log.id,
+              source: 'standalone_log',
             });
             pendingNavigationRef.current = targetRoute;
             setPrKind('reps');

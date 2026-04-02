@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { usePostHog } from 'posthog-react-native';
 import {
   View,
   Text,
@@ -24,6 +25,7 @@ import { colors, typography } from '../../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SetDatePicker } from '../../../components/SetDatePicker';
 import { defaultSetLocalDateIso, isValidPastOrPresentSetDate } from '../../../lib/setDate';
+import { trackSessionUpdated } from '../../../lib/analytics';
 
 interface SetEntry {
   id: string;
@@ -55,6 +57,7 @@ export default function EditLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { token } = useAuth();
+  const posthog = usePostHog();
   const [log, setLog] = useState<Session | null>(null);
   const [sets, setSets] = useState<SetEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,6 +135,10 @@ export default function EditLogScreen() {
       const currentSetIds = new Set(sets.map((s) => s.id));
       const removedIds: string[] = [...originalSetIds].filter((i) => !currentSetIds.has(i));
 
+      const setsAdded = sets.filter((s) => s.isNew).length;
+      const setsRemoved = removedIds.length;
+      const setsUpdated = sets.filter((s) => !s.isNew).length;
+
       for (const setId of removedIds) {
         if (!setId.startsWith('new-')) {
           await deleteSet(setId, token);
@@ -177,6 +184,16 @@ export default function EditLogScreen() {
           await updateSet(s.id, updates, token);
         }
       }
+
+      trackSessionUpdated(posthog, {
+        sessionId: log.id,
+        exerciseId: exercise.id,
+        exerciseName: exercise.name,
+        setsAdded,
+        setsRemoved,
+        setsUpdated,
+        source: 'session_edit_screen',
+      });
 
       router.back();
     } catch (err) {

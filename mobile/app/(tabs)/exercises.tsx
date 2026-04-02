@@ -8,11 +8,15 @@ import {
   Pressable,
   RefreshControl,
   Image,
+  Alert,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { getLoggedExercises } from '../../lib/api';
+import { trackStartedStandaloneLog, trackDeletedExerciseHistory } from '../../lib/analytics';
+import { getLoggedExercises, deleteAllSessionsForExercise } from '../../lib/api';
 import type { LoggedExercise, ExerciseUnit, LoggingType } from '../../types';
 import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -58,12 +62,14 @@ function formatLoggedSubtitle(ex: LoggedExercise): string {
 }
 
 export default function ExercisesScreen() {
-  const { member } = useAuth();
+  const { member, token } = useAuth();
+  const posthog = usePostHog();
   const router = useRouter();
   const [items, setItems] = useState<LoggedExercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deletingExerciseId, setDeletingExerciseId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!member?.id) {
@@ -90,6 +96,45 @@ export default function ExercisesScreen() {
     useCallback(() => {
       fetchData();
     }, [fetchData])
+  );
+
+  const confirmDeleteExercise = useCallback(
+    (item: LoggedExercise) => {
+      Alert.alert(
+        'Delete exercise?',
+        `This removes "${item.name}" and all sessions you logged for it. This cannot be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              if (!member?.id) {
+                setError('Not signed in');
+                return;
+              }
+              setError(null);
+              try {
+                setDeletingExerciseId(item.id);
+                const sessionCount = await deleteAllSessionsForExercise(member.id, item.id, token);
+                trackDeletedExerciseHistory(posthog, {
+                  exerciseId: item.id,
+                  exerciseName: item.name,
+                  sessionCount,
+                  source: 'exercises_tab_swipe',
+                });
+                setItems((prev) => prev.filter((x) => x.id !== item.id));
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to delete exercise');
+              } finally {
+                setDeletingExerciseId(null);
+              }
+            },
+          },
+        ]
+      );
+    },
+    [member?.id, token, posthog]
   );
 
   if (loading) {
@@ -136,27 +181,49 @@ export default function ExercisesScreen() {
           renderItem={({ item }) => {
             const metaLine = formatLoggedSubtitle(item);
             const dateStr = formatDate(item.lastLoggedAt);
+            const busy = deletingExerciseId === item.id;
             return (
-              <Pressable
-                style={styles.card}
-                onPress={() => router.push(`/exercise/${item.id}`)}
+              <Swipeable
+                enabled={!busy}
+                friction={2}
+                renderRightActions={() => (
+                  <Pressable
+                    style={styles.exerciseDeleteAction}
+                    onPress={() => confirmDeleteExercise(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete exercise and all sessions"
+                  >
+                    <Ionicons name="trash-outline" size={22} color={colors.white} />
+                    <Text style={styles.exerciseDeleteActionText}>Delete</Text>
+                  </Pressable>
+                )}
               >
-                <View style={styles.cardMain}>
-                  <Text style={styles.cardName}>{item.name}</Text>
-                  <View style={styles.cardMetaRow}>
-                    <Ionicons name="trophy-outline" size={16} color={colors.textMuted} style={styles.cardMetaIcon} />
-                    <Text style={styles.cardMeta} numberOfLines={2}>
-                      {metaLine}
-                      {dateStr ? (
-                        <Text style={styles.cardMetaDate}> · {dateStr}</Text>
-                      ) : null}
-                    </Text>
+                <Pressable
+                  style={[styles.card, busy && styles.cardDeleting]}
+                  onPress={() => router.push(`/exercise/${item.id}`)}
+                  disabled={busy}
+                >
+                  <View style={styles.cardMain}>
+                    <Text style={styles.cardName}>{item.name}</Text>
+                    <View style={styles.cardMetaRow}>
+                      <Ionicons name="trophy-outline" size={16} color={colors.textMuted} style={styles.cardMetaIcon} />
+                      <Text style={styles.cardMeta} numberOfLines={2}>
+                        {metaLine}
+                        {dateStr ? (
+                          <Text style={styles.cardMetaDate}> · {dateStr}</Text>
+                        ) : null}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-                <View style={styles.chevronWrap}>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-                </View>
-              </Pressable>
+                  <View style={styles.chevronWrap}>
+                    {busy ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : (
+                      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                    )}
+                  </View>
+                </Pressable>
+              </Swipeable>
             );
           }}
           ListEmptyComponent={
@@ -179,7 +246,10 @@ export default function ExercisesScreen() {
       <View style={styles.addCtaContainer}>
         <Pressable
           style={styles.addCta}
-          onPress={() => router.push('/exercise/log')}
+          onPress={() => {
+            trackStartedStandaloneLog(posthog, { source: 'exercises_tab' });
+            router.push('/exercise/log');
+          }}
         >
           <Ionicons name="add" size={20} color={colors.white} />
           <Text style={styles.addCtaText}>Add Exercise</Text>
@@ -266,6 +336,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  cardDeleting: { opacity: 0.7 },
+  exerciseDeleteAction: {
+    backgroundColor: '#dc2626',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    marginBottom: 12,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  exerciseDeleteActionText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 14,
+    marginTop: 4,
   },
   cardMain: { flex: 1 },
   cardName: {
