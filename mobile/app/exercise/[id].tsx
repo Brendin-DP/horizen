@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
+  Modal,
 } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -25,6 +26,8 @@ const CHART_PAD_H = 10;
 const CHART_PAD_V = 8;
 const CHART_INNER_W = CHART_WIDTH - 2 * CHART_PAD_H;
 const CHART_INNER_H = CHART_HEIGHT - 2 * CHART_PAD_V;
+
+type SessionSortMode = 'date-desc' | 'date-asc' | 'weight-desc' | 'weight-asc';
 
 function chartXForIndex(i: number, count: number): number {
   if (count <= 1) return CHART_PAD_H + CHART_INNER_W / 2;
@@ -509,13 +512,24 @@ export default function ExerciseDetailScreen() {
     return hasPb ? top.logId : null;
   }, [history, exercise]);
 
-  const pastLogs = useMemo(() => {
+  const [sessionSortMode, setSessionSortMode] = useState<SessionSortMode>('date-desc');
+  const [sortModalVisible, setSortModalVisible] = useState(false);
+
+  const sortedSessions = useMemo(() => {
     if (!exercise) return [];
-    return [...history].sort(
-      (a, b) =>
-        new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()
+    const copy = [...history];
+    if (sessionSortMode.startsWith('date')) {
+      const desc = sessionSortMode === 'date-desc';
+      const t = (x: ExerciseHistory) => new Date(x.loggedAt).getTime();
+      return copy.sort((a, b) => (desc ? t(b) - t(a) : t(a) - t(b)));
+    }
+    const desc = sessionSortMode === 'weight-desc';
+    return copy.sort((a, b) =>
+      desc
+        ? compareHistoryLogs(a, b, exercise.loggingType)
+        : compareHistoryLogs(b, a, exercise.loggingType)
     );
-  }, [history, exercise]);
+  }, [history, exercise, sessionSortMode]);
 
   if (loading) {
     return (
@@ -538,21 +552,34 @@ export default function ExerciseDetailScreen() {
           {error && <Text style={styles.error}>{error}</Text>}
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Your Progress</Text>
+            <Text style={[styles.sectionTitle, styles.sectionTitleBelow]}>Your Progress</Text>
             <View style={styles.card}>
               {exercise ? <ProgressChart history={history} exercise={exercise} /> : null}
             </View>
           </View>
 
           <View style={[styles.section, styles.sectionSpaced]}>
-            <Text style={styles.sectionTitle}>Your Sessions</Text>
-            {pastLogs.length === 0 ? (
+            <View style={styles.sessionsHeaderRow}>
+              <Text style={styles.sectionTitle}>Your Sessions</Text>
+              {history.length > 0 && exercise ? (
+                <Pressable
+                  style={styles.sortFilterBtn}
+                  onPress={() => setSortModalVisible(true)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Sort sessions"
+                >
+                  <Ionicons name="funnel-outline" size={22} color={colors.textPrimary} />
+                </Pressable>
+              ) : null}
+            </View>
+            {sortedSessions.length === 0 ? (
               <View style={styles.pbEmpty}>
                 <Text style={styles.pbEmptyText}>No sessions yet</Text>
                 <Text style={styles.pbEmptySub}>Log a session to track your progress</Text>
               </View>
             ) : (
-              pastLogs.map((log) => {
+              sortedSessions.map((log) => {
                 const isPb =
                   exercise != null && pbLogId != null && log.logId === pbLogId;
                 const setCount = log.sets?.length ?? 0;
@@ -612,6 +639,86 @@ export default function ExerciseDetailScreen() {
           </Pressable>
         </View>
       ) : null}
+
+      <Modal
+        visible={sortModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSortModalVisible(false)}
+      >
+        <Pressable
+          style={styles.sortModalOverlay}
+          onPress={() => setSortModalVisible(false)}
+        >
+          <View style={styles.sortModalCard}>
+            <Text style={styles.sortModalTitle}>Sort sessions</Text>
+            <Text style={styles.sortModalSectionLabel}>By date</Text>
+            {(
+              [
+                { mode: 'date-desc' as const, label: 'Newest first' },
+                { mode: 'date-asc' as const, label: 'Oldest first' },
+              ] as const
+            ).map(({ mode, label }) => (
+              <Pressable
+                key={mode}
+                style={styles.sortModalRow}
+                onPress={() => {
+                  setSessionSortMode(mode);
+                  setSortModalVisible(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.sortModalRowText,
+                    sessionSortMode === mode && styles.sortModalRowTextActive,
+                  ]}
+                >
+                  {label}
+                </Text>
+                {sessionSortMode === mode ? (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                ) : null}
+              </Pressable>
+            ))}
+            <Text style={[styles.sortModalSectionLabel, styles.sortModalSectionLabelSpaced]}>
+              By weight
+            </Text>
+            {(
+              [
+                { mode: 'weight-desc' as const, label: 'Best first' },
+                { mode: 'weight-asc' as const, label: 'Lowest first' },
+              ] as const
+            ).map(({ mode, label }) => (
+              <Pressable
+                key={mode}
+                style={styles.sortModalRow}
+                onPress={() => {
+                  setSessionSortMode(mode);
+                  setSortModalVisible(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.sortModalRowText,
+                    sessionSortMode === mode && styles.sortModalRowTextActive,
+                  ]}
+                >
+                  {label}
+                </Text>
+                {sessionSortMode === mode ? (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                ) : null}
+              </Pressable>
+            ))}
+            <Pressable
+              style={styles.sortModalCancel}
+              onPress={() => setSortModalVisible(false)}
+            >
+              <Text style={styles.sortModalCancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -636,11 +743,86 @@ const styles = StyleSheet.create({
   error: { color: colors.primary, marginBottom: 16 },
   section: { marginBottom: 0 },
   sectionSpaced: { marginTop: 24 },
+  sessionsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 24,
+  },
   sectionTitle: {
     fontSize: 18,
     color: colors.textPrimary,
-    marginBottom: 24,
+    flexShrink: 1,
     fontFamily: typography.heading,
+  },
+  sectionTitleBelow: {
+    marginBottom: 24,
+  },
+  sortFilterBtn: {
+    padding: 4,
+  },
+  sortModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  sortModalCard: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 20,
+    maxWidth: 400,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  sortModalTitle: {
+    fontSize: 18,
+    fontFamily: typography.heading,
+    color: colors.textPrimary,
+    marginBottom: 16,
+  },
+  sortModalSectionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    fontFamily: typography.bodySemibold,
+  },
+  sortModalSectionLabelSpaced: {
+    marginTop: 16,
+  },
+  sortModalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  sortModalRowText: {
+    fontSize: 16,
+    color: colors.textPrimary,
+    fontFamily: typography.body,
+  },
+  sortModalRowTextActive: {
+    color: colors.primary,
+    fontWeight: '600',
+    fontFamily: typography.bodySemibold,
+  },
+  sortModalCancel: {
+    marginTop: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  sortModalCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textMuted,
+    fontFamily: typography.bodySemibold,
   },
   footerCtaContainer: {
     paddingHorizontal: 16,
