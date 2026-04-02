@@ -9,7 +9,7 @@ import adminRouter from './routes/admin.js';
 import exercisesRouter from './routes/exercises.js';
 import workoutsRouter from './routes/workouts.js';
 import { workoutExercisesRouter, setsIdRouter } from './routes/sets.js';
-import exerciseLogsRouter from './routes/exerciseLogs.js';
+import sessionsRouter from './routes/sessions.js';
 import fundRouter from './routes/fund.js';
 
 const app = express();
@@ -28,7 +28,7 @@ app.use('/leaderboard', leaderboardRouter);
 app.use('/exercises', exercisesRouter);
 app.use('/workouts', workoutsRouter);
 app.use('/workout-exercises', workoutExercisesRouter);
-app.use('/exercise-logs', exerciseLogsRouter);
+app.use('/sessions', sessionsRouter);
 app.use('/sets', setsIdRouter);
 app.use('/fund', fundRouter);
 

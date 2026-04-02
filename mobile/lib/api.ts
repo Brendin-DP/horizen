@@ -459,44 +459,53 @@ export async function getMemberProgress(
   return res.json();
 }
 
-// Exercise logs (new flow, no workout container)
-export async function createExerciseLog(payload: {
-  memberId: string;
-  exerciseId: string;
-  notes?: string;
-  loggedAt?: string;
-}, token?: string | null): Promise<import('../types').ExerciseLog> {
-  const res = await fetchApi('/exercise-logs', {
+/** Sessions (standalone exercise logs, no workout container) */
+export async function createSession(
+  payload: {
+    memberId: string;
+    exerciseId: string;
+    notes?: string;
+    loggedAt?: string;
+  },
+  token?: string | null
+): Promise<import('../types').Session> {
+  const res = await fetchApi('/sessions', {
     method: 'POST',
     body: JSON.stringify(payload),
     token,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error((err as { error?: string }).error || 'Failed to create exercise log');
+    throw new Error((err as { error?: string }).error || 'Failed to create session');
   }
   return res.json();
 }
 
-export async function getExerciseLogs(memberId: string, token?: string | null): Promise<import('../types').ExerciseLog[]> {
-  const res = await fetchApi(`/exercise-logs?memberId=${encodeURIComponent(memberId)}`, { token });
-  if (!res.ok) throw new Error('Failed to fetch exercise logs');
+export async function getSessions(
+  memberId: string,
+  token?: string | null,
+  options?: { exerciseId?: string }
+): Promise<import('../types').Session[]> {
+  const params = new URLSearchParams({ memberId });
+  if (options?.exerciseId) params.set('exerciseId', options.exerciseId);
+  const res = await fetchApi(`/sessions?${params.toString()}`, { token });
+  if (!res.ok) throw new Error('Failed to fetch sessions');
   return res.json();
 }
 
-export async function getExerciseLog(id: string, token?: string | null): Promise<import('../types').ExerciseLog> {
-  const res = await fetchApi(`/exercise-logs/${id}`, { token });
-  if (!res.ok) throw new Error('Exercise log not found');
+export async function getSession(id: string, token?: string | null): Promise<import('../types').Session> {
+  const res = await fetchApi(`/sessions/${id}`, { token });
+  if (!res.ok) throw new Error('Session not found');
   return res.json();
 }
 
-export async function deleteExerciseLog(id: string, token?: string | null): Promise<void> {
-  const res = await fetchApi(`/exercise-logs/${id}`, { method: 'DELETE', token });
-  if (!res.ok) throw new Error('Failed to delete exercise log');
+export async function deleteSession(id: string, token?: string | null): Promise<void> {
+  const res = await fetchApi(`/sessions/${id}`, { method: 'DELETE', token });
+  if (!res.ok) throw new Error('Failed to delete session');
 }
 
-export async function addSetToExerciseLog(
-  exerciseLogId: string,
+export async function addSetToSession(
+  sessionId: string,
   payload: {
     setNumber: number;
     reps?: number;
@@ -507,7 +516,7 @@ export async function addSetToExerciseLog(
   },
   token?: string | null
 ): Promise<import('../types').Set> {
-  const res = await fetchApi(`/exercise-logs/${exerciseLogId}/sets`, {
+  const res = await fetchApi(`/sessions/${sessionId}/sets`, {
     method: 'POST',
     body: JSON.stringify(payload),
     token,
@@ -516,8 +525,8 @@ export async function addSetToExerciseLog(
   return res.json();
 }
 
-export async function addSetsBatchToExerciseLog(
-  exerciseLogId: string,
+export async function addSetsBatchToSession(
+  sessionId: string,
   sets: Array<{
     setNumber: number;
     reps?: number;
@@ -528,12 +537,20 @@ export async function addSetsBatchToExerciseLog(
   }>,
   token?: string | null
 ): Promise<import('../types').Set[]> {
-  const res = await fetchApi(`/exercise-logs/${exerciseLogId}/sets/batch`, {
+  const res = await fetchApi(`/sessions/${sessionId}/sets/batch`, {
     method: 'POST',
     body: JSON.stringify({ sets }),
     token,
   });
   if (!res.ok) throw new Error('Failed to add sets');
+  return res.json();
+}
+
+export async function getLoggedExercises(memberId: string): Promise<import('../types').LoggedExercise[]> {
+  const res = await fetch(
+    `${BASE_URL}/exercises/logged?memberId=${encodeURIComponent(memberId)}`
+  );
+  if (!res.ok) throw new Error('Failed to fetch logged exercises');
   return res.json();
 }
 

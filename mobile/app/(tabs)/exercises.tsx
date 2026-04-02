@@ -7,20 +7,18 @@ import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
-  Modal,
   Image,
 } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { getExerciseLogs, deleteExerciseLog } from '../../lib/api';
-import type { ExerciseLog, Set as LogSet } from '../../types';
+import { getLoggedExercises } from '../../lib/api';
+import type { LoggedExercise, ExerciseUnit, LoggingType } from '../../types';
 import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-function formatDate(iso: string) {
+function formatDate(iso: string | null) {
+  if (!iso) return '';
   return new Date(iso).toLocaleDateString(undefined, {
     day: 'numeric',
     month: 'short',
@@ -28,48 +26,44 @@ function formatDate(iso: string) {
   });
 }
 
-function pickBetterPb(
-  best: { reps: number; weightKg: number } | undefined,
-  s: LogSet
-): { reps: number; weightKg: number } | undefined {
-  if (s.reps == null || s.weightKg == null || !(s.weightKg > 0)) return best;
-  if (!best) return { reps: s.reps, weightKg: s.weightKg };
-  if (s.weightKg > best.weightKg) return { reps: s.reps, weightKg: s.weightKg };
-  if (s.weightKg === best.weightKg && s.reps > best.reps) return { reps: s.reps, weightKg: s.weightKg };
-  return best;
-}
-
-/** Best weight set within a single exercise log session (not lifetime). */
-function sessionBestFromSets(sets: LogSet[] | undefined): { reps: number; weightKg: number } | undefined {
-  let best: { reps: number; weightKg: number } | undefined;
-  for (const s of sets ?? []) {
-    const next = pickBetterPb(best, s);
-    if (next) best = next;
+/** Subtitle from lifetime best set + last session date (GET /exercises/logged). */
+function formatLoggedSubtitle(ex: LoggedExercise): string {
+  const unit = ex.unit as ExerciseUnit;
+  const lt = ex.loggingType as LoggingType;
+  const best = ex.bestSet;
+  if (unit === 'time') {
+    if (best?.durationSeconds != null) return `${best.durationSeconds}s`;
+    return 'No sets yet';
   }
-  return best;
-}
-
-function sessionMaxReps(sets: LogSet[] | undefined): number | undefined {
-  let best: number | undefined;
-  for (const s of sets ?? []) {
-    if (s.reps != null) {
-      if (best == null || s.reps > best) best = s.reps;
+  if (unit === 'distance') {
+    if (best?.distanceMeters != null) return `${best.distanceMeters} m`;
+    return 'No sets yet';
+  }
+  if (lt === 'bodyweight') {
+    if (best?.reps != null) return `${best.reps} reps`;
+    return 'No sets yet';
+  }
+  if (lt === 'weighted') {
+    if (best?.weightKg != null && best.weightKg > 0 && best.reps != null) {
+      return `${best.reps} reps @ ${best.weightKg}kg`;
     }
+    if (best?.reps != null) return `${best.reps} reps`;
+    return 'No sets yet';
   }
-  return best;
+  if (best?.weightKg != null && best.weightKg > 0 && best.reps != null) {
+    return `${best.reps} reps @ ${best.weightKg}kg`;
+  }
+  if (best?.reps != null) return `${best.reps} reps (bodyweight)`;
+  return 'No sets yet';
 }
 
 export default function ExercisesScreen() {
-  const posthog = usePostHog();
-  const { member, token } = useAuth();
+  const { member } = useAuth();
   const router = useRouter();
-  const [logs, setLogs] = useState<ExerciseLog[]>([]);
+  const [items, setItems] = useState<LoggedExercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [logToDelete, setLogToDelete] = useState<ExerciseLog | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!member?.id) {
@@ -78,15 +72,15 @@ export default function ExercisesScreen() {
     }
     setError(null);
     try {
-      const data = await getExerciseLogs(member.id, token);
-      setLogs(data);
+      const data = await getLoggedExercises(member.id);
+      setItems(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load exercises');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [member?.id, token]);
+  }, [member?.id]);
 
   useEffect(() => {
     fetchData();
@@ -97,42 +91,6 @@ export default function ExercisesScreen() {
       fetchData();
     }, [fetchData])
   );
-
-  function openDeleteModal(log: ExerciseLog) {
-    setLogToDelete(log);
-    setDeleteModalVisible(true);
-  }
-
-  async function handleConfirmDelete() {
-    if (!logToDelete || deleting) return;
-    setDeleting(true);
-    try {
-      await deleteExerciseLog(logToDelete.id, token);
-      posthog?.capture('deleted_exercise_log', {
-        logId: logToDelete.id,
-        exerciseName: logToDelete.exercise?.name,
-      });
-      setLogs((prev) => prev.filter((l) => l.id !== logToDelete.id));
-      setDeleteModalVisible(false);
-      setLogToDelete(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete');
-    } finally {
-      setDeleting(false);
-    }
-  }
-
-  function renderRightActions(log: ExerciseLog) {
-    return (
-      <Pressable
-        style={styles.deleteAction}
-        onPress={() => openDeleteModal(log)}
-      >
-        <Ionicons name="trash-outline" size={22} color={colors.white} />
-        <Text style={styles.deleteActionText}>Delete</Text>
-      </Pressable>
-    );
-  }
 
   if (loading) {
     return (
@@ -162,9 +120,9 @@ export default function ExercisesScreen() {
 
         <FlatList
           style={styles.listContainer}
-          data={logs}
+          data={items}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={[styles.list, logs.length === 0 && styles.listEmpty]}
+          contentContainerStyle={[styles.list, items.length === 0 && styles.listEmpty]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -176,41 +134,22 @@ export default function ExercisesScreen() {
             />
           }
           renderItem={({ item }) => {
-            const sessionPb = sessionBestFromSets(item.sets);
-            const maxReps = sessionMaxReps(item.sets);
-            const lt = item.exercise?.loggingType ?? 'weighted';
-            let metaLine = '';
-            if (item.exercise?.unit === 'time' || item.exercise?.unit === 'distance') {
-              metaLine = 'See history';
-            } else if (lt === 'bodyweight') {
-              metaLine = maxReps != null ? `${maxReps} reps` : 'No sets yet';
-            } else if (lt === 'weighted') {
-              metaLine = sessionPb
-                ? `${sessionPb.reps} reps @ ${sessionPb.weightKg}kg`
-                : 'No sets yet';
-            } else {
-              metaLine = sessionPb
-                ? `${sessionPb.reps} reps @ ${sessionPb.weightKg}kg`
-                : maxReps != null
-                  ? `${maxReps} reps (bodyweight)`
-                  : 'No sets yet';
-            }
+            const metaLine = formatLoggedSubtitle(item);
+            const dateStr = formatDate(item.lastLoggedAt);
             return (
-            <Swipeable
-              renderRightActions={() => renderRightActions(item)}
-              friction={2}
-            >
               <Pressable
                 style={styles.card}
-                onPress={() => router.push(`/exercise/${item.exerciseId}`)}
+                onPress={() => router.push(`/exercise/${item.id}`)}
               >
                 <View style={styles.cardMain}>
-                  <Text style={styles.cardName}>{item.exercise?.name ?? 'Exercise'}</Text>
+                  <Text style={styles.cardName}>{item.name}</Text>
                   <View style={styles.cardMetaRow}>
                     <Ionicons name="trophy-outline" size={16} color={colors.textMuted} style={styles.cardMetaIcon} />
                     <Text style={styles.cardMeta} numberOfLines={2}>
                       {metaLine}
-                      <Text style={styles.cardMetaDate}> · {formatDate(item.loggedAt)}</Text>
+                      {dateStr ? (
+                        <Text style={styles.cardMetaDate}> · {dateStr}</Text>
+                      ) : null}
                     </Text>
                   </View>
                 </View>
@@ -218,7 +157,6 @@ export default function ExercisesScreen() {
                   <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                 </View>
               </Pressable>
-            </Swipeable>
             );
           }}
           ListEmptyComponent={
@@ -247,36 +185,6 @@ export default function ExercisesScreen() {
           <Ionicons name="add" size={20} color={colors.white} />
         </Pressable>
       </View>
-
-      <Modal visible={deleteModalVisible} animationType="fade" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Delete log?</Text>
-            <Text style={styles.modalSub}>
-              This will remove {logToDelete?.exercise?.name ?? 'this exercise'} from{' '}
-              {logToDelete ? formatDate(logToDelete.loggedAt) : ''}.
-            </Text>
-            <View style={styles.modalRow}>
-              <Pressable
-                style={styles.modalCancel}
-                onPress={() => {
-                  setDeleteModalVisible(false);
-                  setLogToDelete(null);
-                }}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.modalDelete, deleting && styles.buttonDisabled]}
-                onPress={handleConfirmDelete}
-                disabled={deleting}
-              >
-                <Text style={styles.modalDeleteText}>{deleting ? 'Deleting...' : 'Delete'}</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -393,62 +301,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 8,
   },
-  deleteAction: {
-    backgroundColor: '#dc2626',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 80,
-    marginBottom: 12,
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-  },
-  deleteActionText: {
-    color: colors.white,
-    fontWeight: '600',
-    fontSize: 14,
-    marginTop: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 24,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  modalSub: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginBottom: 24,
-    lineHeight: 20,
-  },
-  modalRow: {
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'flex-end',
-  },
-  modalCancel: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-  },
-  modalCancelText: { color: colors.textMuted, fontWeight: '500' },
-  modalDelete: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: '#dc2626',
-    borderRadius: 12,
-  },
-  modalDeleteText: { color: colors.white, fontWeight: '600' },
-  buttonDisabled: { opacity: 0.6 },
   emptyState: {
     flex: 1,
     justifyContent: 'center',

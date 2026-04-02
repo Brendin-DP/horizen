@@ -51,7 +51,7 @@ export interface WorkoutExercise {
   sets?: Set[];
 }
 
-export interface ExerciseLog {
+export interface Session {
   id: string;
   memberId: string;
   exerciseId: string;
@@ -60,6 +60,13 @@ export interface ExerciseLog {
   createdAt: string;
   exercise?: Exercise;
   sets?: Set[];
+}
+
+/** Unique exercise on the exercises tab: from GET /exercises/logged */
+export interface LoggedExercise extends Exercise {
+  sessionCount: number;
+  lastLoggedAt: string | null;
+  bestSet: Set | null;
 }
 
 export interface ExerciseHistory {
@@ -76,7 +83,7 @@ export interface ExerciseHistory {
 export interface Set {
   id: string;
   workoutExerciseId?: string | null;
-  exerciseLogId?: string | null;
+  sessionId?: string | null;
   setNumber: number;
   reps: number | null;
   weightKg: number | null;

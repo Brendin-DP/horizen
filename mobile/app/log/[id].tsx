@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,14 @@ import {
   Pressable,
   ScrollView,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 import { useAuth } from '../../contexts/AuthContext';
-import { getExerciseLog, getExerciseHistory } from '../../lib/api';
-import type { Exercise, ExerciseHistory, ExerciseLog, LoggingType, Set } from '../../types';
+import { getSession, getExerciseHistory } from '../../lib/api';
+import type { Exercise, ExerciseHistory, Session, LoggingType, Set } from '../../types';
 import { colors, shell, typography } from '../../constants/theme';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function formatLogDateShort(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -99,20 +99,43 @@ function setMatchesSessionBest(
 export default function LogDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { member, token } = useAuth();
-  const [log, setLog] = useState<ExerciseLog | null>(null);
+  const [log, setLog] = useState<Session | null>(null);
   const [history, setHistory] = useState<ExerciseHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isFirstFocusForSessionRef = useRef(true);
 
   useEffect(() => {
-    if (!id) return;
-    setError(null);
-    getExerciseLog(id, token)
-      .then(setLog)
-      .catch(() => setError('Log not found'))
-      .finally(() => setLoading(false));
-  }, [id, token]);
+    isFirstFocusForSessionRef.current = true;
+  }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!id) return;
+      let cancelled = false;
+      const showSpinner = isFirstFocusForSessionRef.current;
+      if (showSpinner) setLoading(true);
+      setError(null);
+      getSession(id, token)
+        .then((data) => {
+          if (!cancelled) setLog(data);
+        })
+        .catch(() => {
+          if (!cancelled) setError('Log not found');
+        })
+        .finally(() => {
+          if (!cancelled) {
+            if (showSpinner) setLoading(false);
+            isFirstFocusForSessionRef.current = false;
+          }
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [id, token])
+  );
 
   const exercise = log?.exercise ?? null;
 
@@ -180,65 +203,75 @@ export default function LogDetailScreen() {
         title={exercise.name}
         titleExtra={formatLogDateShort(log.loggedAt)}
         onBack={() => router.back()}
-        right={
-          <Pressable
-            onPress={() => router.push(`/log/edit/${log.id}`)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Edit log"
-          >
-            <Ionicons name="pencil" size={22} color={colors.primary} />
-          </Pressable>
-        }
       />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.titleRow}>
-          <Text style={styles.titleRowText}>Sets</Text>
-        </View>
-
-        {sets.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No sets in this log</Text>
+      <View style={styles.bodyFill}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.titleRow}>
+            <Text style={styles.titleRowText}>Session Sets</Text>
           </View>
-        ) : (
-          sets.map((s) => {
-            const showRibbon =
-              isPbLog && sessionBest != null && setMatchesSessionBest(s, sessionBest, exercise);
-            const sub = formatSetSubline(s, exercise);
-            return (
-              <View key={s.id} style={[styles.setCard, showRibbon && styles.setCardClip]}>
-                {showRibbon ? (
-                  <View style={styles.pbRibbonWrap} pointerEvents="none">
-                    <View style={styles.pbRibbon}>
-                      <Ionicons name="trophy-outline" size={11} color={colors.white} />
-                      <Text style={styles.pbRibbonText}>Your Best</Text>
+
+          {sets.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>No sets in this session yet</Text>
+            </View>
+          ) : (
+            sets.map((s) => {
+              const showRibbon =
+                isPbLog && sessionBest != null && setMatchesSessionBest(s, sessionBest, exercise);
+              const sub = formatSetSubline(s, exercise);
+              return (
+                <View key={s.id} style={[styles.setCard, showRibbon && styles.setCardClip]}>
+                  {showRibbon ? (
+                    <View style={styles.pbRibbonWrap} pointerEvents="none">
+                      <View style={styles.pbRibbon}>
+                        <Ionicons name="trophy-outline" size={11} color={colors.white} />
+                        <Text style={styles.pbRibbonText}>Your Best</Text>
+                      </View>
+                    </View>
+                  ) : null}
+                  <View style={styles.setCardRow}>
+                    <View style={styles.setCardTextBlock}>
+                      <Text style={styles.setHeadline} numberOfLines={2}>
+                        {formatSetHeadline(s, exercise)}
+                      </Text>
+                      {sub ? <Text style={styles.setMeta}>{sub}</Text> : null}
                     </View>
                   </View>
-                ) : null}
-                <View style={styles.setCardRow}>
-                  <View style={styles.setCardTextBlock}>
-                    <Text style={styles.setHeadline} numberOfLines={2}>
-                      {formatSetHeadline(s, exercise)}
-                    </Text>
-                    {sub ? <Text style={styles.setMeta}>{sub}</Text> : null}
-                  </View>
                 </View>
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
+              );
+            })
+          )}
+        </ScrollView>
+      </View>
+
+      <View
+        style={[
+          styles.footerCtaContainer,
+          { paddingBottom: 12 + insets.bottom + 8 },
+        ]}
+      >
+        <Pressable
+          style={styles.footerCta}
+          onPress={() => router.push(`/log/edit/${log.id}`)}
+          accessibilityRole="button"
+          accessibilityLabel="Add set"
+        >
+          <Text style={styles.footerCtaText}>Add Set</Text>
+          <Ionicons name="add" size={20} color={colors.white} />
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeOuter: { flex: 1, backgroundColor: shell.header },
+  bodyFill: { flex: 1 },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -248,7 +281,7 @@ const styles = StyleSheet.create({
   },
   loadingText: { color: colors.textMuted, marginTop: 12 },
   scroll: { flex: 1, backgroundColor: shell.body },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 32 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 24 },
   titleRow: {
     marginBottom: 24,
   },
@@ -326,4 +359,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: { fontSize: 14, color: colors.textMuted, fontFamily: typography.body },
+  footerCtaContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: shell.footer,
+  },
+  footerCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+  },
+  footerCtaText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 16,
+  },
 });

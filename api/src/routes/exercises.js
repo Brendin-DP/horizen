@@ -1,7 +1,7 @@
 import express from 'express';
 import { randomUUID } from 'crypto';
 import supabase from '../db.js';
-import { mapExercise } from '../utils/mappers.js';
+import { mapExercise, mapSet } from '../utils/mappers.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -73,6 +73,105 @@ router.get('/requests', requireAuth, requireRole('admin'), async (req, res) => {
     createdAt: row.created_at,
   }));
   res.json(mapped);
+});
+
+/** One row per exercise the member has logged; must be registered before GET / and GET /:id */
+router.get('/logged', async (req, res) => {
+  const { memberId } = req.query;
+  if (!memberId) {
+    return res.status(400).json({ error: 'memberId is required' });
+  }
+
+  const { data: sessionRows, error: sessionsError } = await supabase
+    .from('sessions')
+    .select('id, exercise_id, logged_at')
+    .eq('member_id', memberId);
+
+  if (sessionsError) {
+    console.error(sessionsError);
+    return res.status(500).json({ error: 'Failed to fetch sessions' });
+  }
+
+  if (!sessionRows || sessionRows.length === 0) {
+    return res.json([]);
+  }
+
+  const exerciseIds = [...new Set(sessionRows.map((s) => s.exercise_id))];
+
+  const { data: exerciseRows, error: exercisesError } = await supabase
+    .from('exercise_library')
+    .select('*')
+    .in('id', exerciseIds)
+    .eq('status', 'active');
+
+  if (exercisesError) {
+    console.error(exercisesError);
+    return res.status(500).json({ error: 'Failed to fetch exercises' });
+  }
+
+  const sessionIds = sessionRows.map((s) => s.id);
+  const { data: setRows, error: setsError } = await supabase
+    .from('sets')
+    .select('*')
+    .in('session_id', sessionIds);
+
+  if (setsError) {
+    console.error(setsError);
+    return res.status(500).json({ error: 'Failed to fetch sets' });
+  }
+
+  const sets = setRows || [];
+
+  function pickBetterSet(best, current, unit, loggingType) {
+    if (!current) return best;
+    if (!best) return current;
+    if (unit === 'time') {
+      return (current.duration_seconds ?? 0) > (best.duration_seconds ?? 0) ? current : best;
+    }
+    if (unit === 'distance') {
+      return (current.distance_meters ?? 0) > (best.distance_meters ?? 0) ? current : best;
+    }
+    if (loggingType === 'bodyweight') {
+      return (current.reps ?? 0) > (best.reps ?? 0) ? current : best;
+    }
+    const cw = Number(current.weight_kg) || 0;
+    const bw = Number(best.weight_kg) || 0;
+    if (cw > bw) return current;
+    if (cw === bw && (current.reps ?? 0) > (best.reps ?? 0)) return current;
+    return best;
+  }
+
+  const result = (exerciseRows || []).map((exercise) => {
+    const exSessions = sessionRows.filter((s) => s.exercise_id === exercise.id);
+    const exSessionIds = exSessions.map((s) => s.id);
+    const exerciseSets = sets.filter((s) => exSessionIds.includes(s.session_id));
+    const unit = exercise.unit ?? 'weight_reps';
+    const loggingType = exercise.logging_type ?? 'weighted';
+
+    const bestSetRaw = exerciseSets.reduce(
+      (best, cur) => pickBetterSet(best, cur, unit, loggingType),
+      null
+    );
+
+    const latestSession = [...exSessions].sort(
+      (a, b) => new Date(b.logged_at) - new Date(a.logged_at)
+    )[0];
+
+    return {
+      ...mapExercise(exercise),
+      sessionCount: exSessions.length,
+      lastLoggedAt: latestSession?.logged_at ?? null,
+      bestSet: bestSetRaw ? mapSet(bestSetRaw) : null,
+    };
+  });
+
+  result.sort((a, b) => {
+    const ta = a.lastLoggedAt ? new Date(a.lastLoggedAt).getTime() : 0;
+    const tb = b.lastLoggedAt ? new Date(b.lastLoggedAt).getTime() : 0;
+    return tb - ta;
+  });
+
+  res.json(result);
 });
 
 router.get('/', async (req, res) => {

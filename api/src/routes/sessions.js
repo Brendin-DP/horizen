@@ -1,7 +1,7 @@
 import express from 'express';
 import { randomUUID } from 'crypto';
 import supabase from '../db.js';
-import { mapExerciseLog, mapExercise, mapSet, toDbSet } from '../utils/mappers.js';
+import { mapSession, mapExercise, mapSet, toDbSet } from '../utils/mappers.js';
 
 const router = express.Router();
 
@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
     return res.status(404).json({ error: 'Exercise not found' });
   }
 
-  const log = {
+  const sessionRow = {
     id: randomUUID(),
     member_id: memberId,
     exercise_id: exerciseId,
@@ -35,25 +35,32 @@ router.post('/', async (req, res) => {
     created_at: new Date().toISOString(),
   };
 
-  const { data: inserted, error } = await supabase.from('exercise_logs').insert(log).select().single();
+  const { data: inserted, error } = await supabase.from('sessions').insert(sessionRow).select().single();
   if (error) {
     console.error(error);
     return res.status(500).json({ error: 'Database error', detail: error.message });
   }
-  res.status(201).json(mapExerciseLog(inserted));
+  res.status(201).json(mapSession(inserted));
 });
 
 router.get('/', async (req, res) => {
   const memberId = req.query.memberId;
+  const exerciseId = req.query.exerciseId;
   if (!memberId) {
     return res.status(400).json({ error: 'memberId query is required' });
   }
 
-  const { data: logs, error } = await supabase
-    .from('exercise_logs')
+  let query = supabase
+    .from('sessions')
     .select('*')
     .eq('member_id', memberId)
     .order('logged_at', { ascending: false });
+
+  if (exerciseId) {
+    query = query.eq('exercise_id', exerciseId);
+  }
+
+  const { data: sessions, error } = await query;
   if (error) {
     console.error(error);
     return res.status(500).json({ error: 'Database error', detail: error.message });
@@ -65,57 +72,57 @@ router.get('/', async (req, res) => {
     exerciseMap[e.id] = mapExercise(e);
   }
 
-  const logList = logs || [];
-  const logIds = logList.map((l) => l.id);
+  const sessionList = sessions || [];
+  const sessionIds = sessionList.map((s) => s.id);
 
   let allSets = [];
-  if (logIds.length > 0) {
+  if (sessionIds.length > 0) {
     const { data: setsData } = await supabase
       .from('sets')
       .select('*')
-      .in('exercise_log_id', logIds)
+      .in('session_id', sessionIds)
       .order('set_number', { ascending: true });
     allSets = setsData || [];
   }
 
-  const setsByLogId = {};
+  const setsBySessionId = {};
   for (const s of allSets) {
-    const lid = s.exercise_log_id;
-    if (!setsByLogId[lid]) setsByLogId[lid] = [];
-    setsByLogId[lid].push(s);
+    const sid = s.session_id;
+    if (!setsBySessionId[sid]) setsBySessionId[sid] = [];
+    setsBySessionId[sid].push(s);
   }
 
-  const result = logList.map((row) => ({
-    ...mapExerciseLog(row),
+  const result = sessionList.map((row) => ({
+    ...mapSession(row),
     exercise: exerciseMap[row.exercise_id] ?? null,
-    sets: (setsByLogId[row.id] || []).map(mapSet),
+    sets: (setsBySessionId[row.id] || []).map(mapSet),
   }));
   res.json(result);
 });
 
 router.get('/:id', async (req, res) => {
-  const { data: log, error } = await supabase
-    .from('exercise_logs')
+  const { data: sessionRow, error } = await supabase
+    .from('sessions')
     .select('*')
     .eq('id', req.params.id)
     .single();
-  if (error || !log) {
-    return res.status(404).json({ error: 'Exercise log not found' });
+  if (error || !sessionRow) {
+    return res.status(404).json({ error: 'Session not found' });
   }
 
   const { data: exercise } = await supabase
     .from('exercise_library')
     .select('*')
-    .eq('id', log.exercise_id)
+    .eq('id', sessionRow.exercise_id)
     .single();
   const { data: sets } = await supabase
     .from('sets')
     .select('*')
-    .eq('exercise_log_id', log.id)
+    .eq('session_id', sessionRow.id)
     .order('set_number', { ascending: true });
 
   res.json({
-    ...mapExerciseLog(log),
+    ...mapSession(sessionRow),
     exercise: exercise ? mapExercise(exercise) : null,
     sets: (sets || []).map(mapSet),
   });
@@ -123,14 +130,14 @@ router.get('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   const { data: existing } = await supabase
-    .from('exercise_logs')
+    .from('sessions')
     .select('id')
     .eq('id', req.params.id)
     .single();
   if (!existing) {
-    return res.status(404).json({ error: 'Exercise log not found' });
+    return res.status(404).json({ error: 'Session not found' });
   }
-  const { error } = await supabase.from('exercise_logs').delete().eq('id', req.params.id);
+  const { error } = await supabase.from('sessions').delete().eq('id', req.params.id);
   if (error) {
     console.error(error);
     return res.status(500).json({ error: 'Database error', detail: error.message });
@@ -139,20 +146,20 @@ router.delete('/:id', async (req, res) => {
 });
 
 router.post('/:id/sets/batch', async (req, res) => {
-  const exerciseLogId = req.params.id;
+  const sessionId = req.params.id;
   const { sets: setsPayload } = req.body;
 
   if (!Array.isArray(setsPayload) || setsPayload.length === 0) {
     return res.status(400).json({ error: 'sets array is required and must not be empty' });
   }
 
-  const { data: log } = await supabase
-    .from('exercise_logs')
+  const { data: sessionRow } = await supabase
+    .from('sessions')
     .select('id')
-    .eq('id', exerciseLogId)
+    .eq('id', sessionId)
     .single();
-  if (!log) {
-    return res.status(404).json({ error: 'Exercise log not found' });
+  if (!sessionRow) {
+    return res.status(404).json({ error: 'Session not found' });
   }
 
   const now = new Date().toISOString();
@@ -160,7 +167,7 @@ router.post('/:id/sets/batch', async (req, res) => {
     const setNumber = s.setNumber !== undefined ? s.setNumber : idx + 1;
     return toDbSet({
       id: randomUUID(),
-      exerciseLogId,
+      sessionId,
       setNumber,
       reps: s.reps ?? null,
       weightKg: s.weightKg ?? null,
@@ -181,22 +188,22 @@ router.post('/:id/sets/batch', async (req, res) => {
 });
 
 router.post('/:id/sets', async (req, res) => {
-  const exerciseLogId = req.params.id;
+  const sessionId = req.params.id;
   const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed } = req.body;
 
-  const { data: log } = await supabase
-    .from('exercise_logs')
+  const { data: sessionRow } = await supabase
+    .from('sessions')
     .select('id')
-    .eq('id', exerciseLogId)
+    .eq('id', sessionId)
     .single();
-  if (!log) {
-    return res.status(404).json({ error: 'Exercise log not found' });
+  if (!sessionRow) {
+    return res.status(404).json({ error: 'Session not found' });
   }
 
   const { data: maxRow } = await supabase
     .from('sets')
     .select('set_number')
-    .eq('exercise_log_id', exerciseLogId)
+    .eq('session_id', sessionId)
     .order('set_number', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -204,7 +211,7 @@ router.post('/:id/sets', async (req, res) => {
   const maxSetNumber = maxRow?.set_number ?? 0;
   const set = {
     id: randomUUID(),
-    exerciseLogId,
+    sessionId,
     setNumber: setNumber !== undefined ? setNumber : maxSetNumber + 1,
     reps: reps ?? null,
     weightKg: weightKg ?? null,

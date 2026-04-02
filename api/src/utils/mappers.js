@@ -109,7 +109,7 @@ export function mapWorkoutExercise(row) {
   };
 }
 
-export function mapExerciseLog(row) {
+export function mapSession(row) {
   if (!row) return null;
   return {
     id: row.id,
@@ -126,7 +126,7 @@ export function mapSet(row) {
   return {
     id: row.id,
     workoutExerciseId: row.workout_exercise_id ?? null,
-    exerciseLogId: row.exercise_log_id ?? null,
+    sessionId: row.session_id ?? null,
     setNumber: row.set_number ?? 0,
     reps: row.reps ?? null,
     weightKg: row.weight_kg ?? null,
@@ -181,7 +181,7 @@ export function toDbSet(payload) {
   const out = {};
   if (payload.id !== undefined) out.id = payload.id;
   if (payload.workoutExerciseId !== undefined) out.workout_exercise_id = payload.workoutExerciseId;
-  if (payload.exerciseLogId !== undefined) out.exercise_log_id = payload.exerciseLogId;
+  if (payload.sessionId !== undefined) out.session_id = payload.sessionId;
   if (payload.setNumber !== undefined) out.set_number = payload.setNumber;
   if (payload.reps !== undefined) out.reps = payload.reps;
   if (payload.weightKg !== undefined) out.weight_kg = payload.weightKg;

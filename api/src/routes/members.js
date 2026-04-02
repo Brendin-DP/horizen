@@ -323,7 +323,7 @@ router.get('/:id/exercise-history/:exerciseId', async (req, res) => {
   const exerciseUnit = exercise.unit ?? 'weight_reps';
 
   let query = supabase
-    .from('exercise_logs')
+    .from('sessions')
     .select('*')
     .eq('member_id', memberId)
     .eq('exercise_id', exerciseId)
@@ -350,14 +350,14 @@ router.get('/:id/exercise-history/:exerciseId', async (req, res) => {
     const { data: setsData } = await supabase
       .from('sets')
       .select('*')
-      .in('exercise_log_id', logIds)
+      .in('session_id', logIds)
       .order('set_number', { ascending: true });
     allSets = setsData || [];
   }
 
   const setsByLogId = {};
   for (const s of allSets) {
-    const logId = s.exercise_log_id;
+    const logId = s.session_id;
     if (!setsByLogId[logId]) setsByLogId[logId] = [];
     setsByLogId[logId].push(s);
   }
@@ -393,7 +393,7 @@ router.get('/:id/exercise-history/:exerciseId/max-weight', async (req, res) => {
   }
 
   const { data: logs } = await supabase
-    .from('exercise_logs')
+    .from('sessions')
     .select('id')
     .eq('member_id', memberId)
     .eq('exercise_id', exerciseId);
@@ -406,7 +406,7 @@ router.get('/:id/exercise-history/:exerciseId/max-weight', async (req, res) => {
   const { data: sets } = await supabase
     .from('sets')
     .select('weight_kg')
-    .in('exercise_log_id', logIds)
+    .in('session_id', logIds)
     .not('weight_kg', 'is', null)
     .gt('weight_kg', 0);
 
@@ -440,7 +440,7 @@ router.get('/:id/exercise-history/:exerciseId/max-reps', async (req, res) => {
   }
 
   const { data: logs } = await supabase
-    .from('exercise_logs')
+    .from('sessions')
     .select('id')
     .eq('member_id', memberId)
     .eq('exercise_id', exerciseId);
@@ -453,7 +453,7 @@ router.get('/:id/exercise-history/:exerciseId/max-reps', async (req, res) => {
   const { data: sets } = await supabase
     .from('sets')
     .select('reps, weight_kg')
-    .in('exercise_log_id', logIds)
+    .in('session_id', logIds)
     .not('reps', 'is', null);
 
   const bodyweightSets = (sets || []).filter(

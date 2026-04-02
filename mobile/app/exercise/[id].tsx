@@ -11,11 +11,11 @@ import {
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { getExercise, getExerciseHistory } from '../../lib/api';
-import type { Exercise, ExerciseHistory, LoggingType } from '../../types';
+import { getExercise, getSessions } from '../../lib/api';
+import type { Exercise, ExerciseHistory, LoggingType, Session, Set, ExerciseUnit } from '../../types';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, typography } from '../../constants/theme';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { colors, shell, typography } from '../../constants/theme';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 
 const CHART_WIDTH = Dimensions.get('window').width - 64;
@@ -88,6 +88,108 @@ function formatPbSubline(log: ExerciseHistory, ex: Exercise): string {
   }
   if (best?.reps != null) return `${best.reps} reps · ${dateStr}`;
   return dateStr;
+}
+
+/**
+ * Mirrors server computeBestSetForExerciseLog (members route) for session-grouped charts.
+ */
+function computeBestSetForSession(
+  sets: Set[],
+  loggingType: LoggingType,
+  unit: ExerciseUnit
+): { bestSet: ExerciseHistory['bestSet']; totalVolume: number } {
+  if (unit !== 'weight_reps') {
+    let bestSet: ExerciseHistory['bestSet'] = { reps: null, weightKg: null };
+    let totalVolume = 0;
+    for (const s of sets) {
+      if (s.reps != null && s.weightKg != null) {
+        totalVolume += s.reps * s.weightKg;
+        if (
+          !bestSet.weightKg ||
+          s.weightKg > bestSet.weightKg ||
+          (s.weightKg === bestSet.weightKg && s.reps > (bestSet.reps ?? 0))
+        ) {
+          bestSet = { reps: s.reps, weightKg: s.weightKg };
+        }
+      }
+    }
+    return { bestSet, totalVolume };
+  }
+
+  let totalVolume = 0;
+  for (const s of sets) {
+    if (s.reps != null && s.weightKg != null && s.weightKg > 0) {
+      totalVolume += s.reps * s.weightKg;
+    }
+  }
+
+  if (loggingType === 'bodyweight') {
+    let bestReps: number | null = null;
+    for (const s of sets) {
+      if (s.reps != null && (s.weightKg == null || s.weightKg === 0)) {
+        if (bestReps == null || s.reps > bestReps) bestReps = s.reps;
+      }
+    }
+    return { bestSet: { reps: bestReps, weightKg: null }, totalVolume };
+  }
+
+  if (loggingType === 'weighted') {
+    let bestSet: ExerciseHistory['bestSet'] = { reps: null, weightKg: null };
+    for (const s of sets) {
+      if (s.reps != null && s.weightKg != null && s.weightKg > 0) {
+        if (
+          !bestSet.weightKg ||
+          s.weightKg > bestSet.weightKg ||
+          (s.weightKg === bestSet.weightKg && s.reps > (bestSet.reps ?? 0))
+        ) {
+          bestSet = { reps: s.reps, weightKg: s.weightKg };
+        }
+      }
+    }
+    return { bestSet, totalVolume };
+  }
+
+  let bestWeighted: ExerciseHistory['bestSet'] = { reps: null, weightKg: null };
+  for (const s of sets) {
+    if (s.reps != null && s.weightKg != null && s.weightKg > 0) {
+      if (
+        !bestWeighted.weightKg ||
+        s.weightKg > bestWeighted.weightKg ||
+        (s.weightKg === bestWeighted.weightKg && s.reps > (bestWeighted.reps ?? 0))
+      ) {
+        bestWeighted = { reps: s.reps, weightKg: s.weightKg };
+      }
+    }
+  }
+  if (bestWeighted.weightKg != null) {
+    return { bestSet: bestWeighted, totalVolume };
+  }
+
+  let bestReps: number | null = null;
+  for (const s of sets) {
+    if (s.reps != null && (s.weightKg == null || s.weightKg === 0)) {
+      if (bestReps == null || s.reps > bestReps) bestReps = s.reps;
+    }
+  }
+  return { bestSet: { reps: bestReps, weightKg: null }, totalVolume };
+}
+
+function sessionsToHistory(sessions: Session[], exercise: Exercise): ExerciseHistory[] {
+  return sessions.map((sess) => {
+    const sets = [...(sess.sets ?? [])].sort((a, b) => a.setNumber - b.setNumber);
+    const { bestSet, totalVolume } = computeBestSetForSession(
+      sets,
+      exercise.loggingType,
+      exercise.unit
+    );
+    return {
+      logId: sess.id,
+      loggedAt: sess.loggedAt,
+      sets,
+      bestSet,
+      totalVolume,
+    };
+  });
 }
 
 function compareHistoryLogs(a: ExerciseHistory, b: ExerciseHistory, lt: LoggingType): number {
@@ -360,6 +462,7 @@ function ProgressChart({ history, exercise }: { history: ExerciseHistory[]; exer
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { member, token } = useAuth();
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [history, setHistory] = useState<ExerciseHistory[]>([]);
@@ -374,14 +477,11 @@ export default function ExerciseDetailScreen() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    Promise.all([
-      getExercise(id),
-      getExerciseHistory(member.id, id, token),
-    ])
-      .then(([ex, hist]) => {
+    Promise.all([getExercise(id), getSessions(member.id, token, { exerciseId: id })])
+      .then(([ex, sessions]) => {
         if (cancelled) return;
         setExercise(ex);
-        setHistory(hist);
+        setHistory(sessionsToHistory(sessions, ex));
       })
       .catch((err) => {
         if (cancelled) return;
@@ -390,7 +490,9 @@ export default function ExerciseDetailScreen() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id, member?.id, token]);
 
   /** Best-performing session (for PB badge), independent of list order */
@@ -431,70 +533,92 @@ export default function ExerciseDetailScreen() {
         onBack={() => router.back()}
       />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        {error && <Text style={styles.error}>{error}</Text>}
+      <View style={styles.bodyFill}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+          {error && <Text style={styles.error}>{error}</Text>}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Progress</Text>
-          <View style={styles.card}>
-            {exercise ? <ProgressChart history={history} exercise={exercise} /> : null}
-          </View>
-        </View>
-
-        <View style={[styles.section, styles.sectionSpaced]}>
-          <Text style={styles.sectionTitle}>Your PB Logs</Text>
-          {pastLogs.length === 0 ? (
-            <View style={styles.pbEmpty}>
-              <Text style={styles.pbEmptyText}>No logs yet</Text>
-              <Text style={styles.pbEmptySub}>Add from the Exercises tab to track your progress</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Your Progress</Text>
+            <View style={styles.card}>
+              {exercise ? <ProgressChart history={history} exercise={exercise} /> : null}
             </View>
-          ) : (
-            pastLogs.map((log) => {
-              const isPb =
-                exercise != null && pbLogId != null && log.logId === pbLogId;
-              const setCount = log.sets?.length ?? 0;
-              return (
-                <Pressable
-                  key={log.logId}
-                  style={[styles.pbCard, isPb && styles.pbCardClip]}
-                  onPress={() => router.push(`/log/${log.logId}`)}
-                  android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
-                >
-                  {isPb ? (
-                    <View style={styles.pbRibbonWrap} pointerEvents="none">
-                      <View style={styles.pbRibbon}>
-                        <Ionicons name="trophy-outline" size={11} color={colors.white} />
-                        <Text style={styles.pbRibbonText}>Your Best</Text>
-                      </View>
-                    </View>
-                  ) : null}
-                  <View style={styles.pbCardRow}>
-                    <View style={styles.pbCardTextBlock}>
-                      <Text style={styles.pbHeadline} numberOfLines={2}>
-                        {exercise ? formatPbHeadline(log, exercise) : ''}
-                      </Text>
-                      <Text style={styles.pbMeta}>
-                        {exercise ? formatPbSubline(log, exercise) : ''}
-                      </Text>
-                    </View>
-                    {setCount > 1 ? (
-                      <View style={styles.pbSetChip} accessibilityLabel={`${setCount} sets`}>
-                        <Text style={styles.pbSetChipText}>{setCount}</Text>
+          </View>
+
+          <View style={[styles.section, styles.sectionSpaced]}>
+            <Text style={styles.sectionTitle}>Your Sessions</Text>
+            {pastLogs.length === 0 ? (
+              <View style={styles.pbEmpty}>
+                <Text style={styles.pbEmptyText}>No sessions yet</Text>
+                <Text style={styles.pbEmptySub}>Log a session to track your progress</Text>
+              </View>
+            ) : (
+              pastLogs.map((log) => {
+                const isPb =
+                  exercise != null && pbLogId != null && log.logId === pbLogId;
+                const setCount = log.sets?.length ?? 0;
+                return (
+                  <Pressable
+                    key={log.logId}
+                    style={[styles.pbCard, isPb && styles.pbCardClip]}
+                    onPress={() => router.push(`/log/${log.logId}`)}
+                    android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
+                  >
+                    {isPb ? (
+                      <View style={styles.pbRibbonWrap} pointerEvents="none">
+                        <View style={styles.pbRibbon}>
+                          <Ionicons name="trophy-outline" size={11} color={colors.white} />
+                          <Text style={styles.pbRibbonText}>Your Best</Text>
+                        </View>
                       </View>
                     ) : null}
-                  </View>
-                </Pressable>
-              );
-            })
-          )}
+                    <View style={styles.pbCardRow}>
+                      <View style={styles.pbCardTextBlock}>
+                        <Text style={styles.pbHeadline} numberOfLines={2}>
+                          {exercise ? formatPbHeadline(log, exercise) : ''}
+                        </Text>
+                        <Text style={styles.pbMeta}>
+                          {exercise ? formatPbSubline(log, exercise) : ''}
+                        </Text>
+                      </View>
+                      {setCount > 1 ? (
+                        <View style={styles.pbSetChip} accessibilityLabel={`${setCount} sets`}>
+                          <Text style={styles.pbSetChipText}>{setCount}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </Pressable>
+                );
+              })
+            )}
+          </View>
+        </ScrollView>
+      </View>
+
+      {id ? (
+        <View
+          style={[
+            styles.footerCtaContainer,
+            { paddingBottom: 12 + insets.bottom + 8 },
+          ]}
+        >
+          <Pressable
+            style={styles.footerCta}
+            onPress={() => router.push(`/exercise/log?exerciseId=${id}`)}
+            accessibilityRole="button"
+            accessibilityLabel="Add session"
+          >
+            <Text style={styles.footerCtaText}>Add Session</Text>
+            <Ionicons name="add" size={20} color={colors.white} />
+          </Pressable>
         </View>
-      </ScrollView>
+      ) : null}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.backgroundDark },
+  bodyFill: { flex: 1 },
   center: {
     flex: 1,
     backgroundColor: colors.backgroundDark,
@@ -517,6 +641,27 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: 24,
     fontFamily: typography.heading,
+  },
+  footerCtaContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: shell.footer,
+  },
+  footerCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+  },
+  footerCtaText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 16,
   },
   card: {
     backgroundColor: colors.white,

@@ -14,12 +14,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { DrillDownHeader } from '../../../components/DrillDownHeader';
 import { useAuth } from '../../../contexts/AuthContext';
 import {
-  getExerciseLog,
+  getSession,
   updateSet,
-  addSetToExerciseLog,
+  addSetToSession,
   deleteSet,
 } from '../../../lib/api';
-import type { ExerciseLog, Set } from '../../../types';
+import type { Session, Set } from '../../../types';
 import { colors, typography } from '../../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -49,7 +49,7 @@ export default function EditLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { token } = useAuth();
-  const [log, setLog] = useState<ExerciseLog | null>(null);
+  const [log, setLog] = useState<Session | null>(null);
   const [sets, setSets] = useState<SetEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -57,7 +57,7 @@ export default function EditLogScreen() {
 
   useEffect(() => {
     if (!id) return;
-    getExerciseLog(id, token)
+    getSession(id, token)
       .then((data) => {
         setLog(data);
         const entries =
@@ -102,11 +102,9 @@ export default function EditLogScreen() {
     setSaving(true);
     setError(null);
     try {
-      const originalSetIds = new Set(
-        (log.sets ?? []).map((s) => s.id)
-      );
+      const originalSetIds = new Set((log.sets ?? []).map((s: Set) => s.id));
       const currentSetIds = new Set(sets.map((s) => s.id));
-      const removedIds = [...originalSetIds].filter((i) => !currentSetIds.has(i));
+      const removedIds: string[] = [...originalSetIds].filter((i) => !currentSetIds.has(i));
 
       for (const setId of removedIds) {
         if (!setId.startsWith('new-')) {
@@ -118,7 +116,14 @@ export default function EditLogScreen() {
       for (const s of sets) {
         setNumber++;
         if (s.isNew) {
-          const body: Record<string, number | boolean> = { setNumber, completed: true };
+          const body: {
+            setNumber: number;
+            reps?: number;
+            weightKg?: number | null;
+            durationSeconds?: number;
+            distanceMeters?: number;
+            completed?: boolean;
+          } = { setNumber, completed: true };
           if (exercise.unit === 'weight_reps') {
             const r = parseInt(s.reps, 10);
             body.reps = isNaN(r) ? 0 : r;
@@ -128,7 +133,7 @@ export default function EditLogScreen() {
           } else if (exercise.unit === 'distance') {
             body.distanceMeters = parseFloat(s.distance) || 0;
           }
-          await addSetToExerciseLog(log.id, body, token);
+          await addSetToSession(log.id, body, token);
         } else {
           const updates: Partial<Set> = {};
           if (exercise.unit === 'weight_reps') {

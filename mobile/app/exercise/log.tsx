@@ -23,8 +23,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   getExercise,
   getExercises,
-  createExerciseLog,
-  addSetsBatchToExerciseLog,
+  createSession,
+  addSetsBatchToSession,
   getExerciseMaxWeight,
   getExerciseMaxReps,
   getExerciseHistory,
@@ -282,7 +282,7 @@ export default function LogExerciseScreen() {
     setSuccessModalVisible(false);
     const target = pendingNavigationRef.current;
     pendingNavigationRef.current = null;
-    if (target) router.replace(target as '/exercise/[id]' | '/(tabs)/exercises');
+    if (target) router.replace(target as `/log/${string}` | '/(tabs)/exercises');
   }
 
   async function handleSaveLog() {
@@ -345,12 +345,12 @@ export default function LogExerciseScreen() {
         setsPayload.push(body as (typeof setsPayload)[0]);
       }
 
-      const log = await createExerciseLog(
+      const log = await createSession(
         { memberId: member.id, exerciseId: exercise.id },
         token
       );
 
-      await addSetsBatchToExerciseLog(log.id, setsPayload, token);
+      await addSetsBatchToSession(log.id, setsPayload, token);
 
       posthog?.capture('logged_exercise', {
         exerciseId: exercise.id,
@@ -358,7 +358,7 @@ export default function LogExerciseScreen() {
         setCount: sets.length,
       });
 
-      const targetRoute = exerciseId ? `/exercise/${exercise.id}` : '/(tabs)/exercises';
+      const targetRoute = `/log/${log.id}`;
 
       if (exercise.unit === 'weight_reps' && exercise.loggingType !== 'bodyweight') {
         const weights = sets
@@ -429,7 +429,7 @@ export default function LogExerciseScreen() {
         }
 
         if (!showedPr) {
-          router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
+          router.replace(targetRoute as `/log/${string}`);
         }
       } else if (exercise.unit === 'weight_reps' && exercise.loggingType === 'bodyweight') {
         const repVals = sets
@@ -459,13 +459,13 @@ export default function LogExerciseScreen() {
               setTimeout(() => confettiRef.current?.start(), 80);
             });
           } else {
-            router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
+            router.replace(targetRoute as `/log/${string}`);
           }
         } else {
-          router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
+          router.replace(targetRoute as `/log/${string}`);
         }
       } else {
-        router.replace(targetRoute as '/exercise/[id]' | '/(tabs)/exercises');
+        router.replace(targetRoute as `/log/${string}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save log');
