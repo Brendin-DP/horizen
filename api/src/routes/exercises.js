@@ -3,11 +3,18 @@ import { randomUUID } from 'crypto';
 import supabase from '../db.js';
 import { mapExercise, mapSet } from '../utils/mappers.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import {
+  ENUMS,
+  isValidEnum,
+  isValidMuscleGroups,
+  isValidUUID,
+  DEFAULT_EXERCISE_CATEGORY,
+} from '../utils/validation.js';
 
 const router = express.Router();
 
-const LOGGING_TYPES = new Set(['weighted', 'bodyweight', 'weighted_or_bodyweight']);
-const UNITS = new Set(['weight_reps', 'time', 'distance']);
+const LOGGING_TYPES = new Set(ENUMS.loggingTypes);
+const UNITS = new Set(ENUMS.units);
 
 /** POST /request and GET /requests MUST be registered before /:id */
 
@@ -19,14 +26,31 @@ router.post('/request', requireAuth, async (req, res) => {
   if (!memberId || memberId !== req.member.id) {
     return res.status(400).json({ error: 'memberId must match authenticated member' });
   }
+  if (!isValidUUID(memberId)) {
+    return res.status(400).json({ error: 'memberId must be a valid UUID' });
+  }
   const id = randomUUID();
-  const categoryVal =
-    category != null && String(category).trim() ? String(category).trim() : 'General';
+  let categoryVal = DEFAULT_EXERCISE_CATEGORY;
+  if (category != null && String(category).trim()) {
+    const c = String(category).trim();
+    if (!isValidEnum(c, ENUMS.categories)) {
+      return res.status(400).json({ error: 'Invalid category', detail: c });
+    }
+    categoryVal = c;
+  }
+  let typeVal = null;
+  if (type != null && String(type).trim()) {
+    const t = String(type).trim();
+    if (!isValidEnum(t, ENUMS.types)) {
+      return res.status(400).json({ error: 'Invalid type', detail: t });
+    }
+    typeVal = t;
+  }
   const insert = {
     id,
     name: name.trim(),
     category: categoryVal,
-    type: type != null && String(type).trim() ? String(type).trim() : null,
+    type: typeVal,
     muscle_groups: [],
     equipment: null,
     unit: 'weight_reps',
@@ -80,6 +104,9 @@ router.get('/logged', async (req, res) => {
   const { memberId } = req.query;
   if (!memberId) {
     return res.status(400).json({ error: 'memberId is required' });
+  }
+  if (!isValidUUID(String(memberId))) {
+    return res.status(400).json({ error: 'memberId must be a valid UUID' });
   }
 
   const { data: sessionRows, error: sessionsError } = await supabase
@@ -178,6 +205,9 @@ router.get('/', async (req, res) => {
   let query = supabase.from('exercise_library').select('*').eq('status', 'active');
   const category = req.query.category;
   if (category) {
+    if (!isValidEnum(String(category), ENUMS.categories)) {
+      return res.status(400).json({ error: 'Invalid category filter' });
+    }
     query = query.eq('category', category);
   }
   const { data, error } = await query.order('name');
@@ -190,31 +220,67 @@ router.get('/', async (req, res) => {
 
 router.patch('/:id/approve', requireAuth, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
+  if (!isValidUUID(id)) {
+    return res.status(400).json({ error: 'Invalid exercise id' });
+  }
   const { name, category, type, muscleGroups, equipment, unit, loggingType } = req.body;
   const updates = { status: 'active' };
   if (name && String(name).trim()) updates.name = String(name).trim();
   if (category !== undefined && category !== null && String(category).trim()) {
-    updates.category = String(category).trim();
+    const c = String(category).trim();
+    if (!isValidEnum(c, ENUMS.categories)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+    updates.category = c;
   }
   if (type !== undefined) {
-    updates.type = type && String(type).trim() ? String(type).trim() : null;
+    if (type === null || !String(type).trim()) {
+      updates.type = null;
+    } else {
+      const t = String(type).trim();
+      if (!isValidEnum(t, ENUMS.types)) {
+        return res.status(400).json({ error: 'Invalid type' });
+      }
+      updates.type = t;
+    }
   }
   if (equipment !== undefined) {
-    updates.equipment = equipment && String(equipment).trim() ? String(equipment).trim() : null;
+    if (equipment === null || !String(equipment).trim()) {
+      updates.equipment = null;
+    } else {
+      const e = String(equipment).trim();
+      if (!isValidEnum(e, ENUMS.equipment)) {
+        return res.status(400).json({ error: 'Invalid equipment' });
+      }
+      updates.equipment = e;
+    }
   }
-  if (unit && UNITS.has(unit)) updates.unit = unit;
-  if (loggingType && LOGGING_TYPES.has(loggingType)) updates.logging_type = loggingType;
+  if (unit !== undefined) {
+    if (!unit || !UNITS.has(unit)) {
+      return res.status(400).json({ error: 'Invalid unit' });
+    }
+    updates.unit = unit;
+  }
+  if (loggingType !== undefined) {
+    if (!loggingType || !LOGGING_TYPES.has(loggingType)) {
+      return res.status(400).json({ error: 'Invalid loggingType' });
+    }
+    updates.logging_type = loggingType;
+  }
   if (muscleGroups !== undefined) {
+    let arr = [];
     if (Array.isArray(muscleGroups)) {
-      updates.muscle_groups = muscleGroups;
+      arr = muscleGroups;
     } else if (typeof muscleGroups === 'string') {
-      updates.muscle_groups = muscleGroups
+      arr = muscleGroups
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean);
-    } else {
-      updates.muscle_groups = [];
     }
+    if (!isValidMuscleGroups(arr)) {
+      return res.status(400).json({ error: 'Invalid muscleGroups: each entry must be a valid muscle group' });
+    }
+    updates.muscle_groups = arr;
   }
   const { data, error } = await supabase
     .from('exercise_library')
@@ -231,6 +297,9 @@ router.patch('/:id/approve', requireAuth, requireRole('admin'), async (req, res)
 
 router.patch('/:id/reject', requireAuth, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
+  if (!isValidUUID(id)) {
+    return res.status(400).json({ error: 'Invalid exercise id' });
+  }
   const { data, error } = await supabase
     .from('exercise_library')
     .update({ status: 'rejected' })
@@ -245,6 +314,9 @@ router.patch('/:id/reject', requireAuth, requireRole('admin'), async (req, res) 
 });
 
 router.patch('/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  if (!isValidUUID(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid exercise id' });
+  }
   const { loggingType } = req.body;
   if (loggingType === undefined || loggingType === null) {
     return res.status(400).json({ error: 'loggingType is required' });
@@ -274,6 +346,9 @@ router.patch('/:id', requireAuth, requireRole('admin'), async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+  if (!isValidUUID(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid exercise id' });
+  }
   const { data, error } = await supabase
     .from('exercise_library')
     .select('*')

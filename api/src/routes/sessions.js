@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import supabase from '../db.js';
 import { mapSession, mapExercise, mapSet, toDbSet } from '../utils/mappers.js';
 import { normalizeSetCreatedAt } from '../utils/setCreatedAt.js';
+import { isValidUUID } from '../utils/validation.js';
 
 const router = express.Router();
 
@@ -11,6 +12,9 @@ router.post('/', async (req, res) => {
 
   if (!memberId || !exerciseId) {
     return res.status(400).json({ error: 'memberId and exerciseId are required' });
+  }
+  if (!isValidUUID(memberId) || !isValidUUID(exerciseId)) {
+    return res.status(400).json({ error: 'memberId and exerciseId must be valid UUIDs' });
   }
 
   const { data: member } = await supabase.from('members').select('id').eq('id', memberId).single();
@@ -49,6 +53,12 @@ router.get('/', async (req, res) => {
   const exerciseId = req.query.exerciseId;
   if (!memberId) {
     return res.status(400).json({ error: 'memberId query is required' });
+  }
+  if (!isValidUUID(String(memberId))) {
+    return res.status(400).json({ error: 'memberId must be a valid UUID' });
+  }
+  if (exerciseId != null && String(exerciseId) !== '' && !isValidUUID(String(exerciseId))) {
+    return res.status(400).json({ error: 'exerciseId must be a valid UUID' });
   }
 
   let query = supabase
@@ -102,6 +112,9 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+  if (!isValidUUID(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid session id' });
+  }
   const { data: sessionRow, error } = await supabase
     .from('sessions')
     .select('*')
@@ -130,6 +143,9 @@ router.get('/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
+  if (!isValidUUID(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid session id' });
+  }
   const { data: existing } = await supabase
     .from('sessions')
     .select('id')
@@ -153,6 +169,9 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/:id/sets/batch', async (req, res) => {
   const sessionId = req.params.id;
+  if (!isValidUUID(sessionId)) {
+    return res.status(400).json({ error: 'Invalid session id' });
+  }
   const { sets: setsPayload } = req.body;
 
   if (!Array.isArray(setsPayload) || setsPayload.length === 0) {
@@ -203,6 +222,9 @@ router.post('/:id/sets/batch', async (req, res) => {
 
 router.post('/:id/sets', async (req, res) => {
   const sessionId = req.params.id;
+  if (!isValidUUID(sessionId)) {
+    return res.status(400).json({ error: 'Invalid session id' });
+  }
   const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed, createdAt } = req.body;
 
   const { data: sessionRow } = await supabase

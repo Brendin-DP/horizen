@@ -17,7 +17,7 @@ import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { trackStartedStandaloneLog, trackExerciseDeleted } from '../../lib/analytics';
 import { getLoggedExercises, deleteAllSessionsForExercise } from '../../lib/api';
-import type { LoggedExercise, ExerciseUnit, LoggingType } from '../../types';
+import type { LoggedExercise } from '../../types';
 import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -32,8 +32,8 @@ function formatDate(iso: string | null) {
 
 /** Subtitle from lifetime best set + last session date (GET /exercises/logged). */
 function formatLoggedSubtitle(ex: LoggedExercise): string {
-  const unit = ex.unit as ExerciseUnit;
-  const lt = ex.loggingType as LoggingType;
+  const unit = ex.unit;
+  const lt = ex.loggingType;
   const best = ex.bestSet;
   if (unit === 'time') {
     if (best?.durationSeconds != null) return `${best.durationSeconds}s`;

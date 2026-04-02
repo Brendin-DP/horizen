@@ -8,8 +8,11 @@ import {
   approveExercise,
   rejectExercise,
   type Exercise,
+  type ExerciseCategory,
+  type ExerciseEquipment,
   type ExerciseLoggingType,
   type ExerciseRequestRow,
+  type ExerciseType,
 } from '../api/client';
 import { colors } from '../constants/theme';
 
@@ -34,6 +37,7 @@ const TYPE_OPTIONS = [
   'Squat',
   'Hinge',
   'Lunge',
+  'Isolation',
   'Core',
   'Cardio',
   'Olympic',
@@ -41,7 +45,6 @@ const TYPE_OPTIONS = [
   'Carry',
   'Mobility',
   'Plyometric',
-  'Isolation',
 ] as const;
 
 const EQUIPMENT_OPTIONS = [
@@ -95,10 +98,10 @@ export default function ExerciseManagement() {
 
   const [approveRow, setApproveRow] = useState<ExerciseRequestRow | null>(null);
   const [apName, setApName] = useState('');
-  const [apCategory, setApCategory] = useState('');
-  const [apType, setApType] = useState('');
+  const [apCategory, setApCategory] = useState<ExerciseCategory>('Upper Body');
+  const [apType, setApType] = useState<ExerciseType | ''>('');
   const [apMuscleGroups, setApMuscleGroups] = useState('');
-  const [apEquipment, setApEquipment] = useState('');
+  const [apEquipment, setApEquipment] = useState<ExerciseEquipment | ''>('');
   const [apUnit, setApUnit] = useState<'weight_reps' | 'time' | 'distance'>('weight_reps');
   const [apLoggingType, setApLoggingType] = useState<ExerciseLoggingType>('weighted');
   const [approveSaving, setApproveSaving] = useState(false);
@@ -188,10 +191,10 @@ export default function ExerciseManagement() {
     setRequestSuccess('');
     setApproveRow(row);
     setApName(row.name);
-    setApCategory(row.category ?? 'General');
-    setApType(row.type ?? '');
+    setApCategory((row.category ?? 'Upper Body') as ExerciseCategory);
+    setApType((row.type ?? '') as ExerciseType | '');
     setApMuscleGroups('');
-    setApEquipment('');
+    setApEquipment('' as ExerciseEquipment | '');
     setApUnit('weight_reps');
     setApLoggingType('weighted');
   }
@@ -215,10 +218,10 @@ export default function ExerciseManagement() {
         approveRow.id,
         {
           name: apName.trim(),
-          category: apCategory.trim(),
-          type: apType.trim() || null,
+          category: apCategory,
+          type: apType === '' ? null : apType,
           muscleGroups,
-          equipment: apEquipment.trim() || null,
+          equipment: apEquipment === '' ? null : apEquipment,
           unit: apUnit,
           loggingType: apLoggingType,
         },
@@ -683,7 +686,7 @@ export default function ExerciseManagement() {
               <select
                 className="hz-select mb-4 w-full"
                 value={apCategory}
-                onChange={(e) => setApCategory(e.target.value)}
+                onChange={(e) => setApCategory(e.target.value as ExerciseCategory)}
               >
                 {CATEGORY_OPTIONS.map((c) => (
                   <option key={c} value={c}>
@@ -692,7 +695,11 @@ export default function ExerciseManagement() {
                 ))}
               </select>
               <label className="mb-2 block text-sm font-medium text-slate-700">Type</label>
-              <select className="hz-select mb-4 w-full" value={apType} onChange={(e) => setApType(e.target.value)}>
+              <select
+                className="hz-select mb-4 w-full"
+                value={apType}
+                onChange={(e) => setApType(e.target.value as ExerciseType | '')}
+              >
                 <option value="">—</option>
                 {TYPE_OPTIONS.map((t) => (
                   <option key={t} value={t}>
@@ -713,7 +720,7 @@ export default function ExerciseManagement() {
               <select
                 className="hz-select mb-4 w-full"
                 value={apEquipment}
-                onChange={(e) => setApEquipment(e.target.value)}
+                onChange={(e) => setApEquipment(e.target.value as ExerciseEquipment | '')}
               >
                 <option value="">—</option>
                 {EQUIPMENT_OPTIONS.map((eq) => (

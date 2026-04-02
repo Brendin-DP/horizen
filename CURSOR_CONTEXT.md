@@ -181,7 +181,7 @@ gymapp/
 {
   "members": [
     {
-      "id": "m1",
+      "id": "00000010-0000-4000-8000-000000f42401",
       "name": "Sarah Jacobs",
       "email": "sarah@gym.com",
       "role": "member",
@@ -189,7 +189,7 @@ gymapp/
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m2",
+      "id": "00000010-0000-4000-8000-000000f42402",
       "name": "James Fortuin",
       "email": "james@gym.com",
       "role": "member",
@@ -197,7 +197,7 @@ gymapp/
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m3",
+      "id": "00000010-0000-4000-8000-000000f42403",
       "name": "Aisha Davids",
       "email": "aisha@gym.com",
       "role": "member",
@@ -205,7 +205,7 @@ gymapp/
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "i1",
+      "id": "00000020-0000-4000-8000-000001e84801",
       "name": "Neal Oberholster",
       "email": "neal@gym.com",
       "role": "instructor",
@@ -215,23 +215,23 @@ gymapp/
   ],
   "starAwards": [
     {
-      "id": "s1",
-      "memberId": "m1",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b401",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Best form this week",
       "createdAt": "2025-01-10T09:00:00Z"
     },
     {
-      "id": "s2",
-      "memberId": "m1",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b402",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Most improved",
       "createdAt": "2025-01-12T09:00:00Z"
     },
     {
-      "id": "s3",
-      "memberId": "m2",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b403",
+      "memberId": "00000010-0000-4000-8000-000000f42402",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "100% attendance",
       "createdAt": "2025-01-11T09:00:00Z"
     }

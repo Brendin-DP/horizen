@@ -14,10 +14,11 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { requestExercise } from '../lib/api';
-import type { ExerciseRequestPayload } from '../types';
+import type { ExerciseCategory, ExerciseRequestPayload, ExerciseType } from '../types';
 import { colors, typography } from '../constants/theme';
 
-export const EXERCISE_REQUEST_CATEGORIES = [
+/** Matches `ENUMS.categories` / Postgres `exercise_category`. */
+export const EXERCISE_REQUEST_CATEGORIES: readonly ExerciseCategory[] = [
   'Upper Body',
   'Lower Body',
   'Full Body',
@@ -26,12 +27,14 @@ export const EXERCISE_REQUEST_CATEGORIES = [
   'Mobility',
 ] as const;
 
-export const EXERCISE_REQUEST_TYPES = [
+/** Matches `ENUMS.types` / Postgres `exercise_type` (order per schema). */
+export const EXERCISE_REQUEST_TYPES: readonly ExerciseType[] = [
   'Push',
   'Pull',
   'Squat',
   'Hinge',
   'Lunge',
+  'Isolation',
   'Core',
   'Cardio',
   'Olympic',
@@ -39,7 +42,6 @@ export const EXERCISE_REQUEST_TYPES = [
   'Carry',
   'Mobility',
   'Plyometric',
-  'Isolation',
 ] as const;
 
 type Props = {
@@ -61,8 +63,8 @@ export function RequestExerciseModal({
   onSuccess,
 }: Props) {
   const [name, setName] = useState('');
-  const [category, setCategory] = useState<string | null>(null);
-  const [exerciseType, setExerciseType] = useState<string | null>(null);
+  const [category, setCategory] = useState<ExerciseCategory | null>(null);
+  const [exerciseType, setExerciseType] = useState<ExerciseType | null>(null);
   const [requestNotes, setRequestNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,12 +119,6 @@ export function RequestExerciseModal({
   }, [token, memberId, name, category, exerciseType, requestNotes, onClose, onSuccess]);
 
   const nameOk = name.trim().length > 0;
-  const pickerList =
-    pickerOpen === 'category'
-      ? EXERCISE_REQUEST_CATEGORIES
-      : pickerOpen === 'type'
-        ? EXERCISE_REQUEST_TYPES
-        : null;
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -217,7 +213,7 @@ export function RequestExerciseModal({
           </View>
         </KeyboardAvoidingView>
 
-        {pickerOpen && pickerList ? (
+        {pickerOpen ? (
           <View style={styles.categoryOverlayRoot} pointerEvents="box-none">
             <Pressable
               style={styles.categoryPickerBackdrop}
@@ -243,19 +239,31 @@ export function RequestExerciseModal({
                 >
                   <Text style={styles.pickerRowMuted}>Clear selection</Text>
                 </Pressable>
-                {pickerList.map((item) => (
-                  <Pressable
-                    key={item}
-                    style={styles.pickerRow}
-                    onPress={() => {
-                      if (pickerOpen === 'category') setCategory(item);
-                      else setExerciseType(item);
-                      setPickerOpen(null);
-                    }}
-                  >
-                    <Text style={styles.pickerRowText}>{item}</Text>
-                  </Pressable>
-                ))}
+                {pickerOpen === 'category'
+                  ? EXERCISE_REQUEST_CATEGORIES.map((item) => (
+                      <Pressable
+                        key={item}
+                        style={styles.pickerRow}
+                        onPress={() => {
+                          setCategory(item);
+                          setPickerOpen(null);
+                        }}
+                      >
+                        <Text style={styles.pickerRowText}>{item}</Text>
+                      </Pressable>
+                    ))
+                  : EXERCISE_REQUEST_TYPES.map((item) => (
+                      <Pressable
+                        key={item}
+                        style={styles.pickerRow}
+                        onPress={() => {
+                          setExerciseType(item);
+                          setPickerOpen(null);
+                        }}
+                      >
+                        <Text style={styles.pickerRowText}>{item}</Text>
+                      </Pressable>
+                    ))}
               </ScrollView>
               <Pressable style={styles.pickerCancel} onPress={() => setPickerOpen(null)}>
                 <Text style={styles.pickerCancelText}>Cancel</Text>

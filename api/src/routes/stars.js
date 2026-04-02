@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import supabase from '../db.js';
 import { mapStarAward, toDbStarAward } from '../utils/mappers.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { isValidUUID } from '../utils/validation.js';
 
 const router = express.Router();
 
@@ -12,6 +13,9 @@ router.post('/', requireAuth, requireRole('admin', 'instructor'), async (req, re
 
   if (!memberId) {
     return res.status(400).json({ error: 'memberId is required' });
+  }
+  if (!isValidUUID(memberId)) {
+    return res.status(400).json({ error: 'memberId must be a valid UUID' });
   }
 
   const { data: member, error: memberErr } = await supabase

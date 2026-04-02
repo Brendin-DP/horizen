@@ -259,7 +259,9 @@ async function fetchApi(
   });
 }
 
-export async function getExercises(category?: string): Promise<import('../types').Exercise[]> {
+export async function getExercises(
+  category?: import('../types').ExerciseCategory
+): Promise<import('../types').Exercise[]> {
   const q = category ? `?category=${encodeURIComponent(category)}` : '';
   const res = await fetch(`${BASE_URL}/exercises${q}`);
   if (!res.ok) throw new Error('Failed to fetch exercises');

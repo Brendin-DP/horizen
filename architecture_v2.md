@@ -305,7 +305,7 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
 {
   "members": [
     {
-      "id": "m1",
+      "id": "00000010-0000-4000-8000-000000f42401",
       "name": "Sarah Jacobs",
       "email": "sarah@gym.com",
       "role": "member",
@@ -315,7 +315,7 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m2",
+      "id": "00000010-0000-4000-8000-000000f42402",
       "name": "James Fortuin",
       "email": "james@gym.com",
       "role": "member",
@@ -325,7 +325,7 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m3",
+      "id": "00000010-0000-4000-8000-000000f42403",
       "name": "Aisha Davids",
       "email": "aisha@gym.com",
       "role": "member",
@@ -335,7 +335,7 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "i1",
+      "id": "00000020-0000-4000-8000-000001e84801",
       "name": "Neal Oberholster",
       "email": "neal@gym.com",
       "role": "instructor",
@@ -347,111 +347,111 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
   ],
   "starAwards": [
     {
-      "id": "s1",
-      "memberId": "m1",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b401",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Best form this week",
       "createdAt": "2025-01-10T09:00:00Z"
     },
     {
-      "id": "s2",
-      "memberId": "m1",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b402",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Most improved",
       "createdAt": "2025-01-12T09:00:00Z"
     },
     {
-      "id": "s3",
-      "memberId": "m2",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b403",
+      "memberId": "00000010-0000-4000-8000-000000f42402",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "100% attendance",
       "createdAt": "2025-01-11T09:00:00Z"
     }
   ],
   "exerciseLibrary": [
     {
-      "id": "ex1",
+      "id": "00000040-0000-4000-8000-000003d09001",
       "name": "Back Squat",
-      "category": "Legs",
+      "category": "Lower Body",
       "muscleGroups": ["Quads", "Glutes", "Hamstrings"],
       "equipment": "Barbell",
       "unit": "weight_reps",
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex2",
+      "id": "00000040-0000-4000-8000-000003d09002",
       "name": "Bench Press",
-      "category": "Push",
+      "category": "Upper Body",
       "muscleGroups": ["Chest", "Triceps", "Shoulders"],
       "equipment": "Barbell",
       "unit": "weight_reps",
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex3",
+      "id": "00000040-0000-4000-8000-000003d09003",
       "name": "Deadlift",
-      "category": "Pull",
+      "category": "Upper Body",
       "muscleGroups": ["Hamstrings", "Glutes", "Back"],
       "equipment": "Barbell",
       "unit": "weight_reps",
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex4",
+      "id": "00000040-0000-4000-8000-000003d09004",
       "name": "Overhead Press",
-      "category": "Push",
+      "category": "Upper Body",
       "muscleGroups": ["Shoulders", "Triceps"],
       "equipment": "Barbell",
       "unit": "weight_reps",
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex5",
+      "id": "00000040-0000-4000-8000-000003d09005",
       "name": "Barbell Row",
-      "category": "Pull",
+      "category": "Upper Body",
       "muscleGroups": ["Lats", "Rhomboids", "Biceps"],
       "equipment": "Barbell",
       "unit": "weight_reps",
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex6",
+      "id": "00000040-0000-4000-8000-000003d09006",
       "name": "Pull Up",
-      "category": "Pull",
+      "category": "Upper Body",
       "muscleGroups": ["Lats", "Biceps"],
       "equipment": "Bodyweight",
       "unit": "weight_reps",
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex7",
+      "id": "00000040-0000-4000-8000-000003d09007",
       "name": "Dumbbell Curl",
-      "category": "Pull",
+      "category": "Upper Body",
       "muscleGroups": ["Biceps"],
       "equipment": "Dumbbell",
       "unit": "weight_reps",
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex8",
+      "id": "00000040-0000-4000-8000-000003d09008",
       "name": "Tricep Pushdown",
-      "category": "Push",
+      "category": "Upper Body",
       "muscleGroups": ["Triceps"],
       "equipment": "Cable",
       "unit": "weight_reps",
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex9",
+      "id": "00000040-0000-4000-8000-000003d09009",
       "name": "Leg Press",
-      "category": "Legs",
+      "category": "Lower Body",
       "muscleGroups": ["Quads", "Glutes"],
       "equipment": "Machine",
       "unit": "weight_reps",
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex10",
+      "id": "00000040-0000-4000-8000-000003d0900a",
       "name": "Plank",
       "category": "Core",
       "muscleGroups": ["Core"],
@@ -460,7 +460,7 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex11",
+      "id": "00000040-0000-4000-8000-000003d0900b",
       "name": "Treadmill Run",
       "category": "Cardio",
       "muscleGroups": [],
@@ -471,8 +471,8 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
   ],
   "workouts": [
     {
-      "id": "w1",
-      "userId": "m1",
+      "id": "00000060-0000-4000-8000-000005b8d801",
+      "userId": "00000010-0000-4000-8000-000000f42401",
       "name": "Monday Push",
       "status": "completed",
       "startedAt": "2025-01-13T08:00:00Z",
@@ -481,8 +481,8 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
       "createdAt": "2025-01-13T08:00:00Z"
     },
     {
-      "id": "w2",
-      "userId": "m1",
+      "id": "00000060-0000-4000-8000-000005b8d802",
+      "userId": "00000010-0000-4000-8000-000000f42401",
       "name": "Wednesday Pull",
       "status": "completed",
       "startedAt": "2025-01-15T08:00:00Z",
@@ -493,25 +493,25 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
   ],
   "workoutExercises": [
     {
-      "id": "we1",
-      "workoutId": "w1",
-      "exerciseId": "ex2",
+      "id": "00000070-0000-4000-8000-000006acfc01",
+      "workoutId": "00000060-0000-4000-8000-000005b8d801",
+      "exerciseId": "00000040-0000-4000-8000-000003d09002",
       "order": 1,
       "notes": null,
       "createdAt": "2025-01-13T08:00:00Z"
     },
     {
-      "id": "we2",
-      "workoutId": "w1",
-      "exerciseId": "ex1",
+      "id": "00000070-0000-4000-8000-000006acfc02",
+      "workoutId": "00000060-0000-4000-8000-000005b8d801",
+      "exerciseId": "00000040-0000-4000-8000-000003d09001",
       "order": 2,
       "notes": null,
       "createdAt": "2025-01-13T08:05:00Z"
     },
     {
-      "id": "we3",
-      "workoutId": "w2",
-      "exerciseId": "ex3",
+      "id": "00000070-0000-4000-8000-000006acfc03",
+      "workoutId": "00000060-0000-4000-8000-000005b8d802",
+      "exerciseId": "00000040-0000-4000-8000-000003d09003",
       "order": 1,
       "notes": "Felt strong today",
       "createdAt": "2025-01-15T08:00:00Z"
@@ -519,8 +519,8 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
   ],
   "sets": [
     {
-      "id": "set1",
-      "workoutExerciseId": "we1",
+      "id": "00000080-0000-4000-8000-000007a12001",
+      "workoutExerciseId": "00000070-0000-4000-8000-000006acfc01",
       "setNumber": 1,
       "reps": 8,
       "weightKg": 80,
@@ -530,8 +530,8 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
       "createdAt": "2025-01-13T08:10:00Z"
     },
     {
-      "id": "set2",
-      "workoutExerciseId": "we1",
+      "id": "00000080-0000-4000-8000-000007a12002",
+      "workoutExerciseId": "00000070-0000-4000-8000-000006acfc01",
       "setNumber": 2,
       "reps": 8,
       "weightKg": 82.5,
@@ -541,8 +541,8 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
       "createdAt": "2025-01-13T08:15:00Z"
     },
     {
-      "id": "set3",
-      "workoutExerciseId": "we1",
+      "id": "00000080-0000-4000-8000-000007a12003",
+      "workoutExerciseId": "00000070-0000-4000-8000-000006acfc01",
       "setNumber": 3,
       "reps": 6,
       "weightKg": 85,
@@ -552,8 +552,8 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
       "createdAt": "2025-01-13T08:20:00Z"
     },
     {
-      "id": "set4",
-      "workoutExerciseId": "we2",
+      "id": "00000080-0000-4000-8000-000007a12004",
+      "workoutExerciseId": "00000070-0000-4000-8000-000006acfc02",
       "setNumber": 1,
       "reps": 5,
       "weightKg": 100,
@@ -563,8 +563,8 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
       "createdAt": "2025-01-13T08:35:00Z"
     },
     {
-      "id": "set5",
-      "workoutExerciseId": "we2",
+      "id": "00000080-0000-4000-8000-000007a12005",
+      "workoutExerciseId": "00000070-0000-4000-8000-000006acfc02",
       "setNumber": 2,
       "reps": 5,
       "weightKg": 102.5,
@@ -574,8 +574,8 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
       "createdAt": "2025-01-13T08:40:00Z"
     },
     {
-      "id": "set6",
-      "workoutExerciseId": "we3",
+      "id": "00000080-0000-4000-8000-000007a12006",
+      "workoutExerciseId": "00000070-0000-4000-8000-000006acfc03",
       "setNumber": 1,
       "reps": 5,
       "weightKg": 120,
@@ -585,8 +585,8 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
       "createdAt": "2025-01-15T08:10:00Z"
     },
     {
-      "id": "set7",
-      "workoutExerciseId": "we3",
+      "id": "00000080-0000-4000-8000-000007a12007",
+      "workoutExerciseId": "00000070-0000-4000-8000-000006acfc03",
       "setNumber": 2,
       "reps": 5,
       "weightKg": 125,
@@ -617,7 +617,7 @@ Mobile reads `upgradeRequired: true` and shows an upsell screen. Logic never liv
 
 7. **CORS open during development.** Both Expo and web clients need access.
 
-8. **Hardcode current user as `m1` (Sarah) for now.** No auth yet. Add a `// TODO: replace with auth` comment wherever currentUser is assumed.
+8. **Use real auth / member UUIDs** — do not hardcode legacy short member ids. Prefer JWT + `member.id` from the session.
 
 9. **API client is one file per client.** All fetch calls in `mobile/lib/api.ts`. Never call fetch directly in a component.
 

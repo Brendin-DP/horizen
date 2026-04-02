@@ -204,14 +204,39 @@ export async function updateFund(
 
 export type ExerciseLoggingType = 'weighted' | 'bodyweight' | 'weighted_or_bodyweight';
 
+export type ExerciseCategory =
+  | 'Upper Body'
+  | 'Lower Body'
+  | 'Full Body'
+  | 'Core'
+  | 'Cardio'
+  | 'Mobility';
+
+export type ExerciseType =
+  | 'Push'
+  | 'Pull'
+  | 'Squat'
+  | 'Hinge'
+  | 'Lunge'
+  | 'Isolation'
+  | 'Core'
+  | 'Cardio'
+  | 'Olympic'
+  | 'Compound'
+  | 'Carry'
+  | 'Mobility'
+  | 'Plyometric';
+
+export type ExerciseEquipment = 'Barbell' | 'Dumbbell' | 'Bodyweight' | 'Cable' | 'Machine' | 'Kettlebell';
+
 export interface Exercise {
   id: string;
   name: string;
-  category: string | null;
-  type?: string | null;
+  category: ExerciseCategory | null;
+  type?: ExerciseType | null;
   muscleGroups: string[];
-  equipment: string | null;
-  unit: string | null;
+  equipment: ExerciseEquipment | null;
+  unit: 'weight_reps' | 'time' | 'distance' | null;
   loggingType: ExerciseLoggingType;
   createdAt: string | null;
 }
@@ -244,8 +269,8 @@ export async function updateExerciseLoggingType(
 export interface ExerciseRequestRow {
   id: string;
   name: string;
-  category: string | null;
-  type: string | null;
+  category: ExerciseCategory | null;
+  type: ExerciseType | null;
   requestNotes: string | null;
   requestedBy: { id: string; name: string; email: string } | null;
   createdAt: string;
@@ -264,10 +289,10 @@ export async function getExerciseRequests(token: string): Promise<ExerciseReques
 
 export type ApproveExerciseBody = {
   name?: string;
-  category?: string;
-  type?: string | null;
+  category?: ExerciseCategory;
+  type?: ExerciseType | null;
   muscleGroups?: string[];
-  equipment?: string | null;
+  equipment?: ExerciseEquipment | null;
   unit?: 'weight_reps' | 'time' | 'distance';
   loggingType?: ExerciseLoggingType;
 };

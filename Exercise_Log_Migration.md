@@ -250,14 +250,16 @@ export async function getExerciseHistory(
 Test these endpoints:
 
 ```bash
+# Use real UUIDs from GET /members and GET /exercises (legacy short ids like m1/ex1 are invalid).
+
 # Create an exercise log
 curl -X POST https://horizen-production.up.railway.app/exercise-logs \
   -H "Content-Type: application/json" \
-  -d '{"memberId": "m1", "exerciseId": "ex1", "notes": "Felt strong"}'
+  -d '{"memberId": "00000000-0000-4000-8000-000000000001", "exerciseId": "40000000-0000-4000-8000-000000000001", "notes": "Felt strong"}'
 
 # Get logs for member
-curl https://horizen-production.up.railway.app/exercise-logs?memberId=m1
+curl 'https://horizen-production.up.railway.app/exercise-logs?memberId=00000000-0000-4000-8000-000000000001'
 
 # Get exercise history for progress chart
-curl https://horizen-production.up.railway.app/members/m1/exercise-history/ex1
+curl https://horizen-production.up.railway.app/members/00000000-0000-4000-8000-000000000001/exercise-history/40000000-0000-4000-8000-000000000001
 ```

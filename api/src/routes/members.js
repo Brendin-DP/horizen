@@ -7,6 +7,7 @@ import { mapMember, mapStarAward, mapSet } from '../utils/mappers.js';
 import { toDbMember } from '../utils/mappers.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { limit } from '../config/features.js';
+import { ENUMS, isValidEnum, isValidUUID } from '../utils/validation.js';
 
 const router = express.Router();
 const PASSWORD_SALT_ROUNDS = 10;
@@ -102,10 +103,16 @@ router.get('/', async (req, res) => {
   let query = supabase.from('members').select('*');
   const roleFilter = req.query.role;
   if (roleFilter) {
+    if (!isValidEnum(String(roleFilter), ENUMS.roles)) {
+      return res.status(400).json({ error: 'Invalid role filter' });
+    }
     query = query.eq('role', roleFilter);
   }
   const planFilter = req.query.plan;
   if (planFilter) {
+    if (!isValidEnum(String(planFilter), ENUMS.plans)) {
+      return res.status(400).json({ error: 'Invalid plan filter' });
+    }
     query = query.eq('plan', planFilter);
   }
   const { data, error } = await query;
@@ -237,13 +244,21 @@ router.post('/me/avatar', requireAuth, upload.single('avatar'), async (req, res)
 });
 
 router.patch('/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  if (!isValidUUID(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid member id' });
+  }
   const { plan, planExpiresAt, role } = req.body;
   const updates = {};
-  if (plan !== undefined) updates.plan = plan;
+  if (plan !== undefined) {
+    if (!isValidEnum(plan, ENUMS.plans)) {
+      return res.status(400).json({ error: 'Invalid plan' });
+    }
+    updates.plan = plan;
+  }
   if (planExpiresAt !== undefined) updates.planExpiresAt = planExpiresAt === '' ? null : planExpiresAt;
   if (role !== undefined) {
-    if (!['member', 'instructor', 'admin'].includes(role)) {
-      return res.status(400).json({ error: 'Role must be member, instructor, or admin' });
+    if (!isValidEnum(role, ENUMS.roles)) {
+      return res.status(400).json({ error: 'Invalid role' });
     }
     updates.role = role;
   }
@@ -272,6 +287,9 @@ router.patch('/:id', requireAuth, requireRole('admin'), async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+  if (!isValidUUID(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid member id' });
+  }
   const { data, error } = await supabase
     .from('members')
     .select('*')
@@ -288,6 +306,9 @@ router.get('/:id', async (req, res) => {
 
 router.get('/:id/stars', async (req, res) => {
   const memberId = req.params.id;
+  if (!isValidUUID(memberId)) {
+    return res.status(400).json({ error: 'Invalid member id' });
+  }
   const { data, error } = await supabase
     .from('star_awards')
     .select('*')
@@ -304,6 +325,9 @@ router.get('/:id/stars', async (req, res) => {
 router.get('/:id/exercise-history/:exerciseId', async (req, res) => {
   const memberId = req.params.id;
   const exerciseId = req.params.exerciseId;
+  if (!isValidUUID(memberId) || !isValidUUID(exerciseId)) {
+    return res.status(400).json({ error: 'member id and exercise id must be valid UUIDs' });
+  }
 
   const { data: member } = await supabase.from('members').select('plan').eq('id', memberId).single();
   if (!member) {
@@ -382,6 +406,12 @@ router.get('/:id/exercise-history/:exerciseId/max-weight', async (req, res) => {
   const memberId = req.params.id;
   const exerciseId = req.params.exerciseId;
   const excludeLogId = req.query.excludeLogId;
+  if (!isValidUUID(memberId) || !isValidUUID(exerciseId)) {
+    return res.status(400).json({ error: 'member id and exercise id must be valid UUIDs' });
+  }
+  if (excludeLogId != null && String(excludeLogId) !== '' && !isValidUUID(String(excludeLogId))) {
+    return res.status(400).json({ error: 'excludeLogId must be a valid UUID' });
+  }
 
   const { data: exercise } = await supabase
     .from('exercise_library')
@@ -423,6 +453,12 @@ router.get('/:id/exercise-history/:exerciseId/max-reps', async (req, res) => {
   const memberId = req.params.id;
   const exerciseId = req.params.exerciseId;
   const excludeLogId = req.query.excludeLogId;
+  if (!isValidUUID(memberId) || !isValidUUID(exerciseId)) {
+    return res.status(400).json({ error: 'member id and exercise id must be valid UUIDs' });
+  }
+  if (excludeLogId != null && String(excludeLogId) !== '' && !isValidUUID(String(excludeLogId))) {
+    return res.status(400).json({ error: 'excludeLogId must be a valid UUID' });
+  }
 
   const { data: exercise } = await supabase
     .from('exercise_library')
@@ -469,6 +505,9 @@ router.get('/:id/exercise-history/:exerciseId/max-reps', async (req, res) => {
 router.get('/:id/progress/:exerciseId', async (req, res) => {
   const memberId = req.params.id;
   const exerciseId = req.params.exerciseId;
+  if (!isValidUUID(memberId) || !isValidUUID(exerciseId)) {
+    return res.status(400).json({ error: 'member id and exercise id must be valid UUIDs' });
+  }
 
   const { data: exercise, error: exErr } = await supabase
     .from('exercise_library')
@@ -545,6 +584,9 @@ router.get('/:id/progress/:exerciseId', async (req, res) => {
 
 router.get('/:id/stats', async (req, res) => {
   const memberId = req.params.id;
+  if (!isValidUUID(memberId)) {
+    return res.status(400).json({ error: 'Invalid member id' });
+  }
 
   const { data: workouts } = await supabase
     .from('workouts')

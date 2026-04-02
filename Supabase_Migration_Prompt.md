@@ -332,8 +332,8 @@ curl http://localhost:3001/leaderboard
 # Single workout with nested exercises + sets
 curl http://localhost:3001/workouts/178fe517-95ec-4cbd-93b4-a18a2168e00e
 
-# Exercise progress for Sarah (m1) on Back Squat (ex1)
-curl http://localhost:3001/members/m1/progress/ex1
+# Exercise progress (use member and exercise UUIDs from the API)
+curl http://localhost:3001/members/00000000-0000-4000-8000-000000000001/progress/40000000-0000-4000-8000-000000000001
 
 # Exercise library
 curl http://localhost:3001/exercises

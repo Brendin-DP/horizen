@@ -1,7 +1,7 @@
 {
   "members": [
     {
-      "id": "m1",
+      "id": "00000010-0000-4000-8000-000000f42401",
       "name": "Sarah Jacobs",
       "email": "sarah@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -12,7 +12,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m2",
+      "id": "00000010-0000-4000-8000-000000f42402",
       "name": "James Fortuin",
       "email": "james@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -23,7 +23,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m3",
+      "id": "00000010-0000-4000-8000-000000f42403",
       "name": "Aisha Davids",
       "email": "aisha@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -34,7 +34,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "i1",
+      "id": "00000020-0000-4000-8000-000001e84801",
       "name": "Neal Oberholster",
       "email": "neal@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -45,7 +45,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "a1",
+      "id": "00000030-0000-4000-8000-000002dc6c01",
       "name": "Admin User",
       "email": "admin@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -56,7 +56,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "a2",
+      "id": "00000030-0000-4000-8000-000002dc6c02",
       "name": "Admin Two",
       "email": "admin2@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -78,7 +78,7 @@
       "createdAt": "2026-03-16T06:23:46.185Z"
     },
     {
-      "id": "m4",
+      "id": "00000010-0000-4000-8000-000000f42404",
       "name": "Bryan Wolf",
       "email": "bryan@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -89,7 +89,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m5",
+      "id": "00000010-0000-4000-8000-000000f42405",
       "name": "Meghan Jespersen",
       "email": "meghan@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -100,7 +100,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m6",
+      "id": "00000010-0000-4000-8000-000000f42406",
       "name": "Alex Turner",
       "email": "alex@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -111,7 +111,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m7",
+      "id": "00000010-0000-4000-8000-000000f42407",
       "name": "Marsha Fisher",
       "email": "marsha@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -122,7 +122,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m8",
+      "id": "00000010-0000-4000-8000-000000f42408",
       "name": "Juanita Cormier",
       "email": "juanita@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -133,7 +133,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m9",
+      "id": "00000010-0000-4000-8000-000000f42409",
       "name": "Jenna Venter",
       "email": "jenna@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -144,7 +144,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m10",
+      "id": "00000010-0000-4000-8000-000000f4240a",
       "name": "David Chen",
       "email": "david@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -155,7 +155,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m11",
+      "id": "00000010-0000-4000-8000-000000f4240b",
       "name": "Emma Wilson",
       "email": "emma@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -166,7 +166,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m12",
+      "id": "00000010-0000-4000-8000-000000f4240c",
       "name": "Marcus Lee",
       "email": "marcus@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -177,7 +177,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "m13",
+      "id": "00000010-0000-4000-8000-000000f4240d",
       "name": "Becky Bartell",
       "email": "becky@gym.com",
       "passwordHash": "$2b$10$Yv7Mkcw5xrmjfECe6Yeln.py5uRMpjuRnbQqoj7eQT5FqM2Xm7XJm",
@@ -303,347 +303,347 @@
   ],
   "starAwards": [
     {
-      "id": "s1",
-      "memberId": "m1",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b401",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Best form this week",
       "createdAt": "2025-01-10T09:00:00Z"
     },
     {
-      "id": "s2",
-      "memberId": "m1",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b402",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Most improved",
       "createdAt": "2025-01-12T09:00:00Z"
     },
     {
-      "id": "s3",
-      "memberId": "m2",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b403",
+      "memberId": "00000010-0000-4000-8000-000000f42402",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "100% attendance",
       "createdAt": "2025-01-11T09:00:00Z"
     },
     {
-      "id": "s4",
-      "memberId": "m4",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b404",
+      "memberId": "00000010-0000-4000-8000-000000f42404",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-01T10:00:00Z"
     },
     {
-      "id": "s5",
-      "memberId": "m4",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b405",
+      "memberId": "00000010-0000-4000-8000-000000f42404",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-02T10:00:00Z"
     },
     {
-      "id": "s6",
-      "memberId": "m4",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b406",
+      "memberId": "00000010-0000-4000-8000-000000f42404",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-03T10:00:00Z"
     },
     {
-      "id": "s7",
-      "memberId": "m4",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b407",
+      "memberId": "00000010-0000-4000-8000-000000f42404",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-04T10:00:00Z"
     },
     {
-      "id": "s8",
-      "memberId": "m4",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b408",
+      "memberId": "00000010-0000-4000-8000-000000f42404",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-05T10:00:00Z"
     },
     {
-      "id": "s9",
-      "memberId": "m4",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b409",
+      "memberId": "00000010-0000-4000-8000-000000f42404",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-06T10:00:00Z"
     },
     {
-      "id": "s10",
-      "memberId": "m5",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b40a",
+      "memberId": "00000010-0000-4000-8000-000000f42405",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-01T11:00:00Z"
     },
     {
-      "id": "s11",
-      "memberId": "m5",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b40b",
+      "memberId": "00000010-0000-4000-8000-000000f42405",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-02T11:00:00Z"
     },
     {
-      "id": "s12",
-      "memberId": "m5",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b40c",
+      "memberId": "00000010-0000-4000-8000-000000f42405",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-03T11:00:00Z"
     },
     {
-      "id": "s13",
-      "memberId": "m5",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b40d",
+      "memberId": "00000010-0000-4000-8000-000000f42405",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-04T11:00:00Z"
     },
     {
-      "id": "s14",
-      "memberId": "m5",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b40e",
+      "memberId": "00000010-0000-4000-8000-000000f42405",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-05T11:00:00Z"
     },
     {
-      "id": "s15",
-      "memberId": "m6",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b40f",
+      "memberId": "00000010-0000-4000-8000-000000f42406",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-01T12:00:00Z"
     },
     {
-      "id": "s16",
-      "memberId": "m6",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b410",
+      "memberId": "00000010-0000-4000-8000-000000f42406",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-02T12:00:00Z"
     },
     {
-      "id": "s17",
-      "memberId": "m6",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b411",
+      "memberId": "00000010-0000-4000-8000-000000f42406",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-03T12:00:00Z"
     },
     {
-      "id": "s18",
-      "memberId": "m6",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b412",
+      "memberId": "00000010-0000-4000-8000-000000f42406",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-04T12:00:00Z"
     },
     {
-      "id": "s19",
-      "memberId": "m7",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b413",
+      "memberId": "00000010-0000-4000-8000-000000f42407",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-01T13:00:00Z"
     },
     {
-      "id": "s20",
-      "memberId": "m7",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b414",
+      "memberId": "00000010-0000-4000-8000-000000f42407",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-02T13:00:00Z"
     },
     {
-      "id": "s21",
-      "memberId": "m7",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b415",
+      "memberId": "00000010-0000-4000-8000-000000f42407",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-03T13:00:00Z"
     },
     {
-      "id": "s22",
-      "memberId": "m7",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b416",
+      "memberId": "00000010-0000-4000-8000-000000f42407",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-04T13:00:00Z"
     },
     {
-      "id": "s23",
-      "memberId": "m8",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b417",
+      "memberId": "00000010-0000-4000-8000-000000f42408",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-01T14:00:00Z"
     },
     {
-      "id": "s24",
-      "memberId": "m8",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b418",
+      "memberId": "00000010-0000-4000-8000-000000f42408",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-02T14:00:00Z"
     },
     {
-      "id": "s25",
-      "memberId": "m8",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b419",
+      "memberId": "00000010-0000-4000-8000-000000f42408",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-03T14:00:00Z"
     },
     {
-      "id": "s26",
-      "memberId": "m9",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b41a",
+      "memberId": "00000010-0000-4000-8000-000000f42409",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-01T15:00:00Z"
     },
     {
-      "id": "s27",
-      "memberId": "m9",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b41b",
+      "memberId": "00000010-0000-4000-8000-000000f42409",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-02T15:00:00Z"
     },
     {
-      "id": "s28",
-      "memberId": "m9",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b41c",
+      "memberId": "00000010-0000-4000-8000-000000f42409",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-03T15:00:00Z"
     },
     {
-      "id": "s29",
-      "memberId": "m10",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b41d",
+      "memberId": "00000010-0000-4000-8000-000000f4240a",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-01T16:00:00Z"
     },
     {
-      "id": "s30",
-      "memberId": "m10",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b41e",
+      "memberId": "00000010-0000-4000-8000-000000f4240a",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-02T16:00:00Z"
     },
     {
-      "id": "s31",
-      "memberId": "m10",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b41f",
+      "memberId": "00000010-0000-4000-8000-000000f4240a",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-03T16:00:00Z"
     },
     {
-      "id": "s32",
-      "memberId": "m11",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b420",
+      "memberId": "00000010-0000-4000-8000-000000f4240b",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-01T17:00:00Z"
     },
     {
-      "id": "s33",
-      "memberId": "m11",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b421",
+      "memberId": "00000010-0000-4000-8000-000000f4240b",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-02T17:00:00Z"
     },
     {
-      "id": "s34",
-      "memberId": "m12",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b422",
+      "memberId": "00000010-0000-4000-8000-000000f4240c",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-01T18:00:00Z"
     },
     {
-      "id": "s35",
-      "memberId": "m12",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b423",
+      "memberId": "00000010-0000-4000-8000-000000f4240c",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-02T18:00:00Z"
     },
     {
-      "id": "s36",
-      "memberId": "m13",
-      "awardedBy": "i1",
+      "id": "00000050-0000-4000-8000-000004c4b424",
+      "memberId": "00000010-0000-4000-8000-000000f4240d",
+      "awardedBy": "00000020-0000-4000-8000-000001e84801",
       "reason": "Session",
       "createdAt": "2025-01-01T19:00:00Z"
     },
     {
       "id": "151342d5-9619-413f-9e61-9b21d49c284f",
-      "memberId": "m1",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:41:35.467Z"
     },
     {
       "id": "771f83fa-ea3f-471b-9943-762c0be80b7c",
-      "memberId": "m2",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42402",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:41:43.383Z"
     },
     {
       "id": "d9a75b70-f157-44f0-ad6f-1b8d3ed920ac",
-      "memberId": "m2",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42402",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:41:45.329Z"
     },
     {
       "id": "f194b955-8f50-4671-aaba-55f6538a0ef8",
-      "memberId": "m2",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42402",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:41:47.176Z"
     },
     {
       "id": "56a9f811-cc47-4ab9-8304-f385575f9741",
-      "memberId": "m1",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:41:49.528Z"
     },
     {
       "id": "70d8282a-6c90-441a-8626-06cee493a283",
-      "memberId": "m1",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:41:51.755Z"
     },
     {
       "id": "202ba731-2dbd-45a1-a85a-7ac858790ada",
-      "memberId": "m1",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:41:53.837Z"
     },
     {
       "id": "e1b15835-089c-4676-8d10-f543374adf15",
-      "memberId": "m1",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:46:55.015Z"
     },
     {
       "id": "8be7b4c2-c90e-4784-8cee-ee2774690cc7",
-      "memberId": "m1",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:46:59.998Z"
     },
     {
       "id": "7f34e7f4-a626-4045-9b9c-ba0446706f93",
-      "memberId": "m1",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:48:29.051Z"
     },
     {
       "id": "5baa80b3-add3-444a-a06b-6ab1f772484e",
-      "memberId": "m1",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:48:33.396Z"
     },
     {
       "id": "f9368529-9c24-488a-87de-e983a83d51ad",
-      "memberId": "m1",
-      "awardedBy": "a1",
+      "memberId": "00000010-0000-4000-8000-000000f42401",
+      "awardedBy": "00000030-0000-4000-8000-000002dc6c01",
       "reason": null,
       "createdAt": "2026-03-17T07:48:36.488Z"
     }
   ],
   "exerciseLibrary": [
     {
-      "id": "ex1",
+      "id": "00000040-0000-4000-8000-000003d09001",
       "name": "Back Squat",
-      "category": "Legs",
+      "category": "Lower Body",
       "muscleGroups": [
         "Quads",
         "Glutes",
@@ -654,9 +654,9 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex2",
+      "id": "00000040-0000-4000-8000-000003d09002",
       "name": "Bench Press",
-      "category": "Push",
+      "category": "Upper Body",
       "muscleGroups": [
         "Chest",
         "Triceps",
@@ -667,9 +667,9 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex3",
+      "id": "00000040-0000-4000-8000-000003d09003",
       "name": "Deadlift",
-      "category": "Pull",
+      "category": "Upper Body",
       "muscleGroups": [
         "Hamstrings",
         "Glutes",
@@ -680,9 +680,9 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex4",
+      "id": "00000040-0000-4000-8000-000003d09004",
       "name": "Overhead Press",
-      "category": "Push",
+      "category": "Upper Body",
       "muscleGroups": [
         "Shoulders",
         "Triceps"
@@ -692,9 +692,9 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex5",
+      "id": "00000040-0000-4000-8000-000003d09005",
       "name": "Barbell Row",
-      "category": "Pull",
+      "category": "Upper Body",
       "muscleGroups": [
         "Lats",
         "Rhomboids",
@@ -705,9 +705,9 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex6",
+      "id": "00000040-0000-4000-8000-000003d09006",
       "name": "Pull Up",
-      "category": "Pull",
+      "category": "Upper Body",
       "muscleGroups": [
         "Lats",
         "Biceps"
@@ -717,9 +717,9 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex7",
+      "id": "00000040-0000-4000-8000-000003d09007",
       "name": "Dumbbell Curl",
-      "category": "Pull",
+      "category": "Upper Body",
       "muscleGroups": [
         "Biceps"
       ],
@@ -728,9 +728,9 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex8",
+      "id": "00000040-0000-4000-8000-000003d09008",
       "name": "Tricep Pushdown",
-      "category": "Push",
+      "category": "Upper Body",
       "muscleGroups": [
         "Triceps"
       ],
@@ -739,9 +739,9 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex9",
+      "id": "00000040-0000-4000-8000-000003d09009",
       "name": "Leg Press",
-      "category": "Legs",
+      "category": "Lower Body",
       "muscleGroups": [
         "Quads",
         "Glutes"
@@ -751,7 +751,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex10",
+      "id": "00000040-0000-4000-8000-000003d0900a",
       "name": "Plank",
       "category": "Core",
       "muscleGroups": [
@@ -762,7 +762,7 @@
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
-      "id": "ex11",
+      "id": "00000040-0000-4000-8000-000003d0900b",
       "name": "Treadmill Run",
       "category": "Cardio",
       "muscleGroups": [],
@@ -774,7 +774,7 @@
   "workouts": [
     {
       "id": "59ce306b-d52c-4b32-8378-886542efcfe3",
-      "userId": "m3",
+      "userId": "00000010-0000-4000-8000-000000f42403",
       "name": null,
       "status": "completed",
       "startedAt": "2026-03-16T06:46:05.322Z",
@@ -784,7 +784,7 @@
     },
     {
       "id": "bcdeb278-ffd1-4499-866c-cd4dedef7146",
-      "userId": "m2",
+      "userId": "00000010-0000-4000-8000-000000f42402",
       "name": null,
       "status": "in_progress",
       "startedAt": "2026-03-16T06:47:08.801Z",
@@ -794,7 +794,7 @@
     },
     {
       "id": "4f859f83-88d7-447a-8e57-499034f1f71a",
-      "userId": "m2",
+      "userId": "00000010-0000-4000-8000-000000f42402",
       "name": null,
       "status": "completed",
       "startedAt": "2026-03-16T06:49:23.852Z",
@@ -804,7 +804,7 @@
     },
     {
       "id": "cca9bab5-d504-44eb-856d-2224df286742",
-      "userId": "m2",
+      "userId": "00000010-0000-4000-8000-000000f42402",
       "name": null,
       "status": "completed",
       "startedAt": "2026-03-16T06:49:53.003Z",
@@ -814,7 +814,7 @@
     },
     {
       "id": "178fe517-95ec-4cbd-93b4-a18a2168e00e",
-      "userId": "m1",
+      "userId": "00000010-0000-4000-8000-000000f42401",
       "name": "My MMM workout",
       "status": "completed",
       "startedAt": "2026-03-17T07:08:08.683Z",
@@ -824,7 +824,7 @@
     },
     {
       "id": "4e32cdc6-d4fa-4478-bc20-d8cd983dd194",
-      "userId": "m1",
+      "userId": "00000010-0000-4000-8000-000000f42401",
       "name": "My MMM workout 2",
       "status": "completed",
       "startedAt": "2026-03-17T07:08:51.605Z",
@@ -834,7 +834,7 @@
     },
     {
       "id": "133131b5-3c8c-4436-b59c-5a2f0697df78",
-      "userId": "m1",
+      "userId": "00000010-0000-4000-8000-000000f42401",
       "name": "My new workout",
       "status": "in_progress",
       "startedAt": "2026-03-17T07:45:43.111Z",
@@ -847,7 +847,7 @@
     {
       "id": "7089c37d-caba-49e2-8a3c-40654680d969",
       "workoutId": "59ce306b-d52c-4b32-8378-886542efcfe3",
-      "exerciseId": "ex1",
+      "exerciseId": "00000040-0000-4000-8000-000003d09001",
       "order": 1,
       "notes": null,
       "createdAt": "2026-03-16T06:46:10.023Z"
@@ -855,7 +855,7 @@
     {
       "id": "c3b9d29f-aca9-4fea-91df-0c8a5699c5dc",
       "workoutId": "59ce306b-d52c-4b32-8378-886542efcfe3",
-      "exerciseId": "ex4",
+      "exerciseId": "00000040-0000-4000-8000-000003d09004",
       "order": 2,
       "notes": null,
       "createdAt": "2026-03-16T06:46:12.559Z"
@@ -863,7 +863,7 @@
     {
       "id": "258b95f7-bcc9-4cb3-81a1-498bf1f2d614",
       "workoutId": "59ce306b-d52c-4b32-8378-886542efcfe3",
-      "exerciseId": "ex7",
+      "exerciseId": "00000040-0000-4000-8000-000003d09007",
       "order": 3,
       "notes": null,
       "createdAt": "2026-03-16T06:46:14.271Z"
@@ -871,7 +871,7 @@
     {
       "id": "1ab7d767-834d-495b-9971-375c0e929211",
       "workoutId": "4f859f83-88d7-447a-8e57-499034f1f71a",
-      "exerciseId": "ex1",
+      "exerciseId": "00000040-0000-4000-8000-000003d09001",
       "order": 1,
       "notes": null,
       "createdAt": "2026-03-16T06:49:26.628Z"
@@ -879,7 +879,7 @@
     {
       "id": "e9237906-f7a2-43a6-b03a-73fee0ba25e5",
       "workoutId": "4f859f83-88d7-447a-8e57-499034f1f71a",
-      "exerciseId": "ex5",
+      "exerciseId": "00000040-0000-4000-8000-000003d09005",
       "order": 2,
       "notes": null,
       "createdAt": "2026-03-16T06:49:39.365Z"
@@ -887,7 +887,7 @@
     {
       "id": "994ef296-e232-49aa-9c4b-cc51d5763e14",
       "workoutId": "4f859f83-88d7-447a-8e57-499034f1f71a",
-      "exerciseId": "ex10",
+      "exerciseId": "00000040-0000-4000-8000-000003d0900a",
       "order": 3,
       "notes": null,
       "createdAt": "2026-03-16T06:49:42.887Z"
@@ -895,7 +895,7 @@
     {
       "id": "0d820e22-1b92-4b4a-b6b6-fb1842906344",
       "workoutId": "cca9bab5-d504-44eb-856d-2224df286742",
-      "exerciseId": "ex1",
+      "exerciseId": "00000040-0000-4000-8000-000003d09001",
       "order": 1,
       "notes": null,
       "createdAt": "2026-03-16T06:49:55.638Z"
@@ -903,7 +903,7 @@
     {
       "id": "fb415682-56a3-4fda-b80f-c49f0418e338",
       "workoutId": "178fe517-95ec-4cbd-93b4-a18a2168e00e",
-      "exerciseId": "ex1",
+      "exerciseId": "00000040-0000-4000-8000-000003d09001",
       "order": 1,
       "notes": null,
       "createdAt": "2026-03-17T07:08:11.719Z"
@@ -911,7 +911,7 @@
     {
       "id": "23f3c5cb-5884-4608-9a5d-c595fd5eab5f",
       "workoutId": "4e32cdc6-d4fa-4478-bc20-d8cd983dd194",
-      "exerciseId": "ex1",
+      "exerciseId": "00000040-0000-4000-8000-000003d09001",
       "order": 1,
       "notes": null,
       "createdAt": "2026-03-17T07:08:54.219Z"
@@ -919,7 +919,7 @@
     {
       "id": "273e170b-6235-421f-9e41-5d663bee736b",
       "workoutId": "133131b5-3c8c-4436-b59c-5a2f0697df78",
-      "exerciseId": "ex1",
+      "exerciseId": "00000040-0000-4000-8000-000003d09001",
       "order": 1,
       "notes": null,
       "createdAt": "2026-03-17T07:45:45.672Z"

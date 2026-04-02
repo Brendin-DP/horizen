@@ -76,7 +76,7 @@ export async function awardStars({ memberId, awardedBy, reason }) { ... }
 `web/src/pages/AwardStars.jsx` — fetches members list, shows a form:
 - Dropdown to select member (only show role: "member")
 - Text input for reason (optional)
-- Submit button → calls `POST /stars` with hardcoded `awardedBy: "i1"` (Neal, our instructor — no auth yet)
+- Submit button → calls `POST /stars` with the signed-in instructor’s member id as `awardedBy` (UUID)
 - On success: show a success message and reset form
 - Handle loading and error states
 

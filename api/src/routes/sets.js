@@ -3,11 +3,15 @@ import { randomUUID } from 'crypto';
 import supabase from '../db.js';
 import { mapSet, mapWorkoutExercise, mapExercise, toDbSet } from '../utils/mappers.js';
 import { normalizeSetCreatedAt } from '../utils/setCreatedAt.js';
+import { isValidUUID } from '../utils/validation.js';
 
 const router = express.Router();
 
 router.get('/:id', async (req, res) => {
   const workoutExerciseId = req.params.id;
+  if (!isValidUUID(workoutExerciseId)) {
+    return res.status(400).json({ error: 'Invalid workout exercise id' });
+  }
   const { data: we, error: weErr } = await supabase
     .from('workout_exercises')
     .select('*')
@@ -41,6 +45,9 @@ router.get('/:id', async (req, res) => {
 
 router.post('/:id/sets', async (req, res) => {
   const workoutExerciseId = req.params.id;
+  if (!isValidUUID(workoutExerciseId)) {
+    return res.status(400).json({ error: 'Invalid workout exercise id' });
+  }
 
   const { data: workoutExercise } = await supabase
     .from('workout_exercises')
@@ -105,6 +112,9 @@ router.post('/:id/sets', async (req, res) => {
 const setsIdRouter = express.Router();
 
 setsIdRouter.patch('/:id', async (req, res) => {
+  if (!isValidUUID(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid set id' });
+  }
   const updates = {};
   const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed, createdAt } = req.body;
   if (setNumber !== undefined) updates.set_number = setNumber;
@@ -142,6 +152,9 @@ setsIdRouter.patch('/:id', async (req, res) => {
 });
 
 setsIdRouter.delete('/:id', async (req, res) => {
+  if (!isValidUUID(req.params.id)) {
+    return res.status(400).json({ error: 'Invalid set id' });
+  }
   const { data: existing } = await supabase
     .from('sets')
     .select('id')

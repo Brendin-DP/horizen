@@ -1,31 +1,104 @@
-// Data model types matching API
+// Data model types matching API / Postgres enums (case-sensitive).
+
+export type MemberRole = 'member' | 'instructor' | 'admin';
+export type MemberPlan = 'free' | 'pro' | 'elite';
 
 export type ExerciseUnit = 'weight_reps' | 'time' | 'distance';
+export type ExerciseLoggingType = 'weighted' | 'bodyweight' | 'weighted_or_bodyweight';
+/** @deprecated Use ExerciseLoggingType */
+export type LoggingType = ExerciseLoggingType;
 
-export type LoggingType = 'weighted' | 'bodyweight' | 'weighted_or_bodyweight';
+export type ExerciseCategory =
+  | 'Upper Body'
+  | 'Lower Body'
+  | 'Full Body'
+  | 'Core'
+  | 'Cardio'
+  | 'Mobility';
+
+export type ExerciseType =
+  | 'Push'
+  | 'Pull'
+  | 'Squat'
+  | 'Hinge'
+  | 'Lunge'
+  | 'Isolation'
+  | 'Core'
+  | 'Cardio'
+  | 'Olympic'
+  | 'Compound'
+  | 'Carry'
+  | 'Mobility'
+  | 'Plyometric';
+
+export type ExerciseEquipment = 'Barbell' | 'Dumbbell' | 'Bodyweight' | 'Cable' | 'Machine' | 'Kettlebell';
+
+export type ExerciseStatus = 'active' | 'requested' | 'rejected';
+
+export type MuscleGroup =
+  | 'Abs'
+  | 'Adductors'
+  | 'Ankles'
+  | 'Arms'
+  | 'Back'
+  | 'Biceps'
+  | 'Brachialis'
+  | 'Calves'
+  | 'Chest'
+  | 'Core'
+  | 'Forearms'
+  | 'Front Delts'
+  | 'Full Body'
+  | 'Glutes'
+  | 'Hamstrings'
+  | 'Hip Flexors'
+  | 'Inner Thighs'
+  | 'IT Band'
+  | 'Lats'
+  | 'Legs'
+  | 'Lower Abs'
+  | 'Lower Back'
+  | 'Lower Chest'
+  | 'Obliques'
+  | 'Outer Thighs'
+  | 'Piriformis'
+  | 'Quads'
+  | 'Rear Delts'
+  | 'Rhomboids'
+  | 'Rotator Cuff'
+  | 'Shoulders'
+  | 'Side Delts'
+  | 'Spine'
+  | 'Thoracic Spine'
+  | 'Traps'
+  | 'Triceps'
+  | 'Upper Back'
+  | 'Upper Chest';
 
 export interface Exercise {
+  /** UUID */
   id: string;
   name: string;
-  category: string;
-  /** Movement pattern (e.g. pull / push). */
-  type?: string | null;
-  muscleGroups: string[];
-  equipment: string | null;
+  category: ExerciseCategory;
+  type: ExerciseType | null;
+  muscleGroups: MuscleGroup[];
+  equipment: ExerciseEquipment | null;
   unit: ExerciseUnit;
-  loggingType: LoggingType;
-  status?: 'active' | 'requested' | 'rejected';
+  loggingType: ExerciseLoggingType;
+  status?: ExerciseStatus;
   requestedBy?: string | null;
   requestNotes?: string | null;
+  rejectionReason?: string | null;
   createdAt: string;
 }
 
 /** Body for POST /exercises/request (memberId must match JWT member). */
 export interface ExerciseRequestPayload {
+  /** UUID */
   memberId: string;
   name: string;
-  category?: string;
-  type?: string;
+  category?: ExerciseCategory;
+  type?: ExerciseType;
   requestNotes?: string;
 }
 
@@ -80,6 +153,7 @@ export interface ExerciseHistory {
   totalVolume: number;
 }
 
+/** Standalone session set or workout set — use sessionId XOR workoutExerciseId. */
 export interface Set {
   id: string;
   workoutExerciseId?: string | null;
@@ -101,9 +175,17 @@ export interface Member {
   id: string;
   name: string;
   email: string;
-  role: 'member' | 'instructor' | 'admin';
-  plan?: 'free' | 'pro' | 'elite';
+  role: MemberRole;
+  plan?: MemberPlan;
   planExpiresAt?: string | null;
   avatarUrl: string | null;
+  createdAt: string;
+}
+
+export interface StarAward {
+  id: string;
+  memberId: string;
+  awardedBy: string;
+  reason: string | null;
   createdAt: string;
 }
