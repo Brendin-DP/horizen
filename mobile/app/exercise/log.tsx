@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -202,6 +202,20 @@ export default function LogExerciseScreen() {
   const pendingNavigationRef = useRef<string | null>(null);
   const [requestModalVisible, setRequestModalVisible] = useState(false);
 
+  /** When logging from the exercises tab (no exerciseId), stack exercise overview under session so Back works. */
+  const navigateToSessionAfterSave = useCallback(
+    (logId: string) => {
+      if (exerciseId) {
+        router.replace(`/log/${logId}`);
+      } else {
+        if (!selectedExercise) return;
+        router.replace(`/exercise/${selectedExercise.id}`);
+        router.push(`/log/${logId}`);
+      }
+    },
+    [exerciseId, router, selectedExercise]
+  );
+
   useEffect(() => {
     if (exerciseId) {
       getExercise(exerciseId)
@@ -282,7 +296,9 @@ export default function LogExerciseScreen() {
     setSuccessModalVisible(false);
     const target = pendingNavigationRef.current;
     pendingNavigationRef.current = null;
-    if (target) router.replace(target as `/log/${string}` | '/(tabs)/exercises');
+    if (!target) return;
+    const match = target.match(/^\/log\/(.+)$/);
+    if (match) navigateToSessionAfterSave(match[1]);
   }
 
   async function handleSaveLog() {
@@ -360,6 +376,8 @@ export default function LogExerciseScreen() {
 
       const targetRoute = `/log/${log.id}`;
 
+      const goAfterSave = () => navigateToSessionAfterSave(log.id);
+
       if (exercise.unit === 'weight_reps' && exercise.loggingType !== 'bodyweight') {
         const weights = sets
           .map((s) => {
@@ -429,7 +447,7 @@ export default function LogExerciseScreen() {
         }
 
         if (!showedPr) {
-          router.replace(targetRoute as `/log/${string}`);
+          goAfterSave();
         }
       } else if (exercise.unit === 'weight_reps' && exercise.loggingType === 'bodyweight') {
         const repVals = sets
@@ -459,13 +477,13 @@ export default function LogExerciseScreen() {
               setTimeout(() => confettiRef.current?.start(), 80);
             });
           } else {
-            router.replace(targetRoute as `/log/${string}`);
+            goAfterSave();
           }
         } else {
-          router.replace(targetRoute as `/log/${string}`);
+          goAfterSave();
         }
       } else {
-        router.replace(targetRoute as `/log/${string}`);
+        goAfterSave();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save log');
