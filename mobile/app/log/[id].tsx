@@ -391,6 +391,16 @@ export default function LogDetailScreen() {
   const sets = [...(log.sets ?? [])].sort((a, b) => a.setNumber - b.setNumber);
   const isPbLog = pbLogId != null && log.id === pbLogId;
 
+  let firstYourBestSetId: string | null = null;
+  if (isPbLog && sessionBest != null) {
+    for (const s of sets) {
+      if (setMatchesSessionBest(s, sessionBest, exercise)) {
+        firstYourBestSetId = s.id;
+        break;
+      }
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safeOuter} edges={['top']}>
       <DrillDownHeader
@@ -415,8 +425,7 @@ export default function LogDetailScreen() {
             </View>
           ) : (
             sets.map((s) => {
-              const showRibbon =
-                isPbLog && sessionBest != null && setMatchesSessionBest(s, sessionBest, exercise);
+              const showRibbon = firstYourBestSetId != null && s.id === firstYourBestSetId;
               const sub = formatSetSubline(s, exercise);
               return (
                 <Swipeable
