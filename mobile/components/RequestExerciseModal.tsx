@@ -13,8 +13,14 @@ import {
   Alert,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { requestExercise } from '../lib/api';
-import type { ExerciseCategory, ExerciseRequestPayload, ExerciseType } from '../types';
+import { getMuscleGroups, requestExercise } from '../lib/api';
+import type {
+  ExerciseCategory,
+  ExerciseRequestPayload,
+  ExerciseType,
+  MuscleGroup,
+  MuscleGroupRegion,
+} from '../types';
 import { colors, typography } from '../constants/theme';
 
 /** Matches `ENUMS.categories` / Postgres `exercise_category`. */
@@ -69,6 +75,9 @@ export function RequestExerciseModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState<null | 'category' | 'type'>(null);
+  const [muscleCatalog, setMuscleCatalog] = useState<MuscleGroup[]>([]);
+  const [muscleCatalogLoading, setMuscleCatalogLoading] = useState(false);
+  const [selectedMuscleGroupIds, setSelectedMuscleGroupIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (visible) {
@@ -79,8 +88,28 @@ export function RequestExerciseModal({
       setError(null);
       setSubmitting(false);
       setPickerOpen(null);
+      setSelectedMuscleGroupIds([]);
     }
   }, [visible, initialName]);
+
+  useEffect(() => {
+    if (!visible) return;
+    let cancelled = false;
+    setMuscleCatalogLoading(true);
+    getMuscleGroups()
+      .then((res) => {
+        if (!cancelled) setMuscleCatalog(res.flat);
+      })
+      .catch(() => {
+        if (!cancelled) setMuscleCatalog([]);
+      })
+      .finally(() => {
+        if (!cancelled) setMuscleCatalogLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [visible]);
 
   const handleSubmit = useCallback(async () => {
     if (!token) {
@@ -101,6 +130,7 @@ export function RequestExerciseModal({
         ...(category ? { category } : {}),
         ...(exerciseType ? { type: exerciseType } : {}),
         ...(requestNotes.trim() ? { requestNotes: requestNotes.trim() } : {}),
+        ...(selectedMuscleGroupIds.length > 0 ? { muscleGroupIds: selectedMuscleGroupIds } : {}),
       };
       await requestExercise(payload, token);
       Alert.alert(
@@ -116,9 +146,23 @@ export function RequestExerciseModal({
     } finally {
       setSubmitting(false);
     }
-  }, [token, memberId, name, category, exerciseType, requestNotes, onClose, onSuccess]);
+  }, [token, memberId, name, category, exerciseType, requestNotes, selectedMuscleGroupIds, onClose, onSuccess]);
 
   const nameOk = name.trim().length > 0;
+
+  const REGION_ORDER: MuscleGroupRegion[] = ['Upper Body', 'Lower Body', 'Core', 'Full Body'];
+  const byRegion = muscleCatalog.reduce<Partial<Record<MuscleGroupRegion, MuscleGroup[]>>>((acc, mg) => {
+    const r = mg.region;
+    if (!acc[r]) acc[r] = [];
+    acc[r]!.push(mg);
+    return acc;
+  }, {});
+
+  function toggleMuscleGroup(id: string) {
+    setSelectedMuscleGroupIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -182,6 +226,37 @@ export function RequestExerciseModal({
                 </Text>
                 <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
               </Pressable>
+
+              <Text style={styles.label}>Muscle groups (optional)</Text>
+              {muscleCatalogLoading ? (
+                <ActivityIndicator style={{ marginBottom: 16 }} color={colors.primary} />
+              ) : (
+                REGION_ORDER.map((region) => {
+                  const items = byRegion[region];
+                  if (!items?.length) return null;
+                  return (
+                    <View key={region} style={styles.mgSection}>
+                      <Text style={styles.mgRegionTitle}>{region}</Text>
+                      <View style={styles.mgChipRow}>
+                        {items.map((mg) => {
+                          const on = selectedMuscleGroupIds.includes(mg.id);
+                          return (
+                            <Pressable
+                              key={mg.id}
+                              onPress={() => toggleMuscleGroup(mg.id)}
+                              style={[styles.mgChip, on && styles.mgChipOn]}
+                              accessibilityRole="button"
+                              accessibilityState={{ selected: on }}
+                            >
+                              <Text style={[styles.mgChipText, on && styles.mgChipTextOn]}>{mg.name}</Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  );
+                })
+              )}
 
               <Text style={styles.label}>Notes</Text>
               <TextInput
@@ -431,6 +506,44 @@ const styles = StyleSheet.create({
   },
   pickerCancelText: {
     fontSize: 16,
+    color: colors.primary,
+    fontWeight: '600',
+    fontFamily: typography.bodySemibold,
+  },
+  mgSection: {
+    marginBottom: 12,
+  },
+  mgRegionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textMuted,
+    marginBottom: 8,
+    fontFamily: typography.bodyMedium,
+  },
+  mgChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  mgChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  mgChipOn: {
+    borderColor: colors.primary,
+    backgroundColor: colors.accent,
+  },
+  mgChipText: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    fontFamily: typography.body,
+  },
+  mgChipTextOn: {
     color: colors.primary,
     fontWeight: '600',
     fontFamily: typography.bodySemibold,

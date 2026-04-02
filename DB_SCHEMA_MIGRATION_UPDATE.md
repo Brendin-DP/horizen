@@ -8,6 +8,10 @@ This document summarizes the alignment between the API, clients, and Postgres: *
 - **Enums**: Values match Postgres exactly — e.g. `'Upper Body'` not `upper_body`, `'weight_reps'` not `weightReps`.
 - **No legacy short ids** like `m1`, `ex1`, `i1` in API payloads or new seed data.
 
+## Muscle groups (junction table)
+
+Exercise muscle groups are **not** stored on `exercise_library`. They use the `muscle_groups` lookup table and `exercise_muscle_groups` junction. API responses expose `muscleGroups: { id, name, region }[]`. Writes use **`muscleGroupIds`** (UUIDs from `GET /muscle-groups`), not free-form name strings.
+
 ## Canonical enum lists (`ENUMS` in `api/src/utils/validation.js`)
 
 | Key | Values |
@@ -19,21 +23,22 @@ This document summarizes the alignment between the API, clients, and Postgres: *
 | `categories` | `Upper Body`, `Lower Body`, `Full Body`, `Core`, `Cardio`, `Mobility` |
 | `types` | `Push`, `Pull`, `Squat`, `Hinge`, `Lunge`, `Isolation`, `Core`, `Cardio`, `Olympic`, `Compound`, `Carry`, `Mobility`, `Plyometric` |
 | `equipment` | `Barbell`, `Dumbbell`, `Bodyweight`, `Cable`, `Machine`, `Kettlebell` |
-| `muscleGroups` | See `ENUMS.muscleGroups` in validation (full Title Case list) |
 | `statuses` | `active`, `requested`, `rejected` |
 
 **Default exercise category** when none is supplied on request: **`Upper Body`** (invalid values such as `General` will fail inserts).
 
 ## Client typings
 
-- **Mobile**: `mobile/types/index.ts` exports unions matching the table above.
-- **Web**: `web/src/api/client.ts` exports matching `ExerciseCategory`, `ExerciseType`, `ExerciseEquipment`, etc.
+- **Mobile**: `mobile/types/index.ts` exports unions matching the table above; `MuscleGroup` is `{ id, name, region }`.
+- **Web**: `web/src/api/client.ts` exports matching exercise enums and `MuscleGroup`.
 
 ## Helpers
 
 - `isValidEnum(value, enumArray)`
 - `isValidUUID(value)`
-- `isValidMuscleGroups(groups)` — every entry must appear in `ENUMS.muscleGroups`.
+- `isValidMuscleGroupIds(ids)` — optional array of UUIDs for `muscleGroupIds` payloads.
+
+Bulk loading for exercises uses `getMuscleGroupsForExercises()` in `api/src/utils/exerciseHelpers.js` (no N+1 queries).
 
 ## Testing
 

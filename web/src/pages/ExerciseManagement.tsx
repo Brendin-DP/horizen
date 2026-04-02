@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getExercises,
+  getMuscleGroups,
   updateExerciseLoggingType,
   getExerciseRequests,
   approveExercise,
@@ -13,6 +14,8 @@ import {
   type ExerciseLoggingType,
   type ExerciseRequestRow,
   type ExerciseType,
+  type MuscleGroup,
+  type MuscleGroupRegion,
 } from '../api/client';
 import { colors } from '../constants/theme';
 
@@ -62,6 +65,8 @@ const UNIT_OPTIONS: { value: 'weight_reps' | 'time' | 'distance'; label: string 
   { value: 'distance', label: 'Distance' },
 ];
 
+const REGION_ORDER: MuscleGroupRegion[] = ['Upper Body', 'Lower Body', 'Core', 'Full Body'];
+
 function formatLoggingLabel(v: string): string {
   const o = LOGGING_OPTIONS.find((x) => x.value === v);
   return o?.label ?? v;
@@ -100,7 +105,8 @@ export default function ExerciseManagement() {
   const [apName, setApName] = useState('');
   const [apCategory, setApCategory] = useState<ExerciseCategory>('Upper Body');
   const [apType, setApType] = useState<ExerciseType | ''>('');
-  const [apMuscleGroups, setApMuscleGroups] = useState('');
+  const [apMuscleGroupIds, setApMuscleGroupIds] = useState<string[]>([]);
+  const [mgCatalog, setMgCatalog] = useState<MuscleGroup[]>([]);
   const [apEquipment, setApEquipment] = useState<ExerciseEquipment | ''>('');
   const [apUnit, setApUnit] = useState<'weight_reps' | 'time' | 'distance'>('weight_reps');
   const [apLoggingType, setApLoggingType] = useState<ExerciseLoggingType>('weighted');
@@ -138,6 +144,12 @@ export default function ExerciseManagement() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    getMuscleGroups()
+      .then((r) => setMgCatalog(r.flat))
+      .catch(() => setMgCatalog([]));
+  }, []);
 
   useEffect(() => {
     if (listTab === 'requested' && token) {
@@ -193,7 +205,7 @@ export default function ExerciseManagement() {
     setApName(row.name);
     setApCategory((row.category ?? 'Upper Body') as ExerciseCategory);
     setApType((row.type ?? '') as ExerciseType | '');
-    setApMuscleGroups('');
+    setApMuscleGroupIds(row.muscleGroups?.map((m) => m.id) ?? []);
     setApEquipment('' as ExerciseEquipment | '');
     setApUnit('weight_reps');
     setApLoggingType('weighted');
@@ -210,17 +222,13 @@ export default function ExerciseManagement() {
     setApproveSaving(true);
     setRequestsError('');
     try {
-      const muscleGroups = apMuscleGroups
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
       await approveExercise(
         approveRow.id,
         {
           name: apName.trim(),
           category: apCategory,
           type: apType === '' ? null : apType,
-          muscleGroups,
+          muscleGroupIds: apMuscleGroupIds,
           equipment: apEquipment === '' ? null : apEquipment,
           unit: apUnit,
           loggingType: apLoggingType,
@@ -707,15 +715,42 @@ export default function ExerciseManagement() {
                   </option>
                 ))}
               </select>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Muscle groups (comma-separated)
-              </label>
-              <input
-                className="hz-input mb-4 w-full"
-                value={apMuscleGroups}
-                onChange={(e) => setApMuscleGroups(e.target.value)}
-                placeholder="e.g. chest, triceps"
-              />
+              <span className="mb-2 block text-sm font-medium text-slate-700">Muscle groups</span>
+              <div className="mb-4 space-y-3">
+                {REGION_ORDER.map((region) => {
+                  const items = mgCatalog.filter((m) => m.region === region);
+                  if (items.length === 0) return null;
+                  return (
+                    <div key={region}>
+                      <div className="mb-1 text-xs font-semibold text-slate-500">{region}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {items.map((mg) => {
+                          const checked = apMuscleGroupIds.includes(mg.id);
+                          return (
+                            <label
+                              key={mg.id}
+                              className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-sm"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => {
+                                  setApMuscleGroupIds((prev) =>
+                                    prev.includes(mg.id)
+                                      ? prev.filter((x) => x !== mg.id)
+                                      : [...prev, mg.id]
+                                  );
+                                }}
+                              />
+                              {mg.name}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Equipment</label>
               <select
                 className="hz-select mb-4 w-full"

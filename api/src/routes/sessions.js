@@ -2,6 +2,7 @@ import express from 'express';
 import { randomUUID } from 'crypto';
 import supabase from '../db.js';
 import { mapSession, mapExercise, mapSet, toDbSet } from '../utils/mappers.js';
+import { getMuscleGroupsForExercises, getExerciseMuscleGroups, attachMuscleGroups } from '../utils/exerciseHelpers.js';
 import { normalizeSetCreatedAt } from '../utils/setCreatedAt.js';
 import { isValidUUID } from '../utils/validation.js';
 
@@ -82,6 +83,10 @@ router.get('/', async (req, res) => {
   for (const e of exercises || []) {
     exerciseMap[e.id] = mapExercise(e);
   }
+  const mgMap = await getMuscleGroupsForExercises(Object.keys(exerciseMap));
+  for (const eid of Object.keys(exerciseMap)) {
+    exerciseMap[eid] = attachMuscleGroups(exerciseMap[eid], mgMap[eid]);
+  }
 
   const sessionList = sessions || [];
   const sessionIds = sessionList.map((s) => s.id);
@@ -135,9 +140,15 @@ router.get('/:id', async (req, res) => {
     .eq('session_id', sessionRow.id)
     .order('set_number', { ascending: true });
 
+  let exercisePayload = null;
+  if (exercise) {
+    const mgs = await getExerciseMuscleGroups(exercise.id);
+    exercisePayload = attachMuscleGroups(mapExercise(exercise), mgs);
+  }
+
   res.json({
     ...mapSession(sessionRow),
-    exercise: exercise ? mapExercise(exercise) : null,
+    exercise: exercisePayload,
     sets: (sets || []).map(mapSet),
   });
 });

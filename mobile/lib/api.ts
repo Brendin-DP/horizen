@@ -259,6 +259,17 @@ async function fetchApi(
   });
 }
 
+export interface MuscleGroupsResponse {
+  flat: import('../types').MuscleGroup[];
+  grouped: Record<string, { id: string; name: string }[]>;
+}
+
+export async function getMuscleGroups(): Promise<MuscleGroupsResponse> {
+  const res = await fetch(`${BASE_URL}/muscle-groups`);
+  if (!res.ok) throw new Error('Failed to fetch muscle groups');
+  return res.json();
+}
+
 export async function getExercises(
   category?: import('../types').ExerciseCategory
 ): Promise<import('../types').Exercise[]> {

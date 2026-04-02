@@ -32,46 +32,6 @@ export const ENUMS = {
     'Plyometric',
   ],
   equipment: ['Barbell', 'Dumbbell', 'Bodyweight', 'Cable', 'Machine', 'Kettlebell'],
-  muscleGroups: [
-    'Abs',
-    'Adductors',
-    'Ankles',
-    'Arms',
-    'Back',
-    'Biceps',
-    'Brachialis',
-    'Calves',
-    'Chest',
-    'Core',
-    'Forearms',
-    'Front Delts',
-    'Full Body',
-    'Glutes',
-    'Hamstrings',
-    'Hip Flexors',
-    'Inner Thighs',
-    'IT Band',
-    'Lats',
-    'Legs',
-    'Lower Abs',
-    'Lower Back',
-    'Lower Chest',
-    'Obliques',
-    'Outer Thighs',
-    'Piriformis',
-    'Quads',
-    'Rear Delts',
-    'Rhomboids',
-    'Rotator Cuff',
-    'Shoulders',
-    'Side Delts',
-    'Spine',
-    'Thoracic Spine',
-    'Traps',
-    'Triceps',
-    'Upper Back',
-    'Upper Chest',
-  ],
   statuses: ['active', 'requested', 'rejected'],
 };
 
@@ -87,9 +47,11 @@ export function isValidUUID(value) {
   return UUID_REGEX.test(value.trim());
 }
 
-export function isValidMuscleGroups(groups) {
-  if (!Array.isArray(groups)) return false;
-  return groups.every((g) => ENUMS.muscleGroups.includes(g));
+/** Optional muscle group id list from `muscle_groups` table (junction uses UUIDs). */
+export function isValidMuscleGroupIds(ids) {
+  if (ids == null) return true;
+  if (!Array.isArray(ids)) return false;
+  return ids.every((id) => typeof id === 'string' && isValidUUID(id.trim()));
 }
 
 /** Default category when none supplied (valid enum). */

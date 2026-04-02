@@ -11,6 +11,7 @@ import workoutsRouter from './routes/workouts.js';
 import { workoutExercisesRouter, setsIdRouter } from './routes/sets.js';
 import sessionsRouter from './routes/sessions.js';
 import fundRouter from './routes/fund.js';
+import muscleGroupsRouter from './routes/muscleGroups.js';
 
 const app = express();
 app.use(cors());
@@ -31,6 +32,7 @@ app.use('/workout-exercises', workoutExercisesRouter);
 app.use('/sessions', sessionsRouter);
 app.use('/sets', setsIdRouter);
 app.use('/fund', fundRouter);
+app.use('/muscle-groups', muscleGroupsRouter);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

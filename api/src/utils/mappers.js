@@ -57,13 +57,6 @@ export function mapStarAward(row) {
   };
 }
 
-function normalizeMuscleGroups(raw) {
-  if (raw == null) return [];
-  if (Array.isArray(raw)) return raw;
-  if (typeof raw === 'object') return Object.values(raw);
-  return [];
-}
-
 export function mapExercise(row) {
   if (!row) return null;
   return {
@@ -71,7 +64,6 @@ export function mapExercise(row) {
     name: row.name,
     category: row.category ?? null,
     type: row.type ?? null,
-    muscleGroups: normalizeMuscleGroups(row.muscle_groups),
     equipment: row.equipment ?? null,
     unit: row.unit ?? null,
     loggingType: row.logging_type ?? 'weighted',

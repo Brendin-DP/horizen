@@ -6,10 +6,16 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 import {
   ENUMS,
   isValidEnum,
-  isValidMuscleGroups,
+  isValidMuscleGroupIds,
   isValidUUID,
   DEFAULT_EXERCISE_CATEGORY,
 } from '../utils/validation.js';
+import {
+  attachMuscleGroups,
+  getExerciseMuscleGroups,
+  getMuscleGroupsForExercises,
+  setExerciseMuscleGroups,
+} from '../utils/exerciseHelpers.js';
 
 const router = express.Router();
 
@@ -19,7 +25,7 @@ const UNITS = new Set(ENUMS.units);
 /** POST /request and GET /requests MUST be registered before /:id */
 
 router.post('/request', requireAuth, async (req, res) => {
-  const { memberId, name, category, type, requestNotes } = req.body;
+  const { memberId, name, category, type, requestNotes, muscleGroupIds } = req.body;
   if (!name || typeof name !== 'string' || !name.trim()) {
     return res.status(400).json({ error: 'Exercise name is required' });
   }
@@ -28,6 +34,9 @@ router.post('/request', requireAuth, async (req, res) => {
   }
   if (!isValidUUID(memberId)) {
     return res.status(400).json({ error: 'memberId must be a valid UUID' });
+  }
+  if (!isValidMuscleGroupIds(muscleGroupIds)) {
+    return res.status(400).json({ error: 'Invalid muscleGroupIds: each entry must be a valid UUID' });
   }
   const id = randomUUID();
   let categoryVal = DEFAULT_EXERCISE_CATEGORY;
@@ -51,7 +60,6 @@ router.post('/request', requireAuth, async (req, res) => {
     name: name.trim(),
     category: categoryVal,
     type: typeVal,
-    muscle_groups: [],
     equipment: null,
     unit: 'weight_reps',
     logging_type: 'weighted',
@@ -65,7 +73,16 @@ router.post('/request', requireAuth, async (req, res) => {
     console.error('Exercise request error:', error);
     return res.status(500).json({ error: 'Failed to submit request', detail: error.message });
   }
-  res.status(201).json(mapExercise(data));
+  try {
+    if (muscleGroupIds && muscleGroupIds.length > 0) {
+      await setExerciseMuscleGroups(id, muscleGroupIds);
+    }
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: e instanceof Error ? e.message : 'Failed to link muscle groups' });
+  }
+  const muscleGroups = await getExerciseMuscleGroups(id);
+  res.status(201).json(attachMuscleGroups(mapExercise(data), muscleGroups));
 });
 
 router.get('/requests', requireAuth, requireRole('admin'), async (req, res) => {
@@ -87,6 +104,9 @@ router.get('/requests', requireAuth, requireRole('admin'), async (req, res) => {
       membersById[m.id] = { id: m.id, name: m.name, email: m.email };
     }
   }
+  const exerciseIds = list.map((r) => r.id);
+  const mgMap = await getMuscleGroupsForExercises(exerciseIds);
+
   const mapped = list.map((row) => ({
     id: row.id,
     name: row.name,
@@ -95,6 +115,7 @@ router.get('/requests', requireAuth, requireRole('admin'), async (req, res) => {
     requestNotes: row.request_notes,
     requestedBy: row.requested_by ? membersById[row.requested_by] ?? null : null,
     createdAt: row.created_at,
+    muscleGroups: mgMap[row.id] || [],
   }));
   res.json(mapped);
 });
@@ -198,7 +219,14 @@ router.get('/logged', async (req, res) => {
     return tb - ta;
   });
 
-  res.json(result);
+  const allIds = result.map((e) => e.id);
+  const muscleGroupsMap = await getMuscleGroupsForExercises(allIds);
+  const enriched = result.map((e) => ({
+    ...e,
+    muscleGroups: muscleGroupsMap[e.id] || [],
+  }));
+
+  res.json(enriched);
 });
 
 router.get('/', async (req, res) => {
@@ -215,7 +243,12 @@ router.get('/', async (req, res) => {
     console.error(error);
     return res.status(500).json({ error: 'Database error', detail: error.message });
   }
-  res.json((data || []).map(mapExercise));
+  const rows = data || [];
+  const ids = rows.map((e) => e.id);
+  const muscleGroupsMap = await getMuscleGroupsForExercises(ids);
+  res.json(
+    rows.map((e) => attachMuscleGroups(mapExercise(e), muscleGroupsMap[e.id]))
+  );
 });
 
 router.patch('/:id/approve', requireAuth, requireRole('admin'), async (req, res) => {
@@ -223,7 +256,10 @@ router.patch('/:id/approve', requireAuth, requireRole('admin'), async (req, res)
   if (!isValidUUID(id)) {
     return res.status(400).json({ error: 'Invalid exercise id' });
   }
-  const { name, category, type, muscleGroups, equipment, unit, loggingType } = req.body;
+  const { name, category, type, muscleGroupIds, equipment, unit, loggingType } = req.body;
+  if (muscleGroupIds !== undefined && !isValidMuscleGroupIds(muscleGroupIds)) {
+    return res.status(400).json({ error: 'Invalid muscleGroupIds: each entry must be a valid UUID' });
+  }
   const updates = { status: 'active' };
   if (name && String(name).trim()) updates.name = String(name).trim();
   if (category !== undefined && category !== null && String(category).trim()) {
@@ -267,21 +303,6 @@ router.patch('/:id/approve', requireAuth, requireRole('admin'), async (req, res)
     }
     updates.logging_type = loggingType;
   }
-  if (muscleGroups !== undefined) {
-    let arr = [];
-    if (Array.isArray(muscleGroups)) {
-      arr = muscleGroups;
-    } else if (typeof muscleGroups === 'string') {
-      arr = muscleGroups
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
-    if (!isValidMuscleGroups(arr)) {
-      return res.status(400).json({ error: 'Invalid muscleGroups: each entry must be a valid muscle group' });
-    }
-    updates.muscle_groups = arr;
-  }
   const { data, error } = await supabase
     .from('exercise_library')
     .update(updates)
@@ -292,7 +313,16 @@ router.patch('/:id/approve', requireAuth, requireRole('admin'), async (req, res)
   if (error || !data) {
     return res.status(404).json({ error: 'Request not found or already processed' });
   }
-  res.json(mapExercise(data));
+  try {
+    if (muscleGroupIds !== undefined) {
+      await setExerciseMuscleGroups(id, muscleGroupIds);
+    }
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: e instanceof Error ? e.message : 'Failed to link muscle groups' });
+  }
+  const muscleGroups = await getExerciseMuscleGroups(id);
+  res.json(attachMuscleGroups(mapExercise(data), muscleGroups));
 });
 
 router.patch('/:id/reject', requireAuth, requireRole('admin'), async (req, res) => {
@@ -310,7 +340,8 @@ router.patch('/:id/reject', requireAuth, requireRole('admin'), async (req, res) 
   if (error || !data) {
     return res.status(404).json({ error: 'Request not found or already processed' });
   }
-  res.json(mapExercise(data));
+  const muscleGroups = await getExerciseMuscleGroups(id);
+  res.json(attachMuscleGroups(mapExercise(data), muscleGroups));
 });
 
 router.patch('/:id', requireAuth, requireRole('admin'), async (req, res) => {
@@ -342,7 +373,8 @@ router.patch('/:id', requireAuth, requireRole('admin'), async (req, res) => {
   if (!data) {
     return res.status(404).json({ error: 'Exercise not found' });
   }
-  res.json(mapExercise(data));
+  const muscleGroups = await getExerciseMuscleGroups(req.params.id);
+  res.json(attachMuscleGroups(mapExercise(data), muscleGroups));
 });
 
 router.get('/:id', async (req, res) => {
@@ -361,7 +393,8 @@ router.get('/:id', async (req, res) => {
     return res.status(500).json({ error: 'Database error', detail: error.message });
   }
   if (!data) return res.status(404).json({ error: 'Exercise not found' });
-  res.json(mapExercise(data));
+  const muscleGroups = await getExerciseMuscleGroups(req.params.id);
+  res.json(attachMuscleGroups(mapExercise(data), muscleGroups));
 });
 
 export default router;

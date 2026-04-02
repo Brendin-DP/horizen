@@ -35,45 +35,14 @@ export type ExerciseEquipment = 'Barbell' | 'Dumbbell' | 'Bodyweight' | 'Cable' 
 
 export type ExerciseStatus = 'active' | 'requested' | 'rejected';
 
-export type MuscleGroup =
-  | 'Abs'
-  | 'Adductors'
-  | 'Ankles'
-  | 'Arms'
-  | 'Back'
-  | 'Biceps'
-  | 'Brachialis'
-  | 'Calves'
-  | 'Chest'
-  | 'Core'
-  | 'Forearms'
-  | 'Front Delts'
-  | 'Full Body'
-  | 'Glutes'
-  | 'Hamstrings'
-  | 'Hip Flexors'
-  | 'Inner Thighs'
-  | 'IT Band'
-  | 'Lats'
-  | 'Legs'
-  | 'Lower Abs'
-  | 'Lower Back'
-  | 'Lower Chest'
-  | 'Obliques'
-  | 'Outer Thighs'
-  | 'Piriformis'
-  | 'Quads'
-  | 'Rear Delts'
-  | 'Rhomboids'
-  | 'Rotator Cuff'
-  | 'Shoulders'
-  | 'Side Delts'
-  | 'Spine'
-  | 'Thoracic Spine'
-  | 'Traps'
-  | 'Triceps'
-  | 'Upper Back'
-  | 'Upper Chest';
+/** From `muscle_groups` lookup + junction; not the legacy string[] column. */
+export type MuscleGroupRegion = 'Upper Body' | 'Lower Body' | 'Core' | 'Full Body';
+
+export interface MuscleGroup {
+  id: string;
+  name: string;
+  region: MuscleGroupRegion;
+}
 
 export interface Exercise {
   /** UUID */
@@ -100,6 +69,8 @@ export interface ExerciseRequestPayload {
   category?: ExerciseCategory;
   type?: ExerciseType;
   requestNotes?: string;
+  /** UUIDs from GET /muscle-groups */
+  muscleGroupIds?: string[];
 }
 
 export interface Workout {

@@ -229,16 +229,37 @@ export type ExerciseType =
 
 export type ExerciseEquipment = 'Barbell' | 'Dumbbell' | 'Bodyweight' | 'Cable' | 'Machine' | 'Kettlebell';
 
+export type MuscleGroupRegion = 'Upper Body' | 'Lower Body' | 'Core' | 'Full Body';
+
+export interface MuscleGroup {
+  id: string;
+  name: string;
+  region: MuscleGroupRegion;
+}
+
 export interface Exercise {
   id: string;
   name: string;
   category: ExerciseCategory | null;
   type?: ExerciseType | null;
-  muscleGroups: string[];
+  muscleGroups: MuscleGroup[];
   equipment: ExerciseEquipment | null;
   unit: 'weight_reps' | 'time' | 'distance' | null;
   loggingType: ExerciseLoggingType;
   createdAt: string | null;
+}
+
+export interface MuscleGroupsResponse {
+  flat: MuscleGroup[];
+  grouped: Record<string, { id: string; name: string }[]>;
+}
+
+export async function getMuscleGroups(): Promise<MuscleGroupsResponse> {
+  const res = await fetch(`${BASE_URL}/muscle-groups`, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) throw new Error('Failed to fetch muscle groups');
+  return res.json();
 }
 
 export async function getExercises(_token?: string | null): Promise<Exercise[]> {
@@ -274,6 +295,7 @@ export interface ExerciseRequestRow {
   requestNotes: string | null;
   requestedBy: { id: string; name: string; email: string } | null;
   createdAt: string;
+  muscleGroups?: MuscleGroup[];
 }
 
 export async function getExerciseRequests(token: string): Promise<ExerciseRequestRow[]> {
@@ -291,7 +313,7 @@ export type ApproveExerciseBody = {
   name?: string;
   category?: ExerciseCategory;
   type?: ExerciseType | null;
-  muscleGroups?: string[];
+  muscleGroupIds?: string[];
   equipment?: ExerciseEquipment | null;
   unit?: 'weight_reps' | 'time' | 'distance';
   loggingType?: ExerciseLoggingType;

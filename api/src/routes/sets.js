@@ -2,6 +2,7 @@ import express from 'express';
 import { randomUUID } from 'crypto';
 import supabase from '../db.js';
 import { mapSet, mapWorkoutExercise, mapExercise, toDbSet } from '../utils/mappers.js';
+import { getExerciseMuscleGroups, attachMuscleGroups } from '../utils/exerciseHelpers.js';
 import { normalizeSetCreatedAt } from '../utils/setCreatedAt.js';
 import { isValidUUID } from '../utils/validation.js';
 
@@ -36,9 +37,15 @@ router.get('/:id', async (req, res) => {
   if (setsErr) {
     return res.status(500).json({ error: 'Database error', detail: setsErr.message });
   }
+  let exercisePayload = null;
+  if (exercise) {
+    const mgs = await getExerciseMuscleGroups(exercise.id);
+    exercisePayload = attachMuscleGroups(mapExercise(exercise), mgs);
+  }
+
   res.json({
     ...mapWorkoutExercise(we),
-    exercise: exercise ? mapExercise(exercise) : null,
+    exercise: exercisePayload,
     sets: (sets || []).map(mapSet),
   });
 });

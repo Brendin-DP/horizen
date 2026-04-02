@@ -2,6 +2,7 @@ import express from 'express';
 import { randomUUID } from 'crypto';
 import supabase from '../db.js';
 import { mapWorkout, mapWorkoutExercise, mapExercise, mapSet, toDbWorkout, toDbWorkoutExercise } from '../utils/mappers.js';
+import { getMuscleGroupsForExercises, attachMuscleGroups } from '../utils/exerciseHelpers.js';
 
 const router = express.Router();
 
@@ -74,6 +75,10 @@ router.get('/default', async (req, res) => {
   for (const e of exercises || []) {
     exerciseMap[e.id] = mapExercise(e);
   }
+  const mgMap = await getMuscleGroupsForExercises(Object.keys(exerciseMap));
+  for (const eid of Object.keys(exerciseMap)) {
+    exerciseMap[eid] = attachMuscleGroups(exerciseMap[eid], mgMap[eid]);
+  }
   const workoutExercisesWithDetails = [];
   for (const we of workoutExercises || []) {
     const { data: sets } = await supabase
@@ -144,6 +149,10 @@ router.get('/:id', async (req, res) => {
   const exerciseMap = {};
   for (const e of exercises || []) {
     exerciseMap[e.id] = mapExercise(e);
+  }
+  const mgMap = await getMuscleGroupsForExercises(Object.keys(exerciseMap));
+  for (const eid of Object.keys(exerciseMap)) {
+    exerciseMap[eid] = attachMuscleGroups(exerciseMap[eid], mgMap[eid]);
   }
 
   const workoutExercisesWithDetails = [];
