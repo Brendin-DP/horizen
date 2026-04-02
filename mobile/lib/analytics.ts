@@ -1,6 +1,11 @@
 /**
  * Central PostHog event names + typed payloads for the mobile app.
  * Use optional chaining at call sites: `trackX(posthog, …)`.
+ *
+ * Exercise lifecycle (standalone / exercises tab):
+ * - started_standalone_log — user opened the log flow
+ * - logged_exercise — session saved with sets
+ * - exercise_deleted — user confirmed delete on exercises tab (all sessions for that exercise removed)
  */
 
 import type { PostHog } from 'posthog-react-native';
@@ -113,16 +118,18 @@ export function trackStartedStandaloneLog(
   capture(posthog, 'started_standalone_log', payload);
 }
 
-export function trackDeletedExerciseHistory(
+/** Fires after API success when the user deletes an exercise row (swipe → Delete) on the exercises tab. */
+export function trackExerciseDeleted(
   posthog: PosthogLike,
   payload: {
     exerciseId: string;
     exerciseName: string;
+    /** Sessions removed (standalone history cleared for this exercise). */
     sessionCount: number;
     source: 'exercises_tab_swipe';
   }
 ) {
-  capture(posthog, 'deleted_exercise_history', payload);
+  capture(posthog, 'exercise_deleted', payload);
 }
 
 export function trackOpenedSessionEdit(

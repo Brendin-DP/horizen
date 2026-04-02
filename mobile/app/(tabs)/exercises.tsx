@@ -15,7 +15,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { usePostHog } from 'posthog-react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { trackStartedStandaloneLog, trackDeletedExerciseHistory } from '../../lib/analytics';
+import { trackStartedStandaloneLog, trackExerciseDeleted } from '../../lib/analytics';
 import { getLoggedExercises, deleteAllSessionsForExercise } from '../../lib/api';
 import type { LoggedExercise, ExerciseUnit, LoggingType } from '../../types';
 import { colors, shell, typography } from '../../constants/theme';
@@ -117,7 +117,7 @@ export default function ExercisesScreen() {
               try {
                 setDeletingExerciseId(item.id);
                 const sessionCount = await deleteAllSessionsForExercise(member.id, item.id, token);
-                trackDeletedExerciseHistory(posthog, {
+                trackExerciseDeleted(posthog, {
                   exerciseId: item.id,
                   exerciseName: item.name,
                   sessionCount,
