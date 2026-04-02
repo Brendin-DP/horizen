@@ -7,29 +7,32 @@ import {
   Pressable,
   ScrollView,
   Alert,
+  Modal,
+  Dimensions,
+  InteractionManager,
 } from 'react-native';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 import { useAuth } from '../../contexts/AuthContext';
-import { getSession, getExerciseHistory, deleteSet, updateSet } from '../../lib/api';
+import { getSession, getExerciseHistory, deleteSet, updateSet, addSetToSession } from '../../lib/api';
 import type { Exercise, ExerciseHistory, Session, LoggingType, Set } from '../../types';
 import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SetLogModal } from '../../components/SetLogModal';
 import {
   type SetEntry,
+  createEmptySet,
   setEntryFromApiSet,
   validateSetEntry,
   setEntryToPatchBody,
+  setEntryToAddSessionBody,
 } from '../../lib/setEntryForm';
-import {
-  trackOpenedSessionEdit,
-  trackSessionSetDeleted,
-  trackSessionSetSaved,
-} from '../../lib/analytics';
+import { trackPersonalBest, trackSessionSetDeleted, trackSessionSetSaved } from '../../lib/analytics';
+import { evaluatePersonalBestAfterSessionAdd } from '../../lib/sessionAddSetPersonalBest';
 
 function formatLogDateShort(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -125,6 +128,14 @@ export default function LogDetailScreen() {
   const [editDraft, setEditDraft] = useState<SetEntry | null>(null);
   const [editModalError, setEditModalError] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [addDraft, setAddDraft] = useState<SetEntry | null>(null);
+  const [addModalError, setAddModalError] = useState<string | null>(null);
+  const [savingAdd, setSavingAdd] = useState(false);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [prKind, setPrKind] = useState<'weight' | 'reps'>('weight');
+  const [prValue, setPrValue] = useState(0);
+  const confettiRef = useRef<ConfettiCannon>(null);
   const isFirstFocusForSessionRef = useRef(true);
 
   useEffect(() => {
@@ -202,6 +213,23 @@ export default function LogDetailScreen() {
     setEditModalError(null);
   }
 
+  function openAddSetModal() {
+    if (!exercise) return;
+    setAddDraft(createEmptySet(exercise));
+    setAddModalError(null);
+    setAddModalVisible(true);
+  }
+
+  function closeAddSetModal() {
+    setAddModalVisible(false);
+    setAddDraft(null);
+    setAddModalError(null);
+  }
+
+  function patchAddDraft(field: keyof SetEntry, value: string | boolean) {
+    setAddDraft((d) => (d ? { ...d, [field]: value } : d));
+  }
+
   function patchEditDraft(field: keyof SetEntry, value: string | boolean) {
     setEditDraft((d) => (d ? { ...d, [field]: value } : d));
   }
@@ -242,6 +270,70 @@ export default function LogDetailScreen() {
     } finally {
       setSavingEdit(false);
     }
+  }
+
+  async function handleSaveNewSet() {
+    if (!token || !addDraft || !exercise || !log?.id || !member?.id) return;
+    const err = validateSetEntry(addDraft, exercise);
+    if (err) {
+      setAddModalError(err);
+      return;
+    }
+    setSavingAdd(true);
+    setAddModalError(null);
+    try {
+      const existing = [...(log.sets ?? [])].sort((a, b) => a.setNumber - b.setNumber);
+      const nextSetNumber = existing.reduce((m, s) => Math.max(m, s.setNumber), 0) + 1;
+      const payload = setEntryToAddSessionBody(addDraft, exercise, nextSetNumber);
+      const created = await addSetToSession(log.id, payload, token);
+      setLog((prev) => {
+        if (!prev) return prev;
+        return { ...prev, sets: [...(prev.sets ?? []), created] };
+      });
+      trackSessionSetSaved(posthog, {
+        sessionId: log.id,
+        exerciseId: exercise.id,
+        setId: created.id,
+        source: 'session_detail_modal',
+      });
+      getExerciseHistory(member.id, exercise.id, token)
+        .then(setHistory)
+        .catch(() => {});
+
+      const pb = await evaluatePersonalBestAfterSessionAdd(
+        exercise,
+        created,
+        existing,
+        member.id,
+        log.id,
+        token
+      );
+      closeAddSetModal();
+      if (pb) {
+        trackPersonalBest(posthog, {
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          pbType: pb.kind,
+          ...(pb.kind === 'weight' ? { weightKg: pb.value } : { reps: pb.value }),
+          sessionId: log.id,
+          source: 'session_detail_add_set',
+        });
+        setPrKind(pb.kind);
+        setPrValue(pb.value);
+        setSuccessModalVisible(true);
+        InteractionManager.runAfterInteractions(() => {
+          setTimeout(() => confettiRef.current?.start(), 80);
+        });
+      }
+    } catch (e) {
+      setAddModalError(e instanceof Error ? e.message : 'Could not add set');
+    } finally {
+      setSavingAdd(false);
+    }
+  }
+
+  function handlePrModalOkay() {
+    setSuccessModalVisible(false);
   }
 
   async function handleDeleteSet(setId: string) {
@@ -384,13 +476,7 @@ export default function LogDetailScreen() {
       >
         <Pressable
           style={styles.footerCta}
-          onPress={() => {
-            trackOpenedSessionEdit(posthog, {
-              sessionId: log.id,
-              source: 'session_detail_footer',
-            });
-            router.push(`/log/edit/${log.id}`);
-          }}
+          onPress={openAddSetModal}
           accessibilityRole="button"
           accessibilityLabel="Add set"
         >
@@ -410,6 +496,47 @@ export default function LogDetailScreen() {
         onConfirm={handleSaveEditedSet}
         saving={savingEdit}
       />
+
+      <SetLogModal
+        visible={addModalVisible}
+        onRequestClose={closeAddSetModal}
+        exercise={exercise}
+        draft={addDraft}
+        onPatch={patchAddDraft}
+        mode="add"
+        modalError={addModalError}
+        onConfirm={handleSaveNewSet}
+        saving={savingAdd}
+      />
+
+      <Modal visible={successModalVisible} animationType="fade" transparent>
+        <View style={styles.successModalOverlay}>
+          <ConfettiCannon
+            ref={confettiRef}
+            count={80}
+            origin={{ x: Dimensions.get('window').width / 2 - 20, y: 200 }}
+            autoStart={false}
+            fadeOut
+            colors={[colors.primary, colors.accent, colors.accentDark, '#22c55e', '#fbbf24']}
+          />
+          <View style={styles.successCard}>
+            <View style={styles.successIconCircle}>
+              <Ionicons name="trophy-outline" size={40} color={colors.primary} />
+            </View>
+            <Text style={styles.successTitle}>
+              {prKind === 'reps' ? 'Rep record!' : 'Record Broken!'}
+            </Text>
+            <Text style={styles.successSub}>
+              {prKind === 'weight'
+                ? `That's your heaviest ${exercise.name} yet! ${prValue}kg`
+                : `That's your best ${exercise.name} set yet — ${prValue} reps.`}
+            </Text>
+            <Pressable style={styles.successOkay} onPress={handlePrModalOkay}>
+              <Text style={styles.successOkayText}>Okay</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -547,4 +674,48 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
+  successModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  successCard: {
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+  },
+  successIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.recordModalCircle,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 24,
+    color: colors.textPrimary,
+    marginBottom: 8,
+    fontFamily: typography.heading,
+  },
+  successSub: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  successOkay: {
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 48,
+    borderRadius: 12,
+  },
+  successOkayText: { color: colors.white, fontWeight: '600', fontSize: 16 },
 });

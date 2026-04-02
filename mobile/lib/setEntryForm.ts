@@ -119,3 +119,59 @@ export function setEntryToPatchBody(entry: SetEntry, exercise: Exercise): Partia
   }
   return out;
 }
+
+/** Body for POST /sessions/:id/sets (add set to an existing session). Mirrors standalone log batch mapping. */
+export function setEntryToAddSessionBody(
+  entry: SetEntry,
+  exercise: Exercise,
+  setNumber: number
+): {
+  setNumber: number;
+  completed: boolean;
+  createdAt: string;
+  reps?: number;
+  weightKg?: number | null;
+  durationSeconds?: number;
+  distanceMeters?: number;
+} {
+  const body: {
+    setNumber: number;
+    completed: boolean;
+    createdAt: string;
+    reps?: number;
+    weightKg?: number | null;
+    durationSeconds?: number;
+    distanceMeters?: number;
+  } = {
+    setNumber,
+    completed: true,
+    createdAt: entry.loggedAtIso,
+  };
+  if (exercise.unit === 'weight_reps') {
+    const r = parseInt(entry.reps, 10);
+    body.reps = r;
+    const lt = exercise.loggingType;
+    if (lt === 'bodyweight') {
+      body.weightKg = null;
+    } else if (weightRequired(lt)) {
+      body.weightKg = parseFloat(entry.weight);
+    } else if (weightOptional(lt)) {
+      if (!entry.addedWeight) {
+        body.weightKg = null;
+      } else {
+        const trimmed = entry.weight.trim();
+        if (trimmed === '') {
+          body.weightKg = null;
+        } else {
+          const w = parseFloat(trimmed);
+          body.weightKg = w === 0 ? null : w;
+        }
+      }
+    }
+  } else if (exercise.unit === 'time') {
+    body.durationSeconds = parseInt(entry.duration, 10);
+  } else if (exercise.unit === 'distance') {
+    body.distanceMeters = parseFloat(entry.distance);
+  }
+  return body;
+}

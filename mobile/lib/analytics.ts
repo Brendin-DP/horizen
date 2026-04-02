@@ -39,7 +39,7 @@ export function trackPersonalBest(
     weightKg?: number;
     reps?: number;
     sessionId?: string;
-    source: 'standalone_log';
+    source: 'standalone_log' | 'session_detail_add_set';
   }
 ) {
   const { pbType, weightKg, reps, ...rest } = payload;
@@ -130,11 +130,4 @@ export function trackExerciseDeleted(
   }
 ) {
   capture(posthog, 'exercise_deleted', payload);
-}
-
-export function trackOpenedSessionEdit(
-  posthog: PosthogLike,
-  payload: { sessionId: string; source: 'session_detail_footer' }
-) {
-  capture(posthog, 'opened_session_edit', payload);
 }
