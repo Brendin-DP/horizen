@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search } from 'lucide-react';
+import { Pencil, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getExercises,
   getMuscleGroups,
-  updateExerciseLoggingType,
+  updateExercise,
   getExerciseRequests,
   approveExercise,
   rejectExercise,
@@ -67,11 +67,6 @@ const UNIT_OPTIONS: { value: 'weight_reps' | 'time' | 'distance'; label: string 
 
 const REGION_ORDER: MuscleGroupRegion[] = ['Upper Body', 'Lower Body', 'Core', 'Full Body'];
 
-function formatLoggingLabel(v: string): string {
-  const o = LOGGING_OPTIONS.find((x) => x.value === v);
-  return o?.label ?? v;
-}
-
 function formatRequestDate(iso: string | null | undefined): string {
   if (!iso) return '—';
   try {
@@ -87,11 +82,6 @@ export default function ExerciseManagement() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  /** Pending logging type changes (exercise id → value); persisted only via Save. */
-  const [loggingDrafts, setLoggingDrafts] = useState<
-    Record<string, ExerciseLoggingType>
-  >({});
-  const [savingLogging, setSavingLogging] = useState(false);
   const [rowError, setRowError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [listTab, setListTab] = useState<'active' | 'requested'>('active');
@@ -101,7 +91,12 @@ export default function ExerciseManagement() {
   const [requestsError, setRequestsError] = useState('');
   const [requestSuccess, setRequestSuccess] = useState('');
 
-  const [approveRow, setApproveRow] = useState<ExerciseRequestRow | null>(null);
+  type FormModal =
+    | null
+    | { kind: 'approve'; row: ExerciseRequestRow }
+    | { kind: 'editActive'; exercise: Exercise }
+    | { kind: 'editRequest'; row: ExerciseRequestRow };
+  const [formModal, setFormModal] = useState<FormModal>(null);
   const [apName, setApName] = useState('');
   const [apCategory, setApCategory] = useState<ExerciseCategory>('Upper Body');
   const [apType, setApType] = useState<ExerciseType | ''>('');
@@ -110,7 +105,8 @@ export default function ExerciseManagement() {
   const [apEquipment, setApEquipment] = useState<ExerciseEquipment | ''>('');
   const [apUnit, setApUnit] = useState<'weight_reps' | 'time' | 'distance'>('weight_reps');
   const [apLoggingType, setApLoggingType] = useState<ExerciseLoggingType>('weighted');
-  const [approveSaving, setApproveSaving] = useState(false);
+  const [apRequestNotes, setApRequestNotes] = useState('');
+  const [formSaving, setFormSaving] = useState(false);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
@@ -119,7 +115,6 @@ export default function ExerciseManagement() {
       const data = await getExercises();
       const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
       setExercises(sorted);
-      setLoggingDrafts({});
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load exercises');
     } finally {
@@ -157,92 +152,102 @@ export default function ExerciseManagement() {
     }
   }, [listTab, token, fetchRequests]);
 
-  function handleLoggingDraftChange(exercise: Exercise, loggingType: ExerciseLoggingType) {
-    setRowError(null);
-    const saved = (exercise.loggingType ?? 'weighted') as ExerciseLoggingType;
-    if (loggingType === saved) {
-      setLoggingDrafts((prev) => {
-        if (!(exercise.id in prev)) return prev;
-        const next = { ...prev };
-        delete next[exercise.id];
-        return next;
-      });
-    } else {
-      setLoggingDrafts((prev) => ({ ...prev, [exercise.id]: loggingType }));
-    }
-  }
-
-  const hasDirtyLogging = Object.keys(loggingDrafts).length > 0;
-
-  async function handleSaveLoggingChanges() {
-    if (!token || savingLogging) return;
-    const entries = Object.entries(loggingDrafts);
-    if (entries.length === 0) return;
-    setRowError(null);
-    setSavingLogging(true);
-    try {
-      for (const [id, loggingType] of entries) {
-        const updated = await updateExerciseLoggingType(id, loggingType, token);
-        setExercises((prev) =>
-          prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e))
-        );
-        setLoggingDrafts((prev) => {
-          const next = { ...prev };
-          delete next[id];
-          return next;
-        });
-      }
-    } catch (err) {
-      setRowError(err instanceof Error ? err.message : 'Update failed');
-    } finally {
-      setSavingLogging(false);
-    }
-  }
-
-  function openApprove(row: ExerciseRequestRow) {
-    setRequestSuccess('');
-    setApproveRow(row);
+  function populateFormFromRequestRow(row: ExerciseRequestRow) {
     setApName(row.name);
     setApCategory((row.category ?? 'Upper Body') as ExerciseCategory);
     setApType((row.type ?? '') as ExerciseType | '');
     setApMuscleGroupIds(row.muscleGroups?.map((m) => m.id) ?? []);
-    setApEquipment('' as ExerciseEquipment | '');
-    setApUnit('weight_reps');
-    setApLoggingType('weighted');
+    setApEquipment((row.equipment ?? '') as ExerciseEquipment | '');
+    setApUnit(row.unit ?? 'weight_reps');
+    setApLoggingType(row.loggingType ?? 'weighted');
+    setApRequestNotes(row.requestNotes ?? '');
   }
 
-  function closeApprove() {
-    if (approveSaving) return;
-    setApproveRow(null);
+  function populateFormFromExercise(ex: Exercise) {
+    setApName(ex.name);
+    setApCategory((ex.category ?? 'Upper Body') as ExerciseCategory);
+    setApType((ex.type ?? '') as ExerciseType | '');
+    setApMuscleGroupIds(ex.muscleGroups?.map((m) => m.id) ?? []);
+    setApEquipment((ex.equipment ?? '') as ExerciseEquipment | '');
+    setApUnit(ex.unit ?? 'weight_reps');
+    setApLoggingType(ex.loggingType ?? 'weighted');
+    setApRequestNotes('');
   }
 
-  async function handleApproveSubmit(e: React.FormEvent) {
+  function openApprove(row: ExerciseRequestRow) {
+    setRequestSuccess('');
+    setFormModal({ kind: 'approve', row });
+    populateFormFromRequestRow(row);
+  }
+
+  function openEditActive(exercise: Exercise) {
+    setFormModal({ kind: 'editActive', exercise });
+    populateFormFromExercise(exercise);
+  }
+
+  function openEditRequest(row: ExerciseRequestRow) {
+    setFormModal({ kind: 'editRequest', row });
+    populateFormFromRequestRow(row);
+  }
+
+  function closeFormModal() {
+    if (formSaving) return;
+    setFormModal(null);
+  }
+
+  async function handleExerciseFormSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !approveRow) return;
-    setApproveSaving(true);
+    if (!token || !formModal) return;
+    setFormSaving(true);
     setRequestsError('');
+    setRowError(null);
+    const payload = {
+      name: apName.trim(),
+      category: apCategory,
+      type: apType === '' ? null : apType,
+      muscleGroupIds: apMuscleGroupIds,
+      equipment: apEquipment === '' ? null : apEquipment,
+      unit: apUnit,
+      loggingType: apLoggingType,
+    };
     try {
-      await approveExercise(
-        approveRow.id,
-        {
-          name: apName.trim(),
-          category: apCategory,
-          type: apType === '' ? null : apType,
-          muscleGroupIds: apMuscleGroupIds,
-          equipment: apEquipment === '' ? null : apEquipment,
-          unit: apUnit,
-          loggingType: apLoggingType,
-        },
-        token
-      );
-      setRequests((prev) => prev.filter((r) => r.id !== approveRow.id));
-      setApproveRow(null);
-      setRequestSuccess('Exercise approved and added to the library.');
-      fetchData();
+      if (formModal.kind === 'approve') {
+        await approveExercise(formModal.row.id, {
+          ...payload,
+          requestNotes: apRequestNotes.trim() ? apRequestNotes.trim() : null,
+        }, token);
+        setRequests((prev) => prev.filter((r) => r.id !== formModal.row.id));
+        setRequestSuccess('Exercise approved and added to the library.');
+        fetchData();
+      } else if (formModal.kind === 'editActive') {
+        const updated = await updateExercise(formModal.exercise.id, payload, token);
+        setExercises((prev) =>
+          prev.map((ex) => (ex.id === updated.id ? { ...ex, ...updated } : ex)).sort((a, b) => a.name.localeCompare(b.name))
+        );
+        setRequestSuccess('Exercise updated.');
+      } else {
+        await updateExercise(
+          formModal.row.id,
+          {
+            ...payload,
+            requestNotes: apRequestNotes.trim() ? apRequestNotes.trim() : null,
+          },
+          token
+        );
+        setRequestSuccess('Request updated.');
+        void fetchRequests();
+        fetchData();
+      }
+      setFormModal(null);
     } catch (err) {
-      setRequestsError(err instanceof Error ? err.message : 'Approve failed');
+      const msg = err instanceof Error ? err.message : 'Save failed';
+      if (formModal.kind === 'approve' || formModal.kind === 'editRequest') {
+        setRequestsError(msg);
+      } else {
+        setRowError(msg);
+      }
     } finally {
-      setApproveSaving(false);
+      setFormSaving(false);
     }
   }
 
@@ -307,20 +312,10 @@ export default function ExerciseManagement() {
         }}
       >
         <h1 style={{ margin: 0, fontSize: 24, color: colors.textPrimary }}>Exercise Management</h1>
-        {listTab === 'active' && hasDirtyLogging && token ? (
-          <button
-            type="button"
-            className="hz-btn hz-btn-primary shrink-0"
-            disabled={savingLogging}
-            onClick={() => void handleSaveLoggingChanges()}
-          >
-            {savingLogging ? 'Saving…' : 'Save'}
-          </button>
-        ) : null}
       </div>
       <p style={{ margin: '0 0 24px', fontSize: 14, color: colors.textMuted, maxWidth: 640 }}>
-        Set how each exercise is logged in the app: pure weight, pure bodyweight, or optional weight.
-        Changes apply on the next load in the mobile app.
+        Browse active exercises and pending requests. Use the edit control on a row to change name,
+        category, type, muscle groups, equipment, unit, and logging type.
       </p>
 
       {error && (
@@ -494,15 +489,15 @@ export default function ExerciseManagement() {
             <div style={{ overflowX: 'auto' }}>
               <table style={requestTableStyle}>
                 <thead>
-                  <tr style={{ backgroundColor: colors.backgroundDark }}>
-                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Name</th>
-                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Requested By</th>
-                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Category</th>
-                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Type</th>
-                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Notes</th>
-                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Date</th>
-                    <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Actions</th>
-                  </tr>
+                <tr style={{ backgroundColor: colors.backgroundDark }}>
+                  <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Name</th>
+                  <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Requested By</th>
+                  <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Category</th>
+                  <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Type</th>
+                  <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Notes</th>
+                  <th style={{ padding: 12, textAlign: 'left', fontWeight: 600 }}>Date</th>
+                  <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, width: 220 }}>Actions</th>
+                </tr>
                 </thead>
                 <tbody>
                   {requests.map((row) => (
@@ -528,13 +523,22 @@ export default function ExerciseManagement() {
                         {formatRequestDate(row.createdAt)}
                       </td>
                       <td style={{ padding: 12 }}>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                           <button
                             type="button"
                             className="hz-btn hz-btn-primary text-sm"
                             onClick={() => openApprove(row)}
                           >
                             Approve
+                          </button>
+                          <button
+                            type="button"
+                            className="hz-btn inline-flex items-center gap-1 text-sm"
+                            onClick={() => openEditRequest(row)}
+                            title="Edit request"
+                          >
+                            <Pencil className="h-3.5 w-3.5" aria-hidden />
+                            Edit
                           </button>
                           <button
                             type="button"
@@ -606,15 +610,13 @@ export default function ExerciseManagement() {
                   <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>Name</th>
                   <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>Category</th>
                   <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>Unit</th>
-                  <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14 }}>
-                    Logging type
+                  <th style={{ padding: 12, textAlign: 'left', fontWeight: 600, fontSize: 14, width: 120 }}>
+                    Actions
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredExercises.map((ex) => {
-                  const savedLt = (ex.loggingType ?? 'weighted') as ExerciseLoggingType;
-                  const lt = (loggingDrafts[ex.id] ?? savedLt) as ExerciseLoggingType;
                   return (
                     <tr key={ex.id} style={{ borderTop: `1px solid ${colors.border}` }}>
                       <td style={{ padding: 12, fontWeight: 500 }}>{ex.name}</td>
@@ -623,21 +625,16 @@ export default function ExerciseManagement() {
                       </td>
                       <td style={{ padding: 12, color: colors.textMuted }}>{ex.unit ?? '—'}</td>
                       <td style={{ padding: 12 }}>
-                        <select
-                          value={lt}
-                          disabled={savingLogging || !token}
-                          onChange={(e) =>
-                            handleLoggingDraftChange(ex, e.target.value as ExerciseLoggingType)
-                          }
-                          className={`hz-select min-w-[220px] ${savingLogging ? 'opacity-70' : ''}`}
-                          title={formatLoggingLabel(lt)}
+                        <button
+                          type="button"
+                          className="hz-btn inline-flex items-center gap-1 text-sm"
+                          onClick={() => openEditActive(ex)}
+                          disabled={!token}
+                          title="Edit exercise"
                         >
-                          {LOGGING_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
+                          <Pencil className="h-3.5 w-3.5" aria-hidden />
+                          Edit
+                        </button>
                       </td>
                     </tr>
                   );
@@ -648,11 +645,11 @@ export default function ExerciseManagement() {
         </>
       )}
 
-      {approveRow ? (
+      {formModal ? (
         <div
           role="dialog"
           aria-modal="true"
-          aria-labelledby="approve-dialog-title"
+          aria-labelledby="exercise-form-dialog-title"
           style={{
             position: 'fixed',
             inset: 0,
@@ -663,7 +660,7 @@ export default function ExerciseManagement() {
             padding: 24,
             backgroundColor: 'rgba(0,0,0,0.45)',
           }}
-          onClick={closeApprove}
+          onClick={closeFormModal}
         >
           <div
             style={{
@@ -679,10 +676,14 @@ export default function ExerciseManagement() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 id="approve-dialog-title" style={{ margin: '0 0 16px', fontSize: 18 }}>
-              Approve exercise
+            <h3 id="exercise-form-dialog-title" style={{ margin: '0 0 16px', fontSize: 18 }}>
+              {formModal.kind === 'approve'
+                ? 'Approve exercise'
+                : formModal.kind === 'editActive'
+                  ? 'Edit exercise'
+                  : 'Edit request'}
             </h3>
-            <form onSubmit={handleApproveSubmit}>
+            <form onSubmit={handleExerciseFormSubmit}>
               <label className="mb-2 block text-sm font-medium text-slate-700">Name</label>
               <input
                 className="hz-input mb-4 w-full"
@@ -778,7 +779,7 @@ export default function ExerciseManagement() {
               </select>
               <label className="mb-2 block text-sm font-medium text-slate-700">Logging type</label>
               <select
-                className="hz-select mb-6 w-full"
+                className={`hz-select w-full ${formModal.kind === 'editActive' ? 'mb-6' : 'mb-4'}`}
                 value={apLoggingType}
                 onChange={(e) => setApLoggingType(e.target.value as ExerciseLoggingType)}
               >
@@ -788,12 +789,27 @@ export default function ExerciseManagement() {
                   </option>
                 ))}
               </select>
+              {formModal.kind === 'approve' || formModal.kind === 'editRequest' ? (
+                <>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Request notes</label>
+                  <textarea
+                    className="hz-input mb-6 min-h-[88px] w-full resize-y py-2"
+                    value={apRequestNotes}
+                    onChange={(e) => setApRequestNotes(e.target.value)}
+                    placeholder="Member’s request notes"
+                  />
+                </>
+              ) : null}
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                <button type="button" className="hz-btn" onClick={closeApprove} disabled={approveSaving}>
+                <button type="button" className="hz-btn" onClick={closeFormModal} disabled={formSaving}>
                   Cancel
                 </button>
-                <button type="submit" className="hz-btn hz-btn-primary" disabled={approveSaving}>
-                  {approveSaving ? 'Saving…' : 'Approve & Add to Library'}
+                <button type="submit" className="hz-btn hz-btn-primary" disabled={formSaving}>
+                  {formSaving
+                    ? 'Saving…'
+                    : formModal.kind === 'approve'
+                      ? 'Approve & Add to Library'
+                      : 'Save changes'}
                 </button>
               </div>
             </form>

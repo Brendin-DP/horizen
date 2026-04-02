@@ -22,6 +22,68 @@ const router = express.Router();
 const LOGGING_TYPES = new Set(ENUMS.loggingTypes);
 const UNITS = new Set(ENUMS.units);
 
+/**
+ * Shared field validation for admin exercise updates (not including status).
+ * Mutates `updates` (snake_case DB keys).
+ * @param {{ allowRequestNotes?: boolean }} [opts]
+ */
+function applyExerciseFieldUpdates(body, updates, opts = {}) {
+  const { allowRequestNotes = false } = opts;
+  const { name, category, type, equipment, unit, loggingType, requestNotes } = body;
+  if (name !== undefined) {
+    if (!name || typeof name !== 'string' || !String(name).trim()) {
+      return { error: 'Invalid name' };
+    }
+    updates.name = String(name).trim();
+  }
+  if (category !== undefined && category !== null && String(category).trim()) {
+    const c = String(category).trim();
+    if (!isValidEnum(c, ENUMS.categories)) {
+      return { error: 'Invalid category' };
+    }
+    updates.category = c;
+  }
+  if (type !== undefined) {
+    if (type === null || !String(type).trim()) {
+      updates.type = null;
+    } else {
+      const t = String(type).trim();
+      if (!isValidEnum(t, ENUMS.types)) {
+        return { error: 'Invalid type' };
+      }
+      updates.type = t;
+    }
+  }
+  if (equipment !== undefined) {
+    if (equipment === null || !String(equipment).trim()) {
+      updates.equipment = null;
+    } else {
+      const e = String(equipment).trim();
+      if (!isValidEnum(e, ENUMS.equipment)) {
+        return { error: 'Invalid equipment' };
+      }
+      updates.equipment = e;
+    }
+  }
+  if (unit !== undefined) {
+    if (!unit || !UNITS.has(unit)) {
+      return { error: 'Invalid unit' };
+    }
+    updates.unit = unit;
+  }
+  if (loggingType !== undefined) {
+    if (!loggingType || !LOGGING_TYPES.has(loggingType)) {
+      return { error: 'Invalid loggingType' };
+    }
+    updates.logging_type = loggingType;
+  }
+  if (allowRequestNotes && requestNotes !== undefined) {
+    updates.request_notes =
+      requestNotes != null && String(requestNotes).trim() ? String(requestNotes).trim() : null;
+  }
+  return null;
+}
+
 /** POST /request and GET /requests MUST be registered before /:id */
 
 router.post('/request', requireAuth, async (req, res) => {
@@ -112,6 +174,9 @@ router.get('/requests', requireAuth, requireRole('admin'), async (req, res) => {
     name: row.name,
     category: row.category,
     type: row.type,
+    equipment: row.equipment ?? null,
+    unit: row.unit ?? 'weight_reps',
+    loggingType: row.logging_type ?? 'weighted',
     requestNotes: row.request_notes,
     requestedBy: row.requested_by ? membersById[row.requested_by] ?? null : null,
     createdAt: row.created_at,
@@ -256,53 +321,13 @@ router.patch('/:id/approve', requireAuth, requireRole('admin'), async (req, res)
   if (!isValidUUID(id)) {
     return res.status(400).json({ error: 'Invalid exercise id' });
   }
-  const { name, category, type, muscleGroupIds, equipment, unit, loggingType } = req.body;
+  const { muscleGroupIds } = req.body;
   if (muscleGroupIds !== undefined && !isValidMuscleGroupIds(muscleGroupIds)) {
     return res.status(400).json({ error: 'Invalid muscleGroupIds: each entry must be a valid UUID' });
   }
   const updates = { status: 'active' };
-  if (name && String(name).trim()) updates.name = String(name).trim();
-  if (category !== undefined && category !== null && String(category).trim()) {
-    const c = String(category).trim();
-    if (!isValidEnum(c, ENUMS.categories)) {
-      return res.status(400).json({ error: 'Invalid category' });
-    }
-    updates.category = c;
-  }
-  if (type !== undefined) {
-    if (type === null || !String(type).trim()) {
-      updates.type = null;
-    } else {
-      const t = String(type).trim();
-      if (!isValidEnum(t, ENUMS.types)) {
-        return res.status(400).json({ error: 'Invalid type' });
-      }
-      updates.type = t;
-    }
-  }
-  if (equipment !== undefined) {
-    if (equipment === null || !String(equipment).trim()) {
-      updates.equipment = null;
-    } else {
-      const e = String(equipment).trim();
-      if (!isValidEnum(e, ENUMS.equipment)) {
-        return res.status(400).json({ error: 'Invalid equipment' });
-      }
-      updates.equipment = e;
-    }
-  }
-  if (unit !== undefined) {
-    if (!unit || !UNITS.has(unit)) {
-      return res.status(400).json({ error: 'Invalid unit' });
-    }
-    updates.unit = unit;
-  }
-  if (loggingType !== undefined) {
-    if (!loggingType || !LOGGING_TYPES.has(loggingType)) {
-      return res.status(400).json({ error: 'Invalid loggingType' });
-    }
-    updates.logging_type = loggingType;
-  }
+  const fieldErr = applyExerciseFieldUpdates(req.body, updates, { allowRequestNotes: true });
+  if (fieldErr) return res.status(400).json(fieldErr);
   const { data, error } = await supabase
     .from('exercise_library')
     .update(updates)
@@ -345,35 +370,62 @@ router.patch('/:id/reject', requireAuth, requireRole('admin'), async (req, res) 
 });
 
 router.patch('/:id', requireAuth, requireRole('admin'), async (req, res) => {
-  if (!isValidUUID(req.params.id)) {
+  const { id } = req.params;
+  if (!isValidUUID(id)) {
     return res.status(400).json({ error: 'Invalid exercise id' });
   }
-  const { loggingType } = req.body;
-  if (loggingType === undefined || loggingType === null) {
-    return res.status(400).json({ error: 'loggingType is required' });
+  const { muscleGroupIds } = req.body;
+  if (muscleGroupIds !== undefined && !isValidMuscleGroupIds(muscleGroupIds)) {
+    return res.status(400).json({ error: 'Invalid muscleGroupIds: each entry must be a valid UUID' });
   }
-  if (!LOGGING_TYPES.has(loggingType)) {
-    return res.status(400).json({
-      error: 'loggingType must be weighted, bodyweight, or weighted_or_bodyweight',
-    });
-  }
-  const { data, error } = await supabase
+
+  const { data: existing, error: fetchErr } = await supabase
     .from('exercise_library')
-    .update({ logging_type: loggingType })
-    .eq('id', req.params.id)
-    .select()
+    .select('*')
+    .eq('id', id)
     .single();
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return res.status(404).json({ error: 'Exercise not found' });
-    }
-    console.error(error);
-    return res.status(500).json({ error: 'Database error', detail: error.message });
-  }
-  if (!data) {
+  if (fetchErr || !existing) {
     return res.status(404).json({ error: 'Exercise not found' });
   }
-  const muscleGroups = await getExerciseMuscleGroups(req.params.id);
+  if (existing.status !== 'active' && existing.status !== 'requested') {
+    return res.status(400).json({ error: 'Can only edit active or requested exercises' });
+  }
+
+  const updates = {};
+  const fieldErr = applyExerciseFieldUpdates(req.body, updates, {
+    allowRequestNotes: existing.status === 'requested',
+  });
+  if (fieldErr) return res.status(400).json(fieldErr);
+
+  if (Object.keys(updates).length === 0 && muscleGroupIds === undefined) {
+    return res.status(400).json({ error: 'No fields to update' });
+  }
+
+  let data = existing;
+  if (Object.keys(updates).length > 0) {
+    const { data: updated, error } = await supabase
+      .from('exercise_library')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Database error', detail: error.message });
+    }
+    if (!updated) return res.status(404).json({ error: 'Exercise not found' });
+    data = updated;
+  }
+
+  try {
+    if (muscleGroupIds !== undefined) {
+      await setExerciseMuscleGroups(id, muscleGroupIds);
+    }
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: e instanceof Error ? e.message : 'Failed to link muscle groups' });
+  }
+  const muscleGroups = await getExerciseMuscleGroups(id);
   res.json(attachMuscleGroups(mapExercise(data), muscleGroups));
 });
 

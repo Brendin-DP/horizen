@@ -270,15 +270,26 @@ export async function getExercises(_token?: string | null): Promise<Exercise[]> 
   return res.json();
 }
 
-export async function updateExerciseLoggingType(
+export type UpdateExerciseBody = {
+  name?: string;
+  category?: ExerciseCategory;
+  type?: ExerciseType | null;
+  muscleGroupIds?: string[];
+  equipment?: ExerciseEquipment | null;
+  unit?: 'weight_reps' | 'time' | 'distance';
+  loggingType?: ExerciseLoggingType;
+  requestNotes?: string | null;
+};
+
+export async function updateExercise(
   exerciseId: string,
-  loggingType: ExerciseLoggingType,
+  body: UpdateExerciseBody,
   token: string
 ): Promise<Exercise> {
   const res = await fetch(`${BASE_URL}/exercises/${encodeURIComponent(exerciseId)}`, {
     method: 'PATCH',
     headers: headersWithAuth(token),
-    body: JSON.stringify({ loggingType }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -292,6 +303,9 @@ export interface ExerciseRequestRow {
   name: string;
   category: ExerciseCategory | null;
   type: ExerciseType | null;
+  equipment: ExerciseEquipment | null;
+  unit: 'weight_reps' | 'time' | 'distance';
+  loggingType: ExerciseLoggingType;
   requestNotes: string | null;
   requestedBy: { id: string; name: string; email: string } | null;
   createdAt: string;
@@ -317,6 +331,7 @@ export type ApproveExerciseBody = {
   equipment?: ExerciseEquipment | null;
   unit?: 'weight_reps' | 'time' | 'distance';
   loggingType?: ExerciseLoggingType;
+  requestNotes?: string | null;
 };
 
 export async function approveExercise(
