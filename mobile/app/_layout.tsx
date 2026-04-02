@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { View } from 'react-native';
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as ExpoSplashScreen from 'expo-splash-screen';
@@ -49,13 +50,17 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.splashBg }} />
+      <>
+        <StatusBar style="light" />
+        <View style={{ flex: 1, backgroundColor: colors.splashBg }} />
+      </>
     );
   }
 
   return (
     <SafeAreaProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar style="dark" />
       <PostHogProvider
         apiKey={POSTHOG_KEY}
         options={{
