@@ -6,12 +6,14 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  Alert,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 import { useAuth } from '../../contexts/AuthContext';
-import { getSession, getExerciseHistory } from '../../lib/api';
+import { getSession, getExerciseHistory, deleteSet } from '../../lib/api';
 import type { Exercise, ExerciseHistory, Session, LoggingType, Set } from '../../types';
 import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -169,6 +171,25 @@ export default function LogDetailScreen() {
     return history.find((h) => h.logId === log.id)?.bestSet;
   }, [history, log?.id]);
 
+  async function handleDeleteSet(setId: string) {
+    if (!token || !member?.id || !exercise?.id) return;
+    try {
+      await deleteSet(setId, token);
+      setLog((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          sets: (prev.sets ?? []).filter((x) => x.id !== setId),
+        };
+      });
+      getExerciseHistory(member.id, exercise.id, token)
+        .then(setHistory)
+        .catch(() => {});
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Could not delete set');
+    }
+  }
+
   if (loading || (!log && !error)) {
     return (
       <View style={styles.center}>
@@ -225,24 +246,40 @@ export default function LogDetailScreen() {
                 isPbLog && sessionBest != null && setMatchesSessionBest(s, sessionBest, exercise);
               const sub = formatSetSubline(s, exercise);
               return (
-                <View key={s.id} style={[styles.setCard, showRibbon && styles.setCardClip]}>
-                  {showRibbon ? (
-                    <View style={styles.pbRibbonWrap} pointerEvents="none">
-                      <View style={styles.pbRibbon}>
-                        <Ionicons name="trophy-outline" size={11} color={colors.white} />
-                        <Text style={styles.pbRibbonText}>Your Best</Text>
+                <Swipeable
+                  key={s.id}
+                  renderRightActions={() => (
+                    <Pressable
+                      style={styles.deleteAction}
+                      onPress={() => handleDeleteSet(s.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Delete set"
+                    >
+                      <Ionicons name="trash-outline" size={22} color={colors.white} />
+                      <Text style={styles.deleteActionText}>Delete</Text>
+                    </Pressable>
+                  )}
+                  friction={2}
+                >
+                  <View style={[styles.setCard, showRibbon && styles.setCardClip]}>
+                    {showRibbon ? (
+                      <View style={styles.pbRibbonWrap} pointerEvents="none">
+                        <View style={styles.pbRibbon}>
+                          <Ionicons name="trophy-outline" size={11} color={colors.white} />
+                          <Text style={styles.pbRibbonText}>Your Best</Text>
+                        </View>
+                      </View>
+                    ) : null}
+                    <View style={styles.setCardRow}>
+                      <View style={styles.setCardTextBlock}>
+                        <Text style={styles.setHeadline} numberOfLines={2}>
+                          {formatSetHeadline(s, exercise)}
+                        </Text>
+                        {sub ? <Text style={styles.setMeta}>{sub}</Text> : null}
                       </View>
                     </View>
-                  ) : null}
-                  <View style={styles.setCardRow}>
-                    <View style={styles.setCardTextBlock}>
-                      <Text style={styles.setHeadline} numberOfLines={2}>
-                        {formatSetHeadline(s, exercise)}
-                      </Text>
-                      {sub ? <Text style={styles.setMeta}>{sub}</Text> : null}
-                    </View>
                   </View>
-                </View>
+                </Swipeable>
               );
             })
           )}
@@ -261,8 +298,8 @@ export default function LogDetailScreen() {
           accessibilityRole="button"
           accessibilityLabel="Add set"
         >
-          <Text style={styles.footerCtaText}>Add Set</Text>
           <Ionicons name="add" size={20} color={colors.white} />
+          <Text style={styles.footerCtaText}>Add Set</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -349,6 +386,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     fontFamily: typography.body,
+  },
+  deleteAction: {
+    backgroundColor: '#dc2626',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    marginBottom: 12,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  deleteActionText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 14,
+    marginTop: 4,
   },
   emptyCard: {
     backgroundColor: colors.white,

@@ -607,8 +607,8 @@ export default function ExerciseDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel="Add session"
           >
-            <Text style={styles.footerCtaText}>Add Session</Text>
             <Ionicons name="add" size={20} color={colors.white} />
+            <Text style={styles.footerCtaText}>Add Session</Text>
           </Pressable>
         </View>
       ) : null}

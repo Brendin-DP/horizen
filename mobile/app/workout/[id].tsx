@@ -335,7 +335,8 @@ export default function WorkoutDetailScreen() {
                   openSetModal(we);
                 }}
               >
-                <Text style={styles.addSetText}>+ Add Set</Text>
+                <Ionicons name="add" size={20} color={colors.primary} />
+                <Text style={styles.addSetText}>Add Set</Text>
               </Pressable>
             )}
           </Pressable>
@@ -350,7 +351,8 @@ export default function WorkoutDetailScreen() {
                 setPickerVisible(true);
               }}
             >
-              <Text style={styles.addExerciseText}>+ Add Exercise</Text>
+              <Ionicons name="add" size={20} color={colors.textMuted} />
+              <Text style={styles.addExerciseText}>Add Exercise</Text>
             </Pressable>
 
             <Pressable style={styles.completeBtn} onPress={handleComplete}>
@@ -625,19 +627,26 @@ const styles = StyleSheet.create({
   setNum: { color: colors.textMuted, width: 60 },
   setDetail: { color: colors.textPrimary },
   addSetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginTop: 12,
-    padding: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     backgroundColor: colors.accent,
     borderRadius: 8,
     alignSelf: 'flex-start',
   },
   addSetText: { color: colors.primary, fontWeight: '500' },
   addExerciseBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     marginTop: 24,
     padding: 14,
     backgroundColor: colors.white,
     borderRadius: 12,
-    alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
     borderStyle: 'dashed',

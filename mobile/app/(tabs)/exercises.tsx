@@ -181,8 +181,8 @@ export default function ExercisesScreen() {
           style={styles.addCta}
           onPress={() => router.push('/exercise/log')}
         >
-          <Text style={styles.addCtaText}>Add Exercise</Text>
           <Ionicons name="add" size={20} color={colors.white} />
+          <Text style={styles.addCtaText}>Add Exercise</Text>
         </Pressable>
       </View>
     </SafeAreaView>

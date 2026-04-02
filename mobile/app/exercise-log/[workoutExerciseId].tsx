@@ -175,7 +175,8 @@ export default function ExerciseLogScreen() {
             style={styles.addSetBtn}
             onPress={openSetModal}
           >
-            <Text style={styles.addSetText}>+ Add Set</Text>
+            <Ionicons name="add" size={20} color={colors.primary} />
+            <Text style={styles.addSetText}>Add Set</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -320,8 +321,12 @@ const styles = StyleSheet.create({
   setNum: { color: colors.textMuted, width: 60 },
   setDetail: { color: colors.textPrimary },
   addSetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginTop: 12,
-    padding: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     backgroundColor: colors.accent,
     borderRadius: 8,
     alignSelf: 'flex-start',

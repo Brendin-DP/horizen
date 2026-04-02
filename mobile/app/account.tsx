@@ -13,7 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { changePassword, updateProfile } from '../lib/api';
 import { colors, shell, typography } from '../constants/theme';
@@ -31,6 +31,7 @@ function splitName(full: string): { first: string; last: string } {
 
 export default function AccountScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { member, token, updateMember } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [surname, setSurname] = useState('');
@@ -129,42 +130,55 @@ export default function AccountScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+        <View style={styles.bodyFill}>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.titleRow}>
+              <Text style={styles.titleRowText}>Your Details</Text>
+            </View>
+
+            <Text style={styles.label}>First name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="First name"
+              placeholderTextColor={colors.textMuted}
+              value={firstName}
+              onChangeText={setFirstName}
+              autoCapitalize="words"
+            />
+
+            <Text style={styles.label}>Surname</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Surname"
+              placeholderTextColor={colors.textMuted}
+              value={surname}
+              onChangeText={setSurname}
+              autoCapitalize="words"
+            />
+
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={[styles.input, styles.inputDisabled]}
+              value={member.email}
+              editable={false}
+              selectTextOnFocus={false}
+            />
+          </ScrollView>
+        </View>
+
+        <View
+          style={[
+            styles.footerCtaContainer,
+            { paddingBottom: 12 + insets.bottom + 8 },
+          ]}
         >
-          <Text style={styles.label}>First name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="First name"
-            placeholderTextColor={colors.textMuted}
-            value={firstName}
-            onChangeText={setFirstName}
-            autoCapitalize="words"
-          />
-
-          <Text style={styles.label}>Surname</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Surname"
-            placeholderTextColor={colors.textMuted}
-            value={surname}
-            onChangeText={setSurname}
-            autoCapitalize="words"
-          />
-
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={[styles.input, styles.inputDisabled]}
-            value={member.email}
-            editable={false}
-            selectTextOnFocus={false}
-          />
-
           <Pressable
-            style={[styles.primaryButton, saveLoading && styles.buttonDisabled]}
+            style={[styles.footerPrimary, saveLoading && styles.buttonDisabled]}
             onPress={handleSave}
             disabled={saveLoading}
           >
@@ -175,10 +189,13 @@ export default function AccountScreen() {
             )}
           </Pressable>
 
-          <Pressable style={styles.secondaryButton} onPress={() => setPasswordModalOpen(true)}>
-            <Text style={styles.secondaryButtonText}>Change password</Text>
+          <Pressable
+            style={styles.footerSecondary}
+            onPress={() => setPasswordModalOpen(true)}
+          >
+            <Text style={styles.footerSecondaryText}>Change password</Text>
           </Pressable>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
 
       <Modal
@@ -258,10 +275,52 @@ const styles = StyleSheet.create({
     backgroundColor: shell.body,
   },
   flex: { flex: 1 },
+  bodyFill: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: {
-    padding: 24,
-    paddingBottom: 48,
+    paddingHorizontal: 16,
+    paddingTop: 0,
+    paddingBottom: 24,
+  },
+  titleRow: {
+    paddingHorizontal: 0,
+    paddingVertical: 24,
+    backgroundColor: shell.body,
+  },
+  titleRowText: {
+    fontSize: 22,
+    color: colors.textPrimary,
+    fontFamily: typography.heading,
+  },
+  footerCtaContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: shell.footer,
+  },
+  footerPrimary: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerSecondary: {
+    marginTop: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.white,
+  },
+  footerSecondaryText: {
+    color: colors.primary,
+    fontWeight: '600',
+    fontSize: 16,
+    fontFamily: typography.bodySemibold,
   },
   centered: {
     flex: 1,
@@ -295,7 +354,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    marginTop: 8,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -304,17 +362,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: '600',
     fontSize: 16,
-    fontFamily: typography.bodySemibold,
-  },
-  secondaryButton: {
-    marginTop: 16,
-    padding: 14,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: '600',
     fontFamily: typography.bodySemibold,
   },
   modalOverlay: {
