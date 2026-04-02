@@ -8,12 +8,9 @@ import {
   ScrollView,
   TextInput,
   FlatList,
-  Switch,
   Modal,
   Dimensions,
   InteractionManager,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { usePostHog } from 'posthog-react-native';
@@ -37,96 +34,62 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 import { RequestExerciseModal } from '../../components/RequestExerciseModal';
-
-interface SetEntry {
-  id: string;
-  reps: string;
-  weight: string;
-  duration: string;
-  distance: string;
-  /** For weighted_or_bodyweight: true = loaded/weight mode, false = bodyweight-only */
-  addedWeight: boolean;
-}
-
-function createEmptySet(ex: Exercise): SetEntry {
-  return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    reps: '',
-    weight: '',
-    duration: '',
-    distance: '',
-    /** Hybrid exercises: start in loaded mode (Bodyweight switch off). */
-    addedWeight: weightOptional(ex.loggingType),
-  };
-}
-
-function validateSetEntry(s: SetEntry, exercise: Exercise): string | null {
-  if (exercise.unit === 'weight_reps') {
-    const r = parseInt(s.reps, 10);
-    if (isNaN(r)) return 'Enter valid reps';
-    const lt = exercise.loggingType;
-    if (lt === 'bodyweight') return null;
-    if (weightRequired(lt)) {
-      const w = parseFloat(s.weight);
-      if (isNaN(w) || w <= 0) return 'Enter weight greater than 0';
-      return null;
-    }
-    if (weightOptional(lt)) {
-      if (!s.addedWeight) return null;
-      const trimmed = s.weight.trim();
-      if (trimmed === '') return null;
-      const w = parseFloat(trimmed);
-      if (isNaN(w) || w < 0) return 'Enter valid weight or leave blank for bodyweight';
-      return null;
-    }
-    return null;
-  }
-  if (exercise.unit === 'time') {
-    const d = parseInt(s.duration, 10);
-    if (isNaN(d) || d < 0) return 'Enter valid duration';
-    return null;
-  }
-  if (exercise.unit === 'distance') {
-    const d = parseFloat(s.distance);
-    if (isNaN(d) || d < 0) return 'Enter valid distance';
-    return null;
-  }
-  return null;
-}
+import { SetLogModal } from '../../components/SetLogModal';
+import { defaultSetLocalDateIso } from '../../lib/setDate';
+import { type SetEntry, createEmptySet, validateSetEntry } from '../../lib/setEntryForm';
 
 function formatSetEntrySummary(s: SetEntry, exercise: Exercise): string {
+  let base: string;
   if (exercise.unit === 'weight_reps') {
     const r = parseInt(s.reps, 10);
     const lt = exercise.loggingType;
     if (lt === 'bodyweight') {
-      return !isNaN(r) ? `${r} reps (bodyweight)` : '—';
-    }
-    if (weightRequired(lt)) {
+      base = !isNaN(r) ? `${r} reps (bodyweight)` : '—';
+    } else if (weightRequired(lt)) {
       const w = parseFloat(s.weight);
-      if (!isNaN(r) && !isNaN(w) && w > 0) return `${r} reps @ ${w}kg`;
-      return '—';
-    }
-    if (weightOptional(lt)) {
+      base =
+        !isNaN(r) && !isNaN(w) && w > 0 ? `${r} reps @ ${w}kg` : '—';
+    } else if (weightOptional(lt)) {
       if (!s.addedWeight) {
-        return !isNaN(r) ? `${r} reps (bodyweight)` : '—';
+        base = !isNaN(r) ? `${r} reps (bodyweight)` : '—';
+      } else {
+        const trimmed = s.weight.trim();
+        if (trimmed === '') {
+          base = !isNaN(r) ? `${r} reps (bodyweight)` : '—';
+        } else {
+          const w = parseFloat(trimmed);
+          base =
+            !isNaN(r) && !isNaN(w) && w > 0
+              ? `${r} reps @ ${w}kg`
+              : !isNaN(r)
+                ? `${r} reps (bodyweight)`
+                : '—';
+        }
       }
-      const trimmed = s.weight.trim();
-      if (trimmed === '') return !isNaN(r) ? `${r} reps (bodyweight)` : '—';
-      const w = parseFloat(trimmed);
-      if (!isNaN(r) && !isNaN(w) && w > 0) return `${r} reps @ ${w}kg`;
-      return !isNaN(r) ? `${r} reps (bodyweight)` : '—';
+    } else {
+      base = '—';
     }
-    return '—';
-  }
-  if (exercise.unit === 'time') {
+  } else if (exercise.unit === 'time') {
     const d = parseInt(s.duration, 10);
-    return !isNaN(d) ? `${d}s` : '—';
-  }
-  if (exercise.unit === 'distance') {
+    base = !isNaN(d) ? `${d}s` : '—';
+  } else if (exercise.unit === 'distance') {
     const d = parseFloat(s.distance);
-    return !isNaN(d) ? `${d} m` : '—';
+    base = !isNaN(d) ? `${d} m` : '—';
+  } else {
+    base = '—';
   }
-  return '—';
+  if (s.loggedAtIso) {
+    try {
+      const short = new Date(s.loggedAtIso).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+      });
+      return `${short} · ${base}`;
+    } catch {
+      return base;
+    }
+  }
+  return base;
 }
 
 /** Max reps among bodyweight-only sets (no added weight) for weighted_or_bodyweight exercises. */
@@ -255,7 +218,10 @@ export default function LogExerciseScreen() {
   function openEditSetModal(s: SetEntry) {
     if (!selectedExercise) return;
     setEditingSetId(s.id);
-    setDraft({ ...s });
+    setDraft({
+      ...s,
+      loggedAtIso: s.loggedAtIso ?? defaultSetLocalDateIso(),
+    });
     setModalError(null);
     setAddSetModalVisible(true);
   }
@@ -320,6 +286,7 @@ export default function LogExerciseScreen() {
         durationSeconds?: number;
         distanceMeters?: number;
         completed: boolean;
+        createdAt: string;
       }> = [];
 
       for (let i = 0; i < sets.length; i++) {
@@ -330,7 +297,19 @@ export default function LogExerciseScreen() {
           setSaving(false);
           return;
         }
-        const body: Record<string, number | boolean | null> = { setNumber: i + 1, completed: true };
+        const body: {
+          setNumber: number;
+          completed: boolean;
+          createdAt: string;
+          reps?: number;
+          weightKg?: number | null;
+          durationSeconds?: number;
+          distanceMeters?: number;
+        } = {
+          setNumber: i + 1,
+          completed: true,
+          createdAt: s.loggedAtIso,
+        };
         if (exercise.unit === 'weight_reps') {
           const r = parseInt(s.reps, 10);
           body.reps = r;
@@ -358,7 +337,7 @@ export default function LogExerciseScreen() {
         } else if (exercise.unit === 'distance') {
           body.distanceMeters = parseFloat(s.distance);
         }
-        setsPayload.push(body as (typeof setsPayload)[0]);
+        setsPayload.push(body);
       }
 
       const log = await createSession(
@@ -619,10 +598,6 @@ export default function LogExerciseScreen() {
   }
 
   const exercise = selectedExercise!;
-  const isWeightReps = exercise.unit === 'weight_reps';
-  const isTime = exercise.unit === 'time';
-  const isDistance = exercise.unit === 'distance';
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <DrillDownHeader
@@ -726,154 +701,18 @@ export default function LogExerciseScreen() {
         </View>
       )}
 
-      <Modal
-        visible={addSetModalVisible}
-        animationType="fade"
-        transparent
-        onRequestClose={closeAddSetModal}
-      >
-        <KeyboardAvoidingView
-          style={styles.addSetModalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.addSetModalScroll}
-          >
-            <View style={styles.addSetModalCard}>
-              <Text style={styles.addSetModalTitle}>{editingSetId ? 'Edit set' : 'Add set'}</Text>
-              {modalError ? <Text style={styles.modalErrorText}>{modalError}</Text> : null}
-              {draft && isWeightReps && (
-                <>
-                  {exercise.loggingType === 'bodyweight' ? (
-                    <>
-                      <Text style={styles.fieldLabel}>Reps</Text>
-                      <View style={styles.inputWithSuffixRow}>
-                        <TextInput
-                          style={styles.inputSuffixField}
-                          placeholder="Add reps"
-                          value={draft.reps}
-                          onChangeText={(v) => patchDraft('reps', v)}
-                          keyboardType="number-pad"
-                          placeholderTextColor={colors.textMuted}
-                        />
-                        <Text style={styles.inputSuffix}>reps</Text>
-                      </View>
-                      <Text style={styles.bodyweightHint}>
-                        Bodyweight only—log your reps. No added weight for this exercise.
-                      </Text>
-                    </>
-                  ) : weightOptional(exercise.loggingType) ? (
-                    <>
-                      <View style={styles.weightHeaderRow}>
-                        <Text style={styles.weightHeaderTitle}>Weight</Text>
-                        <View style={styles.bodyweightToggleRight}>
-                          <Text style={styles.bodyweightLabel}>Bodyweight</Text>
-                          <View style={styles.switchCompact}>
-                            <Switch
-                              value={!draft.addedWeight}
-                              onValueChange={(v) => {
-                                patchDraft('addedWeight', !v);
-                                if (v) patchDraft('weight', '');
-                              }}
-                              trackColor={{ false: colors.border, true: colors.accent }}
-                              thumbColor={!draft.addedWeight ? colors.primary : colors.white}
-                            />
-                          </View>
-                        </View>
-                      </View>
-                      <View
-                        style={[
-                          styles.inputWithSuffixRow,
-                          !draft.addedWeight && styles.inputWithSuffixRowDisabled,
-                        ]}
-                      >
-                        <TextInput
-                          style={[styles.inputSuffixField, !draft.addedWeight && styles.inputSuffixFieldDisabled]}
-                          placeholder={draft.addedWeight ? 'Add weight' : ''}
-                          value={draft.weight}
-                          onChangeText={(v) => patchDraft('weight', v)}
-                          keyboardType="decimal-pad"
-                          placeholderTextColor={colors.textMuted}
-                          editable={draft.addedWeight}
-                        />
-                        <Text style={styles.inputSuffix}>kg</Text>
-                      </View>
-                      <Text style={styles.fieldLabel}>Reps</Text>
-                      <View style={styles.inputWithSuffixRow}>
-                        <TextInput
-                          style={styles.inputSuffixField}
-                          placeholder="Add reps"
-                          value={draft.reps}
-                          onChangeText={(v) => patchDraft('reps', v)}
-                          keyboardType="number-pad"
-                          placeholderTextColor={colors.textMuted}
-                        />
-                        <Text style={styles.inputSuffix}>reps</Text>
-                      </View>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={styles.fieldLabel}>Weight</Text>
-                      <View style={styles.inputWithSuffixRow}>
-                        <TextInput
-                          style={styles.inputSuffixField}
-                          placeholder="Add weight"
-                          value={draft.weight}
-                          onChangeText={(v) => patchDraft('weight', v)}
-                          keyboardType="decimal-pad"
-                          placeholderTextColor={colors.textMuted}
-                        />
-                        <Text style={styles.inputSuffix}>kg</Text>
-                      </View>
-                      <Text style={styles.fieldLabel}>Reps</Text>
-                      <View style={styles.inputWithSuffixRow}>
-                        <TextInput
-                          style={styles.inputSuffixField}
-                          placeholder="Add reps"
-                          value={draft.reps}
-                          onChangeText={(v) => patchDraft('reps', v)}
-                          keyboardType="number-pad"
-                          placeholderTextColor={colors.textMuted}
-                        />
-                        <Text style={styles.inputSuffix}>reps</Text>
-                      </View>
-                    </>
-                  )}
-                </>
-              )}
-              {draft && isTime && (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Duration (seconds)"
-                  value={draft.duration}
-                  onChangeText={(v) => patchDraft('duration', v)}
-                  keyboardType="number-pad"
-                  placeholderTextColor={colors.textMuted}
-                />
-              )}
-              {draft && isDistance && (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Distance (meters)"
-                  value={draft.distance}
-                  onChangeText={(v) => patchDraft('distance', v)}
-                  keyboardType="decimal-pad"
-                  placeholderTextColor={colors.textMuted}
-                />
-              )}
-              <View style={styles.addSetModalActions}>
-                <Pressable style={styles.addSetModalCancel} onPress={closeAddSetModal}>
-                  <Text style={styles.addSetModalCancelText}>Cancel</Text>
-                </Pressable>
-                <Pressable style={styles.addSetModalConfirm} onPress={handleConfirmAddSet}>
-                  <Text style={styles.addSetModalConfirmText}>{editingSetId ? 'Save' : 'Add'}</Text>
-                </Pressable>
-              </View>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </Modal>
+      {selectedExercise ? (
+        <SetLogModal
+          visible={addSetModalVisible}
+          onRequestClose={closeAddSetModal}
+          exercise={selectedExercise}
+          draft={draft}
+          onPatch={patchDraft}
+          mode={editingSetId ? 'edit' : 'add'}
+          modalError={modalError}
+          onConfirm={handleConfirmAddSet}
+        />
+      ) : null}
 
       <Modal visible={successModalVisible} animationType="fade" transparent>
         <View style={styles.successModalOverlay}>
@@ -1151,82 +990,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
   },
-  input: {
-    backgroundColor: colors.backgroundDark,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: 14,
-    color: colors.textPrimary,
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  bodyweightHint: {
-    fontSize: 13,
-    color: colors.textMuted,
-    lineHeight: 18,
-    marginBottom: 12,
-    marginTop: -4,
-  },
-  fieldLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 6,
-    fontFamily: typography.body,
-  },
-  weightHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  weightHeaderTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    fontFamily: typography.bodySemibold,
-  },
-  bodyweightToggleRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  switchCompact: {
-    transform: [{ scale: 0.82 }],
-  },
-  inputWithSuffixRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.backgroundDark,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    marginBottom: 12,
-    paddingLeft: 14,
-    paddingRight: 12,
-    minHeight: 48,
-  },
-  inputWithSuffixRowDisabled: {
-    backgroundColor: colors.border,
-    opacity: 0.9,
-  },
-  inputSuffixField: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: colors.textPrimary,
-    fontFamily: typography.body,
-  },
-  inputSuffixFieldDisabled: {
-    color: colors.textMuted,
-  },
-  inputSuffix: {
-    fontSize: 15,
-    color: colors.textMuted,
-    fontFamily: typography.body,
-    paddingLeft: 4,
-  },
-  bodyweightLabel: { fontSize: 14, color: colors.textPrimary },
   addSetTextBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1244,62 +1007,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
     fontFamily: typography.bodySemibold,
-  },
-  addSetModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  addSetModalScroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  addSetModalCard: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 20,
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
-  },
-  addSetModalTitle: {
-    fontSize: 18,
-    color: colors.textPrimary,
-    marginBottom: 12,
-    fontFamily: typography.heading,
-  },
-  modalErrorText: {
-    color: colors.primary,
-    fontSize: 14,
-    marginBottom: 12,
-    fontFamily: typography.body,
-  },
-  addSetModalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-    marginTop: 16,
-  },
-  addSetModalCancel: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  addSetModalCancelText: {
-    color: colors.textMuted,
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  addSetModalConfirm: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-  },
-  addSetModalConfirmText: {
-    color: colors.white,
-    fontWeight: '600',
-    fontSize: 16,
   },
   saveBtn: {
     flexDirection: 'row',

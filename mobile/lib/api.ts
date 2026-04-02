@@ -513,6 +513,8 @@ export async function addSetToSession(
     durationSeconds?: number;
     distanceMeters?: number;
     completed?: boolean;
+    /** When the set was performed (API maps to `created_at`). */
+    createdAt?: string;
   },
   token?: string | null
 ): Promise<import('../types').Set> {
@@ -534,6 +536,7 @@ export async function addSetsBatchToSession(
     durationSeconds?: number;
     distanceMeters?: number;
     completed?: boolean;
+    createdAt?: string;
   }>,
   token?: string | null
 ): Promise<import('../types').Set[]> {

@@ -20,7 +20,8 @@
           "photosPermission": "Allow Horizen to access your photos to set your profile picture."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "@react-native-community/datetimepicker"
     ],
     "ios": {
       "bundleIdentifier": "com.anonymous.gymapp",

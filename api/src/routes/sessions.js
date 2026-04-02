@@ -2,6 +2,7 @@ import express from 'express';
 import { randomUUID } from 'crypto';
 import supabase from '../db.js';
 import { mapSession, mapExercise, mapSet, toDbSet } from '../utils/mappers.js';
+import { normalizeSetCreatedAt } from '../utils/setCreatedAt.js';
 
 const router = express.Router();
 
@@ -163,20 +164,28 @@ router.post('/:id/sets/batch', async (req, res) => {
   }
 
   const now = new Date().toISOString();
-  const toInsert = setsPayload.map((s, idx) => {
+  const toInsert = [];
+  for (let idx = 0; idx < setsPayload.length; idx++) {
+    const s = setsPayload[idx];
+    const n = normalizeSetCreatedAt(s.createdAt, now);
+    if (!n.ok) {
+      return res.status(400).json({ error: n.error });
+    }
     const setNumber = s.setNumber !== undefined ? s.setNumber : idx + 1;
-    return toDbSet({
-      id: randomUUID(),
-      sessionId,
-      setNumber,
-      reps: s.reps ?? null,
-      weightKg: s.weightKg ?? null,
-      durationSeconds: s.durationSeconds ?? null,
-      distanceMeters: s.distanceMeters ?? null,
-      completed: s.completed !== undefined ? s.completed : true,
-      createdAt: now,
-    });
-  });
+    toInsert.push(
+      toDbSet({
+        id: randomUUID(),
+        sessionId,
+        setNumber,
+        reps: s.reps ?? null,
+        weightKg: s.weightKg ?? null,
+        durationSeconds: s.durationSeconds ?? null,
+        distanceMeters: s.distanceMeters ?? null,
+        completed: s.completed !== undefined ? s.completed : true,
+        createdAt: n.iso,
+      })
+    );
+  }
 
   const { data: inserted, error } = await supabase.from('sets').insert(toInsert).select();
   if (error) {
@@ -189,7 +198,7 @@ router.post('/:id/sets/batch', async (req, res) => {
 
 router.post('/:id/sets', async (req, res) => {
   const sessionId = req.params.id;
-  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed } = req.body;
+  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed, createdAt } = req.body;
 
   const { data: sessionRow } = await supabase
     .from('sessions')
@@ -209,6 +218,11 @@ router.post('/:id/sets', async (req, res) => {
     .maybeSingle();
 
   const maxSetNumber = maxRow?.set_number ?? 0;
+  const defaultCreated = new Date().toISOString();
+  const n = normalizeSetCreatedAt(createdAt, defaultCreated);
+  if (!n.ok) {
+    return res.status(400).json({ error: n.error });
+  }
   const set = {
     id: randomUUID(),
     sessionId,
@@ -218,7 +232,7 @@ router.post('/:id/sets', async (req, res) => {
     durationSeconds: durationSeconds ?? null,
     distanceMeters: distanceMeters ?? null,
     completed: completed !== undefined ? completed : true,
-    createdAt: new Date().toISOString(),
+    createdAt: n.iso,
   };
 
   const toDb = toDbSet(set);

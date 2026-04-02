@@ -13,10 +13,17 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 import { useAuth } from '../../contexts/AuthContext';
-import { getSession, getExerciseHistory, deleteSet } from '../../lib/api';
+import { getSession, getExerciseHistory, deleteSet, updateSet } from '../../lib/api';
 import type { Exercise, ExerciseHistory, Session, LoggingType, Set } from '../../types';
 import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SetLogModal } from '../../components/SetLogModal';
+import {
+  type SetEntry,
+  setEntryFromApiSet,
+  validateSetEntry,
+  setEntryToPatchBody,
+} from '../../lib/setEntryForm';
 
 function formatLogDateShort(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -107,6 +114,10 @@ export default function LogDetailScreen() {
   const [history, setHistory] = useState<ExerciseHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editDraft, setEditDraft] = useState<SetEntry | null>(null);
+  const [editModalError, setEditModalError] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
   const isFirstFocusForSessionRef = useRef(true);
 
   useEffect(() => {
@@ -170,6 +181,53 @@ export default function LogDetailScreen() {
     if (!log?.id) return undefined;
     return history.find((h) => h.logId === log.id)?.bestSet;
   }, [history, log?.id]);
+
+  function openEditSetModal(s: Set) {
+    if (!exercise) return;
+    setEditDraft(setEntryFromApiSet(s, exercise));
+    setEditModalError(null);
+    setEditModalVisible(true);
+  }
+
+  function closeEditSetModal() {
+    setEditModalVisible(false);
+    setEditDraft(null);
+    setEditModalError(null);
+  }
+
+  function patchEditDraft(field: keyof SetEntry, value: string | boolean) {
+    setEditDraft((d) => (d ? { ...d, [field]: value } : d));
+  }
+
+  async function handleSaveEditedSet() {
+    if (!token || !editDraft || !exercise) return;
+    const err = validateSetEntry(editDraft, exercise);
+    if (err) {
+      setEditModalError(err);
+      return;
+    }
+    setSavingEdit(true);
+    setEditModalError(null);
+    try {
+      const body = setEntryToPatchBody(editDraft, exercise);
+      const updated = await updateSet(editDraft.id, body, token);
+      setLog((prev) => {
+        if (!prev) return prev;
+        const nextSets = (prev.sets ?? []).map((x) => (x.id === updated.id ? updated : x));
+        return { ...prev, sets: nextSets };
+      });
+      if (member?.id) {
+        getExerciseHistory(member.id, exercise.id, token)
+          .then(setHistory)
+          .catch(() => {});
+      }
+      closeEditSetModal();
+    } catch (e) {
+      setEditModalError(e instanceof Error ? e.message : 'Could not save set');
+    } finally {
+      setSavingEdit(false);
+    }
+  }
 
   async function handleDeleteSet(setId: string) {
     if (!token || !member?.id || !exercise?.id) return;
@@ -277,6 +335,15 @@ export default function LogDetailScreen() {
                         </Text>
                         {sub ? <Text style={styles.setMeta}>{sub}</Text> : null}
                       </View>
+                      <Pressable
+                        style={styles.setEditBtn}
+                        onPress={() => openEditSetModal(s)}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Edit set"
+                      >
+                        <Ionicons name="pencil" size={22} color={colors.textMuted} />
+                      </Pressable>
                     </View>
                   </View>
                 </Swipeable>
@@ -302,6 +369,18 @@ export default function LogDetailScreen() {
           <Text style={styles.footerCtaText}>Add Set</Text>
         </Pressable>
       </View>
+
+      <SetLogModal
+        visible={editModalVisible}
+        onRequestClose={closeEditSetModal}
+        exercise={exercise}
+        draft={editDraft}
+        onPatch={patchEditDraft}
+        mode="edit"
+        modalError={editModalError}
+        onConfirm={handleSaveEditedSet}
+        saving={savingEdit}
+      />
     </SafeAreaView>
   );
 }
@@ -381,6 +460,13 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: 4,
     fontFamily: typography.bodySemibold,
+  },
+  setEditBtn: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    paddingVertical: 4,
+    paddingLeft: 4,
   },
   setMeta: {
     fontSize: 14,

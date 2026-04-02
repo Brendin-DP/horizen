@@ -22,6 +22,8 @@ import {
 import type { Session, Set } from '../../../types';
 import { colors, typography } from '../../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SetDatePicker } from '../../../components/SetDatePicker';
+import { defaultSetLocalDateIso, isValidPastOrPresentSetDate } from '../../../lib/setDate';
 
 interface SetEntry {
   id: string;
@@ -31,6 +33,7 @@ interface SetEntry {
   distance: string;
   bodyweight: boolean;
   isNew: boolean;
+  loggedAtIso: string;
 }
 
 function setToEntry(s: Set): SetEntry {
@@ -42,6 +45,9 @@ function setToEntry(s: Set): SetEntry {
     distance: s.distanceMeters != null ? String(s.distanceMeters) : '',
     bodyweight: s.weightKg === 0,
     isNew: false,
+    loggedAtIso: s.createdAt
+      ? new Date(s.createdAt).toISOString()
+      : defaultSetLocalDateIso(),
   };
 }
 
@@ -63,7 +69,18 @@ export default function EditLogScreen() {
         const entries =
           data.sets && data.sets.length > 0
             ? data.sets.map(setToEntry)
-            : [{ id: 'new-1', reps: '', weight: '', duration: '', distance: '', bodyweight: false, isNew: true }];
+            : [
+                {
+                  id: 'new-1',
+                  reps: '',
+                  weight: '',
+                  duration: '',
+                  distance: '',
+                  bodyweight: false,
+                  isNew: true,
+                  loggedAtIso: defaultSetLocalDateIso(),
+                },
+              ];
         setSets(entries);
       })
       .catch(() => setError('Log not found'))
@@ -81,6 +98,7 @@ export default function EditLogScreen() {
         distance: '',
         bodyweight: false,
         isNew: true,
+        loggedAtIso: defaultSetLocalDateIso(),
       },
     ]);
   }
@@ -102,6 +120,14 @@ export default function EditLogScreen() {
     setSaving(true);
     setError(null);
     try {
+      for (const s of sets) {
+        if (s.loggedAtIso && !isValidPastOrPresentSetDate(s.loggedAtIso)) {
+          setError('Log date cannot be in the future');
+          setSaving(false);
+          return;
+        }
+      }
+
       const originalSetIds = new Set((log.sets ?? []).map((s: Set) => s.id));
       const currentSetIds = new Set(sets.map((s) => s.id));
       const removedIds: string[] = [...originalSetIds].filter((i) => !currentSetIds.has(i));
@@ -123,7 +149,8 @@ export default function EditLogScreen() {
             durationSeconds?: number;
             distanceMeters?: number;
             completed?: boolean;
-          } = { setNumber, completed: true };
+            createdAt: string;
+          } = { setNumber, completed: true, createdAt: s.loggedAtIso };
           if (exercise.unit === 'weight_reps') {
             const r = parseInt(s.reps, 10);
             body.reps = isNaN(r) ? 0 : r;
@@ -135,7 +162,9 @@ export default function EditLogScreen() {
           }
           await addSetToSession(log.id, body, token);
         } else {
-          const updates: Partial<Set> = {};
+          const updates: Partial<Set> = {
+            createdAt: s.loggedAtIso,
+          };
           if (exercise.unit === 'weight_reps') {
             const r = parseInt(s.reps, 10);
             updates.reps = isNaN(r) ? null : r;
@@ -145,9 +174,7 @@ export default function EditLogScreen() {
           } else if (exercise.unit === 'distance') {
             updates.distanceMeters = parseFloat(s.distance) || null;
           }
-          if (Object.keys(updates).length > 0) {
-            await updateSet(s.id, updates, token);
-          }
+          await updateSet(s.id, updates, token);
         }
       }
 
@@ -198,6 +225,10 @@ export default function EditLogScreen() {
                 </Pressable>
               )}
             </View>
+            <SetDatePicker
+              valueIso={s.loggedAtIso}
+              onChangeIso={(iso) => updateSetEntry(s.id, 'loggedAtIso', iso)}
+            />
             {isWeightReps && (
               <>
                 <TextInput

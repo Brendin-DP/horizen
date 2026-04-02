@@ -2,6 +2,7 @@ import express from 'express';
 import { randomUUID } from 'crypto';
 import supabase from '../db.js';
 import { mapSet, mapWorkoutExercise, mapExercise, toDbSet } from '../utils/mappers.js';
+import { normalizeSetCreatedAt } from '../utils/setCreatedAt.js';
 
 const router = express.Router();
 
@@ -57,6 +58,7 @@ router.post('/:id/sets', async (req, res) => {
     durationSeconds,
     distanceMeters,
     completed,
+    createdAt,
   } = req.body;
 
   const { data: maxRow } = await supabase
@@ -69,6 +71,12 @@ router.post('/:id/sets', async (req, res) => {
 
   const maxSetNumber = maxRow?.set_number ?? 0;
 
+  const defaultCreated = new Date().toISOString();
+  const n = normalizeSetCreatedAt(createdAt, defaultCreated);
+  if (!n.ok) {
+    return res.status(400).json({ error: n.error });
+  }
+
   const set = {
     id: randomUUID(),
     workoutExerciseId,
@@ -78,7 +86,7 @@ router.post('/:id/sets', async (req, res) => {
     durationSeconds: durationSeconds ?? null,
     distanceMeters: distanceMeters ?? null,
     completed: completed !== undefined ? completed : true,
-    createdAt: new Date().toISOString(),
+    createdAt: n.iso,
   };
 
   const toDb = toDbSet(set);
@@ -98,13 +106,20 @@ const setsIdRouter = express.Router();
 
 setsIdRouter.patch('/:id', async (req, res) => {
   const updates = {};
-  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed } = req.body;
+  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed, createdAt } = req.body;
   if (setNumber !== undefined) updates.set_number = setNumber;
   if (reps !== undefined) updates.reps = reps;
   if (weightKg !== undefined) updates.weight_kg = weightKg;
   if (durationSeconds !== undefined) updates.duration_seconds = durationSeconds;
   if (distanceMeters !== undefined) updates.distance_meters = distanceMeters;
   if (completed !== undefined) updates.completed = completed;
+  if (createdAt !== undefined) {
+    const n = normalizeSetCreatedAt(createdAt, null);
+    if (!n.ok) {
+      return res.status(400).json({ error: n.error });
+    }
+    updates.created_at = n.iso;
+  }
 
   if (Object.keys(updates).length === 0) {
     const { data: set } = await supabase.from('sets').select('*').eq('id', req.params.id).single();
