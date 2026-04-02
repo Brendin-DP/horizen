@@ -235,7 +235,7 @@ export default function LogDetailScreen() {
   }
 
   async function handleSaveEditedSet() {
-    if (!token || !editDraft || !exercise) return;
+    if (!token || !editDraft || !exercise || !log?.id) return;
     const err = validateSetEntry(editDraft, exercise);
     if (err) {
       setEditModalError(err);
@@ -251,13 +251,23 @@ export default function LogDetailScreen() {
         const nextSets = (prev.sets ?? []).map((x) => (x.id === updated.id ? updated : x));
         return { ...prev, sets: nextSets };
       });
-      if (log?.id) {
-        trackSessionSetSaved(posthog, {
-          sessionId: log.id,
-          exerciseId: exercise.id,
-          setId: updated.id,
-          source: 'session_detail_modal',
-        });
+      trackSessionSetSaved(posthog, {
+        sessionId: log.id,
+        exerciseId: exercise.id,
+        setId: updated.id,
+        source: 'session_detail_modal',
+      });
+      let pb: { kind: 'weight' | 'reps'; value: number } | null = null;
+      if (member?.id) {
+        const otherSetsInSession = (log.sets ?? []).filter((s) => s.id !== editDraft.id);
+        pb = await evaluatePersonalBestAfterSessionAdd(
+          exercise,
+          updated,
+          otherSetsInSession,
+          member.id,
+          log.id,
+          token
+        );
       }
       if (member?.id) {
         getExerciseHistory(member.id, exercise.id, token)
@@ -265,6 +275,22 @@ export default function LogDetailScreen() {
           .catch(() => {});
       }
       closeEditSetModal();
+      if (pb) {
+        trackPersonalBest(posthog, {
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          pbType: pb.kind,
+          ...(pb.kind === 'weight' ? { weightKg: pb.value } : { reps: pb.value }),
+          sessionId: log.id,
+          source: 'session_detail_edit_set',
+        });
+        setPrKind(pb.kind);
+        setPrValue(pb.value);
+        setSuccessModalVisible(true);
+        InteractionManager.runAfterInteractions(() => {
+          setTimeout(() => confettiRef.current?.start(), 80);
+        });
+      }
     } catch (e) {
       setEditModalError(e instanceof Error ? e.message : 'Could not save set');
     } finally {

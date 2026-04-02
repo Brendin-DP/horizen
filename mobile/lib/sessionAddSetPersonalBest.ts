@@ -73,7 +73,11 @@ export async function getPriorMaxBodyweightRepsBeforeAdd(
   return Math.max(fromOthers, fromSession);
 }
 
-/** Whether the new set is a new personal best (weight or bodyweight reps), same rules as standalone log. */
+/**
+ * Whether a set is a new personal best (weight or bodyweight reps), same rules as standalone log.
+ * Pass other sets in the same session only (excluding the set being evaluated): for add, sets
+ * before the new one; for edit, all sets except the row being updated.
+ */
 export async function evaluatePersonalBestAfterSessionAdd(
   exercise: Exercise,
   created: Set,

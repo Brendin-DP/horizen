@@ -39,7 +39,7 @@ export function trackPersonalBest(
     weightKg?: number;
     reps?: number;
     sessionId?: string;
-    source: 'standalone_log' | 'session_detail_add_set';
+    source: 'standalone_log' | 'session_detail_add_set' | 'session_detail_edit_set';
   }
 ) {
   const { pbType, weightKg, reps, ...rest } = payload;

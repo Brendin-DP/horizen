@@ -583,7 +583,7 @@ export default function ExerciseDetailScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Sort sessions"
                 >
-                  <Ionicons name="funnel-outline" size={22} color={colors.textPrimary} />
+                  <Ionicons name="swap-vertical-outline" size={22} color={colors.textPrimary} />
                 </Pressable>
               ) : null}
             </View>
