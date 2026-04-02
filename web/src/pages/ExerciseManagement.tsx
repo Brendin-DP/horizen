@@ -79,7 +79,11 @@ export default function ExerciseManagement() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [savingId, setSavingId] = useState<string | null>(null);
+  /** Pending logging type changes (exercise id → value); persisted only via Save. */
+  const [loggingDrafts, setLoggingDrafts] = useState<
+    Record<string, ExerciseLoggingType>
+  >({});
+  const [savingLogging, setSavingLogging] = useState(false);
   const [rowError, setRowError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [listTab, setListTab] = useState<'active' | 'requested'>('active');
@@ -106,6 +110,7 @@ export default function ExerciseManagement() {
       const data = await getExercises();
       const sorted = [...data].sort((a, b) => a.name.localeCompare(b.name));
       setExercises(sorted);
+      setLoggingDrafts({});
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load exercises');
     } finally {
@@ -137,19 +142,45 @@ export default function ExerciseManagement() {
     }
   }, [listTab, token, fetchRequests]);
 
-  async function handleLoggingChange(exercise: Exercise, loggingType: ExerciseLoggingType) {
-    if (!token || savingId) return;
+  function handleLoggingDraftChange(exercise: Exercise, loggingType: ExerciseLoggingType) {
     setRowError(null);
-    setSavingId(exercise.id);
+    const saved = (exercise.loggingType ?? 'weighted') as ExerciseLoggingType;
+    if (loggingType === saved) {
+      setLoggingDrafts((prev) => {
+        if (!(exercise.id in prev)) return prev;
+        const next = { ...prev };
+        delete next[exercise.id];
+        return next;
+      });
+    } else {
+      setLoggingDrafts((prev) => ({ ...prev, [exercise.id]: loggingType }));
+    }
+  }
+
+  const hasDirtyLogging = Object.keys(loggingDrafts).length > 0;
+
+  async function handleSaveLoggingChanges() {
+    if (!token || savingLogging) return;
+    const entries = Object.entries(loggingDrafts);
+    if (entries.length === 0) return;
+    setRowError(null);
+    setSavingLogging(true);
     try {
-      const updated = await updateExerciseLoggingType(exercise.id, loggingType, token);
-      setExercises((prev) =>
-        prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e))
-      );
+      for (const [id, loggingType] of entries) {
+        const updated = await updateExerciseLoggingType(id, loggingType, token);
+        setExercises((prev) =>
+          prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e))
+        );
+        setLoggingDrafts((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+      }
     } catch (err) {
       setRowError(err instanceof Error ? err.message : 'Update failed');
     } finally {
-      setSavingId(null);
+      setSavingLogging(false);
     }
   }
 
@@ -254,9 +285,28 @@ export default function ExerciseManagement() {
 
   return (
     <div>
-      <h1 style={{ margin: '0 0 8px', fontSize: 24, color: colors.textPrimary }}>
-        Exercise Management
-      </h1>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          flexWrap: 'wrap',
+          marginBottom: 8,
+        }}
+      >
+        <h1 style={{ margin: 0, fontSize: 24, color: colors.textPrimary }}>Exercise Management</h1>
+        {listTab === 'active' && hasDirtyLogging && token ? (
+          <button
+            type="button"
+            className="hz-btn hz-btn-primary shrink-0"
+            disabled={savingLogging}
+            onClick={() => void handleSaveLoggingChanges()}
+          >
+            {savingLogging ? 'Saving…' : 'Save'}
+          </button>
+        ) : null}
+      </div>
       <p style={{ margin: '0 0 24px', fontSize: 14, color: colors.textMuted, maxWidth: 640 }}>
         Set how each exercise is logged in the app: pure weight, pure bodyweight, or optional weight.
         Changes apply on the next load in the mobile app.
@@ -552,7 +602,8 @@ export default function ExerciseManagement() {
               </thead>
               <tbody>
                 {filteredExercises.map((ex) => {
-                  const lt = (ex.loggingType ?? 'weighted') as ExerciseLoggingType;
+                  const savedLt = (ex.loggingType ?? 'weighted') as ExerciseLoggingType;
+                  const lt = (loggingDrafts[ex.id] ?? savedLt) as ExerciseLoggingType;
                   return (
                     <tr key={ex.id} style={{ borderTop: `1px solid ${colors.border}` }}>
                       <td style={{ padding: 12, fontWeight: 500 }}>{ex.name}</td>
@@ -563,11 +614,11 @@ export default function ExerciseManagement() {
                       <td style={{ padding: 12 }}>
                         <select
                           value={lt}
-                          disabled={savingId === ex.id || !token}
+                          disabled={savingLogging || !token}
                           onChange={(e) =>
-                            handleLoggingChange(ex, e.target.value as ExerciseLoggingType)
+                            handleLoggingDraftChange(ex, e.target.value as ExerciseLoggingType)
                           }
-                          className={`hz-select min-w-[220px] ${savingId === ex.id ? 'opacity-70' : ''}`}
+                          className={`hz-select min-w-[220px] ${savingLogging ? 'opacity-70' : ''}`}
                           title={formatLoggingLabel(lt)}
                         >
                           {LOGGING_OPTIONS.map((opt) => (
@@ -576,11 +627,6 @@ export default function ExerciseManagement() {
                             </option>
                           ))}
                         </select>
-                        {savingId === ex.id && (
-                          <span style={{ marginLeft: 8, fontSize: 12, color: colors.textMuted }}>
-                            Saving…
-                          </span>
-                        )}
                       </td>
                     </tr>
                   );
