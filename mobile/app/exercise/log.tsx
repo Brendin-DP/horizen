@@ -35,7 +35,6 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 import { RequestExerciseModal } from '../../components/RequestExerciseModal';
 import { SetLogModal } from '../../components/SetLogModal';
-import { defaultSetLocalDateIso } from '../../lib/setDate';
 import { type SetEntry, createEmptySet, validateSetEntry } from '../../lib/setEntryForm';
 import { trackLoggedExercise, trackPersonalBest } from '../../lib/analytics';
 
@@ -78,17 +77,6 @@ function formatSetEntrySummary(s: SetEntry, exercise: Exercise): string {
     base = !isNaN(d) ? `${d} m` : '—';
   } else {
     base = '—';
-  }
-  if (s.loggedAtIso) {
-    try {
-      const short = new Date(s.loggedAtIso).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-      });
-      return `${short} · ${base}`;
-    } catch {
-      return base;
-    }
   }
   return base;
 }
@@ -219,10 +207,7 @@ export default function LogExerciseScreen() {
   function openEditSetModal(s: SetEntry) {
     if (!selectedExercise) return;
     setEditingSetId(s.id);
-    setDraft({
-      ...s,
-      loggedAtIso: s.loggedAtIso ?? defaultSetLocalDateIso(),
-    });
+    setDraft({ ...s });
     setModalError(null);
     setAddSetModalVisible(true);
   }
@@ -309,7 +294,7 @@ export default function LogExerciseScreen() {
         } = {
           setNumber: i + 1,
           completed: true,
-          createdAt: s.loggedAtIso,
+          createdAt: new Date().toISOString(),
         };
         if (exercise.unit === 'weight_reps') {
           const r = parseInt(s.reps, 10);

@@ -1,6 +1,5 @@
 import type { Exercise, Set } from '../types';
 import { weightOptional, weightRequired } from './loggingType';
-import { defaultSetLocalDateIso, isValidPastOrPresentSetDate } from './setDate';
 
 export interface SetEntry {
   id: string;
@@ -10,8 +9,6 @@ export interface SetEntry {
   distance: string;
   /** For weighted_or_bodyweight: true = loaded/weight mode, false = bodyweight-only */
   addedWeight: boolean;
-  /** ISO timestamp for when the set was performed (sent as `createdAt` to API). */
-  loggedAtIso: string;
 }
 
 export function createEmptySet(ex: Exercise): SetEntry {
@@ -22,7 +19,6 @@ export function createEmptySet(ex: Exercise): SetEntry {
     duration: '',
     distance: '',
     addedWeight: weightOptional(ex.loggingType),
-    loggedAtIso: defaultSetLocalDateIso(),
   };
 }
 
@@ -43,16 +39,10 @@ export function setEntryFromApiSet(s: Set, ex: Exercise): SetEntry {
     duration: s.durationSeconds != null ? String(s.durationSeconds) : '',
     distance: s.distanceMeters != null ? String(s.distanceMeters) : '',
     addedWeight,
-    loggedAtIso: s.createdAt
-      ? new Date(s.createdAt).toISOString()
-      : defaultSetLocalDateIso(),
   };
 }
 
 export function validateSetEntry(s: SetEntry, exercise: Exercise): string | null {
-  if (s.loggedAtIso && !isValidPastOrPresentSetDate(s.loggedAtIso)) {
-    return 'Log date cannot be in the future';
-  }
   if (exercise.unit === 'weight_reps') {
     const r = parseInt(s.reps, 10);
     if (isNaN(r)) return 'Enter valid reps';
@@ -86,11 +76,9 @@ export function validateSetEntry(s: SetEntry, exercise: Exercise): string | null
   return null;
 }
 
-/** Fields for PATCH /sets/:id (standalone or workout sets). */
+/** Fields for PATCH /sets/:id (standalone or workout sets). Does not send `createdAt` — set date is not user-editable. */
 export function setEntryToPatchBody(entry: SetEntry, exercise: Exercise): Partial<Set> {
-  const out: Partial<Set> = {
-    createdAt: entry.loggedAtIso,
-  };
+  const out: Partial<Set> = {};
   if (exercise.unit === 'weight_reps') {
     const r = parseInt(entry.reps, 10);
     out.reps = r;
@@ -120,7 +108,7 @@ export function setEntryToPatchBody(entry: SetEntry, exercise: Exercise): Partia
   return out;
 }
 
-/** Body for POST /sessions/:id/sets (add set to an existing session). Mirrors standalone log batch mapping. */
+/** Body for POST /sessions/:id/sets. `createdAt` is always server time when the set is saved. */
 export function setEntryToAddSessionBody(
   entry: SetEntry,
   exercise: Exercise,
@@ -145,7 +133,7 @@ export function setEntryToAddSessionBody(
   } = {
     setNumber,
     completed: true,
-    createdAt: entry.loggedAtIso,
+    createdAt: new Date().toISOString(),
   };
   if (exercise.unit === 'weight_reps') {
     const r = parseInt(entry.reps, 10);

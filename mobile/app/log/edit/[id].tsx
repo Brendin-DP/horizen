@@ -23,8 +23,6 @@ import {
 import type { Session, Set } from '../../../types';
 import { colors, typography } from '../../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SetDatePicker } from '../../../components/SetDatePicker';
-import { defaultSetLocalDateIso, isValidPastOrPresentSetDate } from '../../../lib/setDate';
 import { trackSessionUpdated } from '../../../lib/analytics';
 
 interface SetEntry {
@@ -35,7 +33,6 @@ interface SetEntry {
   distance: string;
   bodyweight: boolean;
   isNew: boolean;
-  loggedAtIso: string;
 }
 
 function setToEntry(s: Set): SetEntry {
@@ -47,9 +44,6 @@ function setToEntry(s: Set): SetEntry {
     distance: s.distanceMeters != null ? String(s.distanceMeters) : '',
     bodyweight: s.weightKg === 0,
     isNew: false,
-    loggedAtIso: s.createdAt
-      ? new Date(s.createdAt).toISOString()
-      : defaultSetLocalDateIso(),
   };
 }
 
@@ -81,7 +75,6 @@ export default function EditLogScreen() {
                   distance: '',
                   bodyweight: false,
                   isNew: true,
-                  loggedAtIso: defaultSetLocalDateIso(),
                 },
               ];
         setSets(entries);
@@ -101,7 +94,6 @@ export default function EditLogScreen() {
         distance: '',
         bodyweight: false,
         isNew: true,
-        loggedAtIso: defaultSetLocalDateIso(),
       },
     ]);
   }
@@ -123,14 +115,6 @@ export default function EditLogScreen() {
     setSaving(true);
     setError(null);
     try {
-      for (const s of sets) {
-        if (s.loggedAtIso && !isValidPastOrPresentSetDate(s.loggedAtIso)) {
-          setError('Log date cannot be in the future');
-          setSaving(false);
-          return;
-        }
-      }
-
       const originalSetIds = new Set((log.sets ?? []).map((s: Set) => s.id));
       const currentSetIds = new Set(sets.map((s) => s.id));
       const removedIds: string[] = [...originalSetIds].filter((i) => !currentSetIds.has(i));
@@ -157,7 +141,7 @@ export default function EditLogScreen() {
             distanceMeters?: number;
             completed?: boolean;
             createdAt: string;
-          } = { setNumber, completed: true, createdAt: s.loggedAtIso };
+          } = { setNumber, completed: true, createdAt: new Date().toISOString() };
           if (exercise.unit === 'weight_reps') {
             const r = parseInt(s.reps, 10);
             body.reps = isNaN(r) ? 0 : r;
@@ -169,9 +153,7 @@ export default function EditLogScreen() {
           }
           await addSetToSession(log.id, body, token);
         } else {
-          const updates: Partial<Set> = {
-            createdAt: s.loggedAtIso,
-          };
+          const updates: Partial<Set> = {};
           if (exercise.unit === 'weight_reps') {
             const r = parseInt(s.reps, 10);
             updates.reps = isNaN(r) ? null : r;
@@ -242,10 +224,6 @@ export default function EditLogScreen() {
                 </Pressable>
               )}
             </View>
-            <SetDatePicker
-              valueIso={s.loggedAtIso}
-              onChangeIso={(iso) => updateSetEntry(s.id, 'loggedAtIso', iso)}
-            />
             {isWeightReps && (
               <>
                 <TextInput

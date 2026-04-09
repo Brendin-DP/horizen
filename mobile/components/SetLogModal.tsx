@@ -13,7 +13,6 @@ import {
 import type { Exercise } from '../types';
 import { weightOptional, weightRequired } from '../lib/loggingType';
 import { colors, typography } from '../constants/theme';
-import { SetDatePicker } from './SetDatePicker';
 import type { SetEntry } from '../lib/setEntryForm';
 
 type Props = {
@@ -64,12 +63,6 @@ export function SetLogModal({
           <View style={styles.card}>
             <Text style={styles.title}>{mode === 'edit' ? 'Edit set' : 'Add set'}</Text>
             {modalError ? <Text style={styles.modalErrorText}>{modalError}</Text> : null}
-            {draft ? (
-              <SetDatePicker
-                valueIso={draft.loggedAtIso}
-                onChangeIso={(iso) => onPatch('loggedAtIso', iso)}
-              />
-            ) : null}
             {draft && isWeightReps && (
               <>
                 {exercise.loggingType === 'bodyweight' ? (
