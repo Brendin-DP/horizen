@@ -7,26 +7,26 @@ function utcYmdKey(d) {
 }
 
 /**
- * Validates set `createdAt` (performed/log date). Not on a future calendar day (UTC).
+ * Validates an ISO timestamp for session `logged_at`: not on a future calendar day (UTC).
  * Uses date-only comparison so “today at local noon” is not rejected before noon local.
  * @param {string|undefined|null} value - ISO string from client; omit to use default
  * @param {string|null} defaultIso - when value is empty; null means required
  * @returns {{ ok: true, iso: string } | { ok: false, error: string }}
  */
-export function normalizeSetCreatedAt(value, defaultIso) {
+export function normalizeIsoLogDate(value, defaultIso) {
   if (value === undefined || value === null || value === '') {
     if (defaultIso == null) {
-      return { ok: false, error: 'createdAt is required' };
+      return { ok: false, error: 'Date is required' };
     }
     return { ok: true, iso: defaultIso };
   }
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) {
-    return { ok: false, error: 'Invalid createdAt' };
+    return { ok: false, error: 'Invalid date' };
   }
   const todayKey = utcYmdKey(new Date());
   if (utcYmdKey(d) > todayKey) {
-    return { ok: false, error: 'createdAt cannot be in the future' };
+    return { ok: false, error: 'Date cannot be in the future' };
   }
   return { ok: true, iso: d.toISOString() };
 }

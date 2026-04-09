@@ -546,17 +546,7 @@ router.get('/:id/progress/:exerciseId', async (req, res) => {
 
     let bestSet = null;
     let totalVolume = 0;
-    const mappedSets = (sets || []).map((s) => ({
-      id: s.id,
-      workoutExerciseId: s.workout_exercise_id,
-      setNumber: s.set_number,
-      reps: s.reps,
-      weightKg: s.weight_kg,
-      durationSeconds: s.duration_seconds,
-      distanceMeters: s.distance_meters,
-      completed: s.completed,
-      createdAt: s.created_at,
-    }));
+    const mappedSets = (sets || []).map((s) => mapSet(s));
 
     for (const s of mappedSets) {
       if (s.reps != null && s.weightKg != null) {

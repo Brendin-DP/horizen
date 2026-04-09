@@ -180,7 +180,6 @@ export function toDbSet(payload) {
   if (payload.durationSeconds !== undefined) out.duration_seconds = payload.durationSeconds;
   if (payload.distanceMeters !== undefined) out.distance_meters = payload.distanceMeters;
   if (payload.completed !== undefined) out.completed = payload.completed;
-  if (payload.createdAt !== undefined) out.created_at = payload.createdAt;
   return out;
 }
 

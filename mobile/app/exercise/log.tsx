@@ -272,7 +272,6 @@ export default function LogExerciseScreen() {
         durationSeconds?: number;
         distanceMeters?: number;
         completed: boolean;
-        createdAt: string;
       }> = [];
 
       for (let i = 0; i < sets.length; i++) {
@@ -286,7 +285,6 @@ export default function LogExerciseScreen() {
         const body: {
           setNumber: number;
           completed: boolean;
-          createdAt: string;
           reps?: number;
           weightKg?: number | null;
           durationSeconds?: number;
@@ -294,7 +292,6 @@ export default function LogExerciseScreen() {
         } = {
           setNumber: i + 1,
           completed: true,
-          createdAt: new Date().toISOString(),
         };
         if (exercise.unit === 'weight_reps') {
           const r = parseInt(s.reps, 10);
@@ -618,8 +615,10 @@ export default function LogExerciseScreen() {
           </View>
           <View style={[styles.emptySetsFooter, { paddingBottom: Math.max(16, insets.bottom) }]}>
             <Pressable style={[styles.addSetTextBtn, styles.addSetTextBtnInFooter]} onPress={openAddSetModal}>
-              <Ionicons name="add" size={20} color={colors.primary} />
-              <Text style={styles.addSetTextBtnLabel}>Add Set</Text>
+              <View style={styles.addSetTextBtnInner}>
+                <Ionicons name="add" size={20} color={colors.primary} />
+                <Text style={styles.addSetTextBtnLabel}>Add Set</Text>
+              </View>
             </Pressable>
             <Pressable
               style={[styles.saveBtn, saving && styles.buttonDisabled, styles.emptySetsFooterSave]}
@@ -683,8 +682,10 @@ export default function LogExerciseScreen() {
 
           <View style={[styles.emptySetsFooter, { paddingBottom: Math.max(16, insets.bottom) }]}>
             <Pressable style={[styles.addSetTextBtn, styles.addSetTextBtnInFooter]} onPress={openAddSetModal}>
-              <Ionicons name="add" size={20} color={colors.primary} />
-              <Text style={styles.addSetTextBtnLabel}>Add Set</Text>
+              <View style={styles.addSetTextBtnInner}>
+                <Ionicons name="add" size={20} color={colors.primary} />
+                <Text style={styles.addSetTextBtnLabel}>Add Set</Text>
+              </View>
             </Pressable>
             <Pressable
               style={[styles.saveBtn, saving && styles.buttonDisabled, styles.emptySetsFooterSave]}
@@ -988,12 +989,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   addSetTextBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    marginBottom: 16,
+  },
+  addSetTextBtnInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    marginBottom: 16,
   },
   /** Tertiary “Add Set” in empty-state footer (no extra bottom margin; sits above Save Exercise) */
   addSetTextBtnInFooter: {

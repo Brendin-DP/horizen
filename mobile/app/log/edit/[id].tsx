@@ -140,8 +140,7 @@ export default function EditLogScreen() {
             durationSeconds?: number;
             distanceMeters?: number;
             completed?: boolean;
-            createdAt: string;
-          } = { setNumber, completed: true, createdAt: new Date().toISOString() };
+          } = { setNumber, completed: true };
           if (exercise.unit === 'weight_reps') {
             const r = parseInt(s.reps, 10);
             body.reps = isNaN(r) ? 0 : r;

@@ -445,16 +445,7 @@ export interface ProgressHistoryEntry {
   workoutId: string;
   workoutName: string | null;
   workoutDate: string;
-  sets: Array<{
-    id: string;
-    setNumber: number;
-    reps: number | null;
-    weightKg: number | null;
-    durationSeconds: number | null;
-    distanceMeters: number | null;
-    completed: boolean;
-    createdAt: string;
-  }>;
+  sets: import('../types').Set[];
   bestSet: { reps: number; weightKg: number } | null;
   totalVolume: number;
 }
@@ -512,6 +503,23 @@ export async function getSession(id: string, token?: string | null): Promise<imp
   return res.json();
 }
 
+export async function updateSession(
+  sessionId: string,
+  body: { loggedAt: string },
+  token?: string | null
+): Promise<import('../types').Session> {
+  const res = await fetchApi(`/sessions/${sessionId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+    token,
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(err.error || 'Failed to update session');
+  }
+  return res.json();
+}
+
 export async function deleteSession(id: string, token?: string | null): Promise<void> {
   const res = await fetchApi(`/sessions/${id}`, { method: 'DELETE', token });
   if (!res.ok) throw new Error('Failed to delete session');
@@ -539,8 +547,6 @@ export async function addSetToSession(
     durationSeconds?: number;
     distanceMeters?: number;
     completed?: boolean;
-    /** When the set was performed (API maps to `created_at`). */
-    createdAt?: string;
   },
   token?: string | null
 ): Promise<import('../types').Set> {
@@ -562,7 +568,6 @@ export async function addSetsBatchToSession(
     durationSeconds?: number;
     distanceMeters?: number;
     completed?: boolean;
-    createdAt?: string;
   }>,
   token?: string | null
 ): Promise<import('../types').Set[]> {

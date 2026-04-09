@@ -10,6 +10,8 @@ import {
   Modal,
   Dimensions,
   InteractionManager,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
@@ -18,11 +20,19 @@ import { usePostHog } from 'posthog-react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 import { useAuth } from '../../contexts/AuthContext';
-import { getSession, getExerciseHistory, deleteSet, updateSet, addSetToSession } from '../../lib/api';
+import {
+  getSession,
+  getExerciseHistory,
+  deleteSet,
+  updateSet,
+  addSetToSession,
+  updateSession,
+} from '../../lib/api';
 import type { Exercise, ExerciseHistory, Session, LoggingType, Set } from '../../types';
 import { colors, shell, typography } from '../../constants/theme';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SetLogModal } from '../../components/SetLogModal';
+import { SetDatePicker } from '../../components/SetDatePicker';
 import {
   type SetEntry,
   createEmptySet,
@@ -34,12 +44,21 @@ import {
 import { trackPersonalBest, trackSessionSetDeleted, trackSessionSetSaved } from '../../lib/analytics';
 import { evaluatePersonalBestAfterSessionAdd } from '../../lib/sessionAddSetPersonalBest';
 
-function formatLogDateShort(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
+/** DD/MM/YYYY for Exercise card (matches session overview design). */
+function formatExerciseCardDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
     year: 'numeric',
   });
+}
+
+function isValidSessionLogDate(iso: string): boolean {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return false;
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  return d.getTime() <= end.getTime();
 }
 
 function compareHistoryLogs(a: ExerciseHistory, b: ExerciseHistory, lt: LoggingType): number {
@@ -137,6 +156,10 @@ export default function LogDetailScreen() {
   const [prValue, setPrValue] = useState(0);
   const confettiRef = useRef<ConfettiCannon>(null);
   const isFirstFocusForSessionRef = useRef(true);
+  const [sessionDateModalVisible, setSessionDateModalVisible] = useState(false);
+  const [sessionDateDraftIso, setSessionDateDraftIso] = useState('');
+  const [savingSessionDate, setSavingSessionDate] = useState(false);
+  const [sessionDateError, setSessionDateError] = useState<string | null>(null);
 
   useEffect(() => {
     isFirstFocusForSessionRef.current = true;
@@ -224,6 +247,38 @@ export default function LogDetailScreen() {
     setAddModalVisible(false);
     setAddDraft(null);
     setAddModalError(null);
+  }
+
+  function openSessionDateModal() {
+    if (!log) return;
+    setSessionDateDraftIso(log.loggedAt);
+    setSessionDateError(null);
+    setSessionDateModalVisible(true);
+  }
+
+  function closeSessionDateModal() {
+    setSessionDateModalVisible(false);
+    setSessionDateError(null);
+  }
+
+  async function handleSaveSessionDate() {
+    if (!log || !token || !exercise || !member?.id) return;
+    if (!isValidSessionLogDate(sessionDateDraftIso)) {
+      setSessionDateError('Date cannot be in the future');
+      return;
+    }
+    setSavingSessionDate(true);
+    setSessionDateError(null);
+    try {
+      const updated = await updateSession(log.id, { loggedAt: sessionDateDraftIso }, token);
+      setLog(updated);
+      getExerciseHistory(member.id, exercise.id, token).then(setHistory).catch(() => {});
+      closeSessionDateModal();
+    } catch (e) {
+      setSessionDateError(e instanceof Error ? e.message : 'Could not save');
+    } finally {
+      setSavingSessionDate(false);
+    }
   }
 
   function patchAddDraft(field: keyof SetEntry, value: string | boolean) {
@@ -429,11 +484,7 @@ export default function LogDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeOuter} edges={['top']}>
-      <DrillDownHeader
-        title={exercise.name}
-        titleExtra={formatLogDateShort(log.loggedAt)}
-        onBack={() => router.back()}
-      />
+      <DrillDownHeader title="Session Details" onBack={() => router.back()} />
 
       <View style={styles.bodyFill}>
         <ScrollView
@@ -442,7 +493,26 @@ export default function LogDetailScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.titleRow}>
-            <Text style={styles.titleRowText}>Session Sets</Text>
+            <Text style={styles.titleRowText}>Exercise</Text>
+          </View>
+          <View style={styles.exerciseCard}>
+            <View style={styles.exerciseCardText}>
+              <Text style={styles.exerciseCardName}>{exercise.name}</Text>
+              <Text style={styles.exerciseCardDate}>{formatExerciseCardDate(log.loggedAt)}</Text>
+            </View>
+            <Pressable
+              style={styles.exerciseCardEdit}
+              onPress={openSessionDateModal}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Edit session date"
+            >
+              <Ionicons name="pencil" size={22} color={colors.textMuted} />
+            </Pressable>
+          </View>
+
+          <View style={styles.titleRow}>
+            <Text style={styles.titleRowText}>Sets</Text>
           </View>
 
           {sets.length === 0 ? (
@@ -513,12 +583,58 @@ export default function LogDetailScreen() {
           style={styles.footerCta}
           onPress={openAddSetModal}
           accessibilityRole="button"
-          accessibilityLabel="Add set"
+          accessibilityLabel="Add Set"
         >
-          <Ionicons name="add" size={20} color={colors.white} />
-          <Text style={styles.footerCtaText}>Add Set</Text>
+          <View style={styles.footerCtaInner}>
+            <Ionicons name="add" size={20} color={colors.white} />
+            <Text style={styles.footerCtaText}>Add Set</Text>
+          </View>
         </Pressable>
       </View>
+
+      <Modal
+        visible={sessionDateModalVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => {
+          if (!savingSessionDate) closeSessionDateModal();
+        }}
+      >
+        <KeyboardAvoidingView
+          style={styles.sessionDateOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.sessionDateCard}>
+            <Text style={styles.sessionDateTitle}>Edit session date</Text>
+            {sessionDateError ? (
+              <Text style={styles.sessionDateError}>{sessionDateError}</Text>
+            ) : null}
+            <SetDatePicker
+              label="Session date"
+              valueIso={sessionDateDraftIso}
+              onChangeIso={(iso) => setSessionDateDraftIso(iso)}
+            />
+            <View style={styles.sessionDateActions}>
+              <Pressable
+                style={[styles.sessionDateBtnGhost, savingSessionDate && styles.actionDisabled]}
+                onPress={closeSessionDateModal}
+                disabled={savingSessionDate}
+              >
+                <Text style={styles.sessionDateBtnGhostText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.sessionDateBtnPrimary, savingSessionDate && styles.actionDisabled]}
+                onPress={handleSaveSessionDate}
+                disabled={savingSessionDate}
+              >
+                <Text style={styles.sessionDateBtnPrimaryText}>
+                  {savingSessionDate ? 'Saving...' : 'Save'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       <SetLogModal
         visible={editModalVisible}
@@ -596,6 +712,93 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: colors.textPrimary,
     fontFamily: typography.heading,
+  },
+  exerciseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    padding: 16,
+    marginBottom: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  exerciseCardText: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 12,
+  },
+  exerciseCardName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    fontFamily: typography.bodySemibold,
+    marginBottom: 4,
+  },
+  exerciseCardDate: {
+    fontSize: 14,
+    color: colors.textMuted,
+    fontFamily: typography.body,
+  },
+  exerciseCardEdit: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 4,
+  },
+  sessionDateOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  sessionDateCard: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+  },
+  sessionDateTitle: {
+    fontSize: 18,
+    color: colors.textPrimary,
+    marginBottom: 12,
+    fontFamily: typography.heading,
+  },
+  sessionDateError: {
+    color: colors.primary,
+    fontSize: 14,
+    marginBottom: 12,
+    fontFamily: typography.body,
+  },
+  sessionDateActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 16,
+  },
+  sessionDateBtnGhost: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  sessionDateBtnGhostText: {
+    color: colors.textMuted,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  sessionDateBtnPrimary: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+  },
+  sessionDateBtnPrimaryText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  actionDisabled: {
+    opacity: 0.55,
   },
   setCard: {
     backgroundColor: colors.white,
@@ -696,13 +899,17 @@ const styles = StyleSheet.create({
     backgroundColor: shell.footer,
   },
   footerCta: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+  },
+  footerCtaInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
   },
   footerCtaText: {
     color: colors.white,

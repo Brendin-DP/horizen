@@ -76,7 +76,7 @@ export function validateSetEntry(s: SetEntry, exercise: Exercise): string | null
   return null;
 }
 
-/** Fields for PATCH /sets/:id (standalone or workout sets). Does not send `createdAt` — set date is not user-editable. */
+/** Fields for PATCH /sets/:id (standalone or workout sets). */
 export function setEntryToPatchBody(entry: SetEntry, exercise: Exercise): Partial<Set> {
   const out: Partial<Set> = {};
   if (exercise.unit === 'weight_reps') {
@@ -108,7 +108,7 @@ export function setEntryToPatchBody(entry: SetEntry, exercise: Exercise): Partia
   return out;
 }
 
-/** Body for POST /sessions/:id/sets. `createdAt` is always server time when the set is saved. */
+/** Body for POST /sessions/:id/sets. Session date comes from `sessions.logged_at`, not per-set. */
 export function setEntryToAddSessionBody(
   entry: SetEntry,
   exercise: Exercise,
@@ -116,7 +116,6 @@ export function setEntryToAddSessionBody(
 ): {
   setNumber: number;
   completed: boolean;
-  createdAt: string;
   reps?: number;
   weightKg?: number | null;
   durationSeconds?: number;
@@ -125,7 +124,6 @@ export function setEntryToAddSessionBody(
   const body: {
     setNumber: number;
     completed: boolean;
-    createdAt: string;
     reps?: number;
     weightKg?: number | null;
     durationSeconds?: number;
@@ -133,7 +131,6 @@ export function setEntryToAddSessionBody(
   } = {
     setNumber,
     completed: true,
-    createdAt: new Date().toISOString(),
   };
   if (exercise.unit === 'weight_reps') {
     const r = parseInt(entry.reps, 10);

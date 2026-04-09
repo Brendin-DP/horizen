@@ -6,6 +6,9 @@ Run these SQL files in the [Supabase SQL Editor](https://supabase.com/dashboard/
 
 1. **000_initial_schema.sql** – Core tables (members, plans, features, plan_features, star_awards, exercise_library, workouts, workout_exercises, sets)
 2. **001_fund_goals.sql** – Fund tracker config (raised amount, visibility)
+3. **002_exercise_logging_type.sql** – Exercise logging type / unit enums
+4. **003_exercise_request_status.sql** – Exercise request workflow
+5. **004_sets_created_at_audit.sql** – `sets.created_at` audit column + index (re-run safe if already present)
 
 ## Environment variables (API)
 

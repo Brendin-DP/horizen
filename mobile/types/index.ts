@@ -135,7 +135,8 @@ export interface Set {
   durationSeconds: number | null;
   distanceMeters: number | null;
   completed: boolean;
-  createdAt: string;
+  /** Audit: server/DB time when this set row was inserted — not the session date (use session.loggedAt). */
+  createdAt?: string | null;
 }
 
 export interface WorkoutWithDetails extends Workout {

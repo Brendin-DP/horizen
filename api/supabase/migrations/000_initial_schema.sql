@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
 CREATE INDEX IF NOT EXISTS idx_workout_exercises_workout ON workout_exercises(workout_id);
 
 -- Sets (reps, weight, etc. per workout exercise)
+-- created_at: audit only — row insert time. Session calendar date lives on sessions.logged_at.
 CREATE TABLE IF NOT EXISTS sets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workout_exercise_id UUID NOT NULL REFERENCES workout_exercises(id) ON DELETE CASCADE,
@@ -108,6 +109,7 @@ CREATE TABLE IF NOT EXISTS sets (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sets_workout_exercise ON sets(workout_exercise_id);
+CREATE INDEX IF NOT EXISTS idx_sets_created_at ON sets(created_at);
 
 -- Seed plans if empty
 INSERT INTO plans (id, name, price_monthly) VALUES

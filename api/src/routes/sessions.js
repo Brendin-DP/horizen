@@ -3,10 +3,44 @@ import { randomUUID } from 'crypto';
 import supabase from '../db.js';
 import { mapSession, mapExercise, mapSet, toDbSet } from '../utils/mappers.js';
 import { getMuscleGroupsForExercises, getExerciseMuscleGroups, attachMuscleGroups } from '../utils/exerciseHelpers.js';
-import { normalizeSetCreatedAt } from '../utils/setCreatedAt.js';
+import { normalizeIsoLogDate } from '../utils/setCreatedAt.js';
 import { isValidUUID } from '../utils/validation.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
+
+/** Full session detail (same shape as GET /sessions/:id). */
+async function getSessionDetailPayload(sessionId) {
+  const { data: sessionRow, error } = await supabase
+    .from('sessions')
+    .select('*')
+    .eq('id', sessionId)
+    .single();
+  if (error || !sessionRow) return null;
+
+  const { data: exercise } = await supabase
+    .from('exercise_library')
+    .select('*')
+    .eq('id', sessionRow.exercise_id)
+    .single();
+  const { data: sets } = await supabase
+    .from('sets')
+    .select('*')
+    .eq('session_id', sessionRow.id)
+    .order('set_number', { ascending: true });
+
+  let exercisePayload = null;
+  if (exercise) {
+    const mgs = await getExerciseMuscleGroups(exercise.id);
+    exercisePayload = attachMuscleGroups(mapExercise(exercise), mgs);
+  }
+
+  return {
+    ...mapSession(sessionRow),
+    exercise: exercisePayload,
+    sets: (sets || []).map(mapSet),
+  };
+}
 
 router.post('/', async (req, res) => {
   const { memberId, exerciseId, notes, loggedAt } = req.body;
@@ -120,37 +154,54 @@ router.get('/:id', async (req, res) => {
   if (!isValidUUID(req.params.id)) {
     return res.status(400).json({ error: 'Invalid session id' });
   }
-  const { data: sessionRow, error } = await supabase
+  const payload = await getSessionDetailPayload(req.params.id);
+  if (!payload) {
+    return res.status(404).json({ error: 'Session not found' });
+  }
+  res.json(payload);
+});
+
+router.patch('/:id', requireAuth, async (req, res) => {
+  const sessionId = req.params.id;
+  if (!isValidUUID(sessionId)) {
+    return res.status(400).json({ error: 'Invalid session id' });
+  }
+  const { loggedAt } = req.body;
+  const n = normalizeIsoLogDate(loggedAt, null);
+  if (!n.ok) {
+    return res.status(400).json({ error: n.error });
+  }
+
+  const { data: sessionRow, error: fetchErr } = await supabase
     .from('sessions')
     .select('*')
-    .eq('id', req.params.id)
+    .eq('id', sessionId)
     .single();
-  if (error || !sessionRow) {
+  if (fetchErr || !sessionRow) {
     return res.status(404).json({ error: 'Session not found' });
   }
 
-  const { data: exercise } = await supabase
-    .from('exercise_library')
-    .select('*')
-    .eq('id', sessionRow.exercise_id)
-    .single();
-  const { data: sets } = await supabase
-    .from('sets')
-    .select('*')
-    .eq('session_id', sessionRow.id)
-    .order('set_number', { ascending: true });
-
-  let exercisePayload = null;
-  if (exercise) {
-    const mgs = await getExerciseMuscleGroups(exercise.id);
-    exercisePayload = attachMuscleGroups(mapExercise(exercise), mgs);
+  const memberId = req.member.id;
+  const isOwner = sessionRow.member_id === memberId;
+  const isAdmin = req.member.role === 'admin';
+  if (!isOwner && !isAdmin) {
+    return res.status(403).json({ error: 'Forbidden' });
   }
 
-  res.json({
-    ...mapSession(sessionRow),
-    exercise: exercisePayload,
-    sets: (sets || []).map(mapSet),
-  });
+  const { error: updErr } = await supabase
+    .from('sessions')
+    .update({ logged_at: n.iso })
+    .eq('id', sessionId);
+  if (updErr) {
+    console.error(updErr);
+    return res.status(500).json({ error: 'Database error', detail: updErr.message });
+  }
+
+  const payload = await getSessionDetailPayload(sessionId);
+  if (!payload) {
+    return res.status(500).json({ error: 'Session not found after update' });
+  }
+  res.json(payload);
 });
 
 router.delete('/:id', async (req, res) => {
@@ -198,14 +249,9 @@ router.post('/:id/sets/batch', async (req, res) => {
     return res.status(404).json({ error: 'Session not found' });
   }
 
-  const now = new Date().toISOString();
   const toInsert = [];
   for (let idx = 0; idx < setsPayload.length; idx++) {
     const s = setsPayload[idx];
-    const n = normalizeSetCreatedAt(s.createdAt, now);
-    if (!n.ok) {
-      return res.status(400).json({ error: n.error });
-    }
     const setNumber = s.setNumber !== undefined ? s.setNumber : idx + 1;
     toInsert.push(
       toDbSet({
@@ -217,7 +263,6 @@ router.post('/:id/sets/batch', async (req, res) => {
         durationSeconds: s.durationSeconds ?? null,
         distanceMeters: s.distanceMeters ?? null,
         completed: s.completed !== undefined ? s.completed : true,
-        createdAt: n.iso,
       })
     );
   }
@@ -236,7 +281,7 @@ router.post('/:id/sets', async (req, res) => {
   if (!isValidUUID(sessionId)) {
     return res.status(400).json({ error: 'Invalid session id' });
   }
-  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed, createdAt } = req.body;
+  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed } = req.body;
 
   const { data: sessionRow } = await supabase
     .from('sessions')
@@ -256,11 +301,6 @@ router.post('/:id/sets', async (req, res) => {
     .maybeSingle();
 
   const maxSetNumber = maxRow?.set_number ?? 0;
-  const defaultCreated = new Date().toISOString();
-  const n = normalizeSetCreatedAt(createdAt, defaultCreated);
-  if (!n.ok) {
-    return res.status(400).json({ error: n.error });
-  }
   const set = {
     id: randomUUID(),
     sessionId,
@@ -270,7 +310,6 @@ router.post('/:id/sets', async (req, res) => {
     durationSeconds: durationSeconds ?? null,
     distanceMeters: distanceMeters ?? null,
     completed: completed !== undefined ? completed : true,
-    createdAt: n.iso,
   };
 
   const toDb = toDbSet(set);
