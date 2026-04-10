@@ -156,6 +156,21 @@ export async function changePassword(
   }
 }
 
+export async function submitFeatureRequest(
+  payload: { title: string; description: string },
+  token?: string | null
+): Promise<void> {
+  const res = await fetchApi('/feature-requests', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    token,
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(err.error || 'Failed to submit request');
+  }
+}
+
 export async function uploadAvatar(uri: string, token: string | null): Promise<Member> {
   const formData = new FormData();
   formData.append('avatar', {

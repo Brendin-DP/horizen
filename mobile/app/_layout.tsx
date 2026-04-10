@@ -94,6 +94,11 @@ export default function RootLayout() {
                 <Stack.Screen name="welcome" />
                 <Stack.Screen name="privacy" options={{ presentation: 'card' }} />
                 <Stack.Screen name="account" options={{ presentation: 'card' }} />
+                <Stack.Screen name="feature-request" options={{ presentation: 'card' }} />
+                <Stack.Screen
+                  name="feature-request-success"
+                  options={{ presentation: 'card', gestureEnabled: false }}
+                />
               </Stack>
             </AuthGate>
           )}

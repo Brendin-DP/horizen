@@ -143,6 +143,10 @@ export default function ProfileScreen() {
       router.push('/account');
       return;
     }
+    if (key === 'request') {
+      router.push('/feature-request');
+      return;
+    }
     showComingSoon();
   }
 

@@ -9,6 +9,7 @@ Run these SQL files in the [Supabase SQL Editor](https://supabase.com/dashboard/
 3. **002_exercise_logging_type.sql** – Exercise logging type / unit enums
 4. **003_exercise_request_status.sql** – Exercise request workflow
 5. **004_sets_created_at_audit.sql** – `sets.created_at` audit column + index (re-run safe if already present)
+6. **005_feature_requests.sql** – Feature request enums + `feature_requests` table
 
 ## Environment variables (API)
 

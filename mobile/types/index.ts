@@ -161,3 +161,21 @@ export interface StarAward {
   reason: string | null;
   createdAt: string;
 }
+
+export type FeatureRequestTag = 'Bug' | 'Feature Request' | 'Improvement';
+export type FeatureRequestStatus =
+  | 'Requested'
+  | 'Under Consideration'
+  | 'In Progress'
+  | 'Done';
+
+export interface FeatureRequest {
+  id: string;
+  title: string;
+  description: string;
+  tag: FeatureRequestTag;
+  status: FeatureRequestStatus;
+  upvotes: number;
+  createdAt: string;
+  updatedAt: string;
+}
