@@ -362,3 +362,96 @@ export async function rejectExercise(id: string, token: string): Promise<Exercis
   }
   return res.json();
 }
+
+// --- Feature requests (admin back office) ---
+
+export type FeatureRequestTag = 'Bug' | 'Feature Request' | 'Improvement';
+export type FeatureRequestStatus =
+  | 'Requested'
+  | 'Under Consideration'
+  | 'In Progress'
+  | 'Done'
+  | 'Archived';
+
+export interface FeatureRequestAdminRow {
+  id: string;
+  title: string;
+  description: string;
+  tag: FeatureRequestTag;
+  status: FeatureRequestStatus;
+  upvotes: number;
+  requestedBy: { id: string; name: string; email: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getFeatureRequests(
+  token: string,
+  filters?: { status?: string; tag?: string }
+): Promise<FeatureRequestAdminRow[]> {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.tag) params.set('tag', filters.tag);
+  const q = params.toString() ? `?${params}` : '';
+  const res = await fetch(`${BASE_URL}/feature-requests${q}`, {
+    headers: headersWithAuth(token),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to fetch feature requests');
+  }
+  return res.json();
+}
+
+export async function updateFeatureRequest(
+  id: string,
+  updates: { status?: FeatureRequestStatus; tag?: FeatureRequestTag },
+  token: string
+): Promise<FeatureRequestAdminRow> {
+  const res = await fetch(`${BASE_URL}/feature-requests/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: headersWithAuth(token),
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to update feature request');
+  }
+  return res.json();
+}
+
+export async function archiveFeatureRequest(id: string, token: string): Promise<FeatureRequestAdminRow> {
+  return updateFeatureRequest(id, { status: 'Archived' }, token);
+}
+
+// --- App settings ---
+
+export interface AppSettingRow {
+  key: string;
+  value: string;
+  updated_at: string;
+}
+
+export async function getAppSettings(token: string): Promise<AppSettingRow[]> {
+  const res = await fetch(`${BASE_URL}/app-settings`, {
+    headers: headersWithAuth(token),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to fetch settings');
+  }
+  return res.json();
+}
+
+export async function updateAppSetting(key: string, value: string, token: string): Promise<AppSettingRow> {
+  const res = await fetch(`${BASE_URL}/app-settings/${encodeURIComponent(key)}`, {
+    method: 'PATCH',
+    headers: headersWithAuth(token),
+    body: JSON.stringify({ value }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || 'Failed to update setting');
+  }
+  return res.json();
+}

@@ -10,6 +10,9 @@ import PlansFeatures from './pages/PlansFeatures';
 import Fund from './pages/Fund';
 import ExerciseManagement from './pages/ExerciseManagement';
 import Settings from './pages/Settings';
+import ProductPortalLayout from './pages/ProductPortalLayout';
+import FeatureRequestsPage from './pages/FeatureRequestsPage';
+import ProductRoadmapPage from './pages/ProductRoadmapPage';
 
 function App() {
   const { token } = useAuth();
@@ -27,6 +30,11 @@ function App() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="product-portal" element={<ProductPortalLayout />}>
+          <Route index element={<Navigate to="/product-portal/feature-requests" replace />} />
+          <Route path="feature-requests" element={<FeatureRequestsPage />} />
+          <Route path="roadmap" element={<ProductRoadmapPage />} />
+        </Route>
         <Route path="settings" element={<Settings />} />
         <Route path="members" element={<Navigate to="/users" replace />} />
         <Route path="users" element={<UserManagement />} />

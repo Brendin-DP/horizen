@@ -13,6 +13,7 @@ import sessionsRouter from './routes/sessions.js';
 import fundRouter from './routes/fund.js';
 import muscleGroupsRouter from './routes/muscleGroups.js';
 import featureRequestsRouter from './routes/featureRequests.js';
+import appSettingsRouter from './routes/appSettings.js';
 
 const app = express();
 app.use(cors());
@@ -35,6 +36,7 @@ app.use('/sets', setsIdRouter);
 app.use('/fund', fundRouter);
 app.use('/muscle-groups', muscleGroupsRouter);
 app.use('/feature-requests', featureRequestsRouter);
+app.use('/app-settings', appSettingsRouter);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

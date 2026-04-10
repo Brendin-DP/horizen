@@ -1,22 +1,28 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, User, ChevronDown, LogOut, Settings } from 'lucide-react';
+import { LayoutDashboard, User, ChevronDown, LogOut, Settings, KanbanSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
 
-const navItems: NavItem[] = [
+const primaryNavItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/product-portal', label: 'Product Portal', icon: KanbanSquare },
 ];
+
+const bottomNavItems: NavItem[] = [{ to: '/settings', label: 'Settings', icon: Settings }];
 
 /** Highlight Settings in the rail when viewing the hub or any management screen reached from it */
 const SETTINGS_HUB_PATHS = ['/settings', '/users', '/plans-features', '/admins', '/exercises'] as const;
 
+const PRODUCT_PORTAL_PATHS = ['/product-portal'] as const;
+
 function isSettingsAreaActive(pathname: string) {
-  return SETTINGS_HUB_PATHS.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`)
-  );
+  return SETTINGS_HUB_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+function isProductPortalActive(pathname: string) {
+  return PRODUCT_PORTAL_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 export default function Layout() {
@@ -27,6 +33,22 @@ export default function Layout() {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const linkClass = (to: string, isActive: boolean) => {
+    let active = isActive;
+    if (to === '/settings') {
+      active = isSettingsAreaActive(location.pathname);
+    }
+    if (to === '/product-portal') {
+      active = isProductPortalActive(location.pathname);
+    }
+    return [
+      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+      active
+        ? 'bg-primary/10 font-semibold text-primary shadow-sm'
+        : 'text-slate-700 hover:bg-slate-50',
+    ].join(' ');
   };
 
   return (
@@ -40,42 +62,54 @@ export default function Layout() {
           />
         </div>
 
-        <nav className="flex flex-1 flex-col space-y-1 overflow-y-auto p-4" aria-label="Main">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) => {
-                const active =
-                  to === '/settings'
-                    ? isSettingsAreaActive(location.pathname)
-                    : isActive;
-                return [
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  active
-                    ? 'bg-primary/10 font-semibold text-primary shadow-sm'
-                    : 'text-slate-700 hover:bg-slate-50',
-                ].join(' ');
-              }}
-            >
-              {({ isActive }) => {
-                const active =
-                  to === '/settings'
-                    ? isSettingsAreaActive(location.pathname)
-                    : isActive;
-                return (
-                  <>
-                    <Icon
-                      className={`h-5 w-5 shrink-0 ${active ? 'text-primary' : 'text-slate-500'}`}
-                      aria-hidden
-                    />
-                    <span>{label}</span>
-                  </>
-                );
-              }}
-            </NavLink>
-          ))}
+        <nav className="flex flex-1 flex-col overflow-y-auto p-4" aria-label="Main">
+          <div className="space-y-1">
+            {primaryNavItems.map(({ to, label, icon: Icon, end }) => (
+              <NavLink key={to} to={to} end={end} className={({ isActive }) => linkClass(to, isActive)}>
+                {({ isActive }) => {
+                  const active =
+                    to === '/settings'
+                      ? isSettingsAreaActive(location.pathname)
+                      : to === '/product-portal'
+                        ? isProductPortalActive(location.pathname)
+                        : isActive;
+                  return (
+                    <>
+                      <Icon
+                        className={`h-5 w-5 shrink-0 ${active ? 'text-primary' : 'text-slate-500'}`}
+                        aria-hidden
+                      />
+                      <span>{label}</span>
+                    </>
+                  );
+                }}
+              </NavLink>
+            ))}
+          </div>
+
+          <div className="mt-auto space-y-1 pt-2">
+            {bottomNavItems.map(({ to, label, icon: Icon, end }) => (
+              <NavLink key={to} to={to} end={end} className={({ isActive }) => linkClass(to, isActive)}>
+                {({ isActive }) => {
+                  const active =
+                    to === '/settings'
+                      ? isSettingsAreaActive(location.pathname)
+                      : to === '/product-portal'
+                        ? isProductPortalActive(location.pathname)
+                        : isActive;
+                  return (
+                    <>
+                      <Icon
+                        className={`h-5 w-5 shrink-0 ${active ? 'text-primary' : 'text-slate-500'}`}
+                        aria-hidden
+                      />
+                      <span>{label}</span>
+                    </>
+                  );
+                }}
+              </NavLink>
+            ))}
+          </div>
         </nav>
 
         <div className="border-t border-slate-200 p-4">

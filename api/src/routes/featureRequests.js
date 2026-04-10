@@ -1,8 +1,104 @@
 import express from 'express';
 import supabase from '../db.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
+
+const VALID_STATUSES = [
+  'Requested',
+  'Under Consideration',
+  'In Progress',
+  'Done',
+  'Archived',
+];
+const VALID_TAGS = ['Bug', 'Feature Request', 'Improvement'];
+
+function mapFeatureRequestRow(row, requester = null) {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    tag: row.tag,
+    status: row.status,
+    upvotes: row.upvotes,
+    requestedBy: requester
+      ? { id: requester.id, name: requester.name, email: requester.email }
+      : null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/** Public roadmap — must be registered before GET /:id */
+router.get('/public', async (req, res) => {
+  const { data: setting } = await supabase
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'roadmap_public')
+    .maybeSingle();
+
+  if (!setting || setting.value !== 'true') {
+    return res.status(403).json({ error: 'Public roadmap is not available' });
+  }
+
+  const { data, error } = await supabase
+    .from('feature_requests')
+    .select('id, title, description, tag, status, upvotes, created_at')
+    .neq('status', 'Archived')
+    .order('upvotes', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Failed to fetch roadmap' });
+  }
+
+  return res.json(
+    (data || []).map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      tag: row.tag,
+      status: row.status,
+      upvotes: row.upvotes,
+      createdAt: row.created_at,
+    }))
+  );
+});
+
+router.get('/', requireAuth, requireRole('admin'), async (req, res) => {
+  const { status, tag } = req.query;
+
+  let query = supabase
+    .from('feature_requests')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (status) query = query.eq('status', status);
+  if (tag) query = query.eq('tag', tag);
+
+  const { data: rows, error } = await query;
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Failed to fetch requests' });
+  }
+
+  const list = rows || [];
+  const ids = [...new Set(list.map((r) => r.requested_by).filter(Boolean))];
+  const memberMap = {};
+  if (ids.length > 0) {
+    const { data: members } = await supabase
+      .from('members')
+      .select('id, name, email')
+      .in('id', ids);
+    for (const m of members || []) {
+      memberMap[m.id] = m;
+    }
+  }
+
+  return res.json(
+    list.map((row) => mapFeatureRequestRow(row, memberMap[row.requested_by] || null))
+  );
+});
 
 router.post('/', requireAuth, async (req, res) => {
   const { title, description } = req.body;
@@ -42,6 +138,50 @@ router.post('/', requireAuth, async (req, res) => {
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   });
+});
+
+router.patch('/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  const { id } = req.params;
+  const { status, tag } = req.body;
+
+  if (status === undefined && tag === undefined) {
+    return res.status(400).json({ error: 'No updates provided' });
+  }
+
+  const updates = { updated_at: new Date().toISOString() };
+
+  if (status !== undefined) {
+    if (!VALID_STATUSES.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+    updates.status = status;
+  }
+
+  if (tag !== undefined) {
+    if (!VALID_TAGS.includes(tag)) {
+      return res.status(400).json({ error: 'Invalid tag' });
+    }
+    updates.tag = tag;
+  }
+
+  const { data, error } = await supabase
+    .from('feature_requests')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error || !data) {
+    return res.status(404).json({ error: 'Request not found' });
+  }
+
+  const { data: member } = await supabase
+    .from('members')
+    .select('id, name, email')
+    .eq('id', data.requested_by)
+    .maybeSingle();
+
+  return res.json(mapFeatureRequestRow(data, member));
 });
 
 export default router;
