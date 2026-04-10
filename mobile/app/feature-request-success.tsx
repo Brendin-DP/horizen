@@ -1,12 +1,19 @@
 import { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, BackHandler } from 'react-native';
 import { useRouter } from 'expo-router';
+import { usePostHog } from 'posthog-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors, shell, typography, borderRadius } from '../constants/theme';
+import { trackFeatureRequestSuccessViewed } from '../lib/analytics';
 
 export default function FeatureRequestSuccessScreen() {
   const router = useRouter();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    trackFeatureRequestSuccessViewed(posthog);
+  }, [posthog]);
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {

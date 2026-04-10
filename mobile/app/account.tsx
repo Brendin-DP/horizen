@@ -12,12 +12,14 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { usePostHog } from 'posthog-react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { changePassword, updateProfile } from '../lib/api';
 import { colors, shell, typography } from '../constants/theme';
 import { DrillDownHeader } from '../components/DrillDownHeader';
+import { trackScreenViewed } from '../lib/analytics';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -31,8 +33,15 @@ function splitName(full: string): { first: string; last: string } {
 
 export default function AccountScreen() {
   const router = useRouter();
+  const posthog = usePostHog();
   const insets = useSafeAreaInsets();
   const { member, token, updateMember } = useAuth();
+
+  useFocusEffect(
+    useCallback(() => {
+      trackScreenViewed(posthog, { screen: 'account' });
+    }, [posthog])
+  );
   const [firstName, setFirstName] = useState('');
   const [surname, setSurname] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);

@@ -6,6 +6,13 @@
  * - started_standalone_log — user opened the log flow
  * - logged_exercise — session saved with sets
  * - exercise_deleted — user confirmed delete on exercises tab (all sessions for that exercise removed)
+ *
+ * Product / settings:
+ * - screen_viewed — account, privacy, or feature_request screen focused
+ * - feature_request_submitted — API success (lengths only, no title/body content)
+ * - feature_request_success_viewed — success confirmation screen shown
+ * - help_faq_opened — Help & FAQ modal opened from Profile
+ * - leaderboard_viewed — Leaderboard tab focused
  */
 
 import type { PostHog } from 'posthog-react-native';
@@ -130,4 +137,31 @@ export function trackExerciseDeleted(
   }
 ) {
   capture(posthog, 'exercise_deleted', payload);
+}
+
+export function trackScreenViewed(
+  posthog: PosthogLike,
+  payload: { screen: 'account' | 'privacy' | 'feature_request' }
+) {
+  capture(posthog, 'screen_viewed', payload);
+}
+
+/** Fires after API success; only character counts — no title or description text. */
+export function trackFeatureRequestSubmitted(
+  posthog: PosthogLike,
+  payload: { titleLength: number; descriptionLength: number }
+) {
+  capture(posthog, 'feature_request_submitted', payload);
+}
+
+export function trackFeatureRequestSuccessViewed(posthog: PosthogLike) {
+  capture(posthog, 'feature_request_success_viewed');
+}
+
+export function trackHelpFaqOpened(posthog: PosthogLike) {
+  capture(posthog, 'help_faq_opened');
+}
+
+export function trackLeaderboardViewed(posthog: PosthogLike) {
+  capture(posthog, 'leaderboard_viewed');
 }

@@ -14,7 +14,9 @@ import {
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { StatusBar } from 'expo-status-bar';
 import { initialWindowMetrics, SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
 import { DrillDownHeader } from './DrillDownHeader';
+import { trackHelpFaqOpened } from '../lib/analytics';
 import { colors, shell, typography } from '../constants/theme';
 
 const faqs = [
@@ -101,13 +103,16 @@ type HelpFaqModalProps = {
 };
 
 export function HelpFaqModal({ visible, onClose }: HelpFaqModalProps) {
+  const posthog = usePostHog();
   const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!visible) {
       setOpenId(null);
+      return;
     }
-  }, [visible]);
+    trackHelpFaqOpened(posthog);
+  }, [visible, posthog]);
 
   function toggle(id: string) {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);

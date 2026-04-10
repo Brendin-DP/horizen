@@ -10,13 +10,15 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { usePostHog } from 'posthog-react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../contexts/AuthContext';
 import { submitFeatureRequest } from '../lib/api';
 import { colors, shell, typography, borderRadius } from '../constants/theme';
 import { DrillDownHeader } from '../components/DrillDownHeader';
+import { trackFeatureRequestSubmitted, trackScreenViewed } from '../lib/analytics';
 
 const TITLE_MAX = 100;
 const DESCRIPTION_MAX = 500;
@@ -24,6 +26,7 @@ const DESCRIPTION_MAX = 500;
 export default function FeatureRequestScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const { token } = useAuth();
   const params = useLocalSearchParams<{ reset?: string }>();
 
@@ -44,6 +47,12 @@ export default function FeatureRequestScreen() {
     }
   }, [params.reset, clearForm]);
 
+  useFocusEffect(
+    useCallback(() => {
+      trackScreenViewed(posthog, { screen: 'feature_request' });
+    }, [posthog])
+  );
+
   const canSubmit =
     !!token &&
     title.trim().length > 0 &&
@@ -59,6 +68,10 @@ export default function FeatureRequestScreen() {
         { title: title.trim(), description: description.trim() },
         token
       );
+      trackFeatureRequestSubmitted(posthog, {
+        titleLength: title.trim().length,
+        descriptionLength: description.trim().length,
+      });
       router.replace('/feature-request-success');
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Something went wrong');

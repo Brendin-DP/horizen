@@ -1,8 +1,11 @@
+import { useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { usePostHog } from 'posthog-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography } from '../constants/theme';
 import { DrillDownHeader } from '../components/DrillDownHeader';
+import { trackScreenViewed } from '../lib/analytics';
 
 const SECTIONS: { title: string; body: string[] }[] = [
   {
@@ -113,6 +116,13 @@ const SECTIONS: { title: string; body: string[] }[] = [
 
 export default function PrivacyScreen() {
   const router = useRouter();
+  const posthog = usePostHog();
+
+  useFocusEffect(
+    useCallback(() => {
+      trackScreenViewed(posthog, { screen: 'privacy' });
+    }, [posthog])
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
