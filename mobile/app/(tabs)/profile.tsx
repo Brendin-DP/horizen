@@ -17,6 +17,7 @@ import { uploadAvatar, type Member } from '../../lib/api';
 import { colors, borderRadius, shell, typography } from '../../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { HelpFaqModal } from '../../components/HelpFaqModal';
 
 function getInitials(name: string): string {
   return name
@@ -133,6 +134,7 @@ export default function ProfileScreen() {
   const posthog = usePostHog();
   const { member, token, updateMember, logout, getAvatarUrl } = useAuth();
   const [uploading, setUploading] = useState(false);
+  const [helpFaqOpen, setHelpFaqOpen] = useState(false);
 
   function handleSettingsItemPress(key: string) {
     if (key === 'privacy') {
@@ -145,6 +147,10 @@ export default function ProfileScreen() {
     }
     if (key === 'request') {
       router.push('/feature-request');
+      return;
+    }
+    if (key === 'help') {
+      setHelpFaqOpen(true);
       return;
     }
     showComingSoon();
@@ -189,6 +195,7 @@ export default function ProfileScreen() {
           onSettingsItemPress={handleSettingsItemPress}
         />
       </ScrollView>
+      <HelpFaqModal visible={helpFaqOpen} onClose={() => setHelpFaqOpen(false)} />
     </SafeAreaView>
   );
 }

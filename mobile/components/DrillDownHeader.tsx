@@ -17,7 +17,7 @@ type DrillDownHeaderProps = {
 export function DrillDownHeader({ title, titleExtra, onBack, right }: DrillDownHeaderProps) {
   return (
     <View style={styles.header}>
-      <Pressable onPress={onBack} style={styles.sideLeft} hitSlop={8} accessibilityRole="button" accessibilityLabel="Go back">
+      <Pressable onPress={onBack} style={styles.sideLeft} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
         <Ionicons name="chevron-back" size={22} color={colors.textMuted} />
       </Pressable>
       <View style={styles.centerBlock}>
@@ -47,17 +47,19 @@ const styles = StyleSheet.create({
   },
   sideLeft: {
     minWidth: SIDE_MIN,
-    height: 40,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'flex-start',
     paddingLeft: 4,
+    zIndex: 2,
   },
   sideRight: {
     minWidth: SIDE_MIN,
-    minHeight: 40,
+    minHeight: 44,
     justifyContent: 'center',
     alignItems: 'flex-end',
     paddingRight: 4,
+    zIndex: 2,
   },
   rightSpacer: {
     width: 1,
@@ -71,6 +73,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingHorizontal: 4,
+    zIndex: 0,
   },
   title: {
     fontSize: 16,
