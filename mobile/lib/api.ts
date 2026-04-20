@@ -264,7 +264,7 @@ async function fetchApi(
   options: RequestInit & { token?: string | null } = {}
 ): Promise<Response> {
   const { token, ...rest } = options;
-  return fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${BASE_URL}${path}`, {
     ...rest,
     headers: {
       'Content-Type': 'application/json',
@@ -272,6 +272,29 @@ async function fetchApi(
       ...(rest.headers as Record<string, string>),
     },
   });
+  // #region agent log
+  if (res.status === 401) {
+    fetch('http://127.0.0.1:7613/ingest/647d3ca5-187f-4bcf-aae1-ccc3f04a480d', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7fe38e' },
+      body: JSON.stringify({
+        sessionId: '7fe38e',
+        location: 'api.ts:fetchApi:401',
+        message: 'API 401 from fetchApi',
+        data: {
+          hypothesisId: 'H-client',
+          path,
+          baseUrl: BASE_URL.slice(0, 48),
+          sentAuthHeader: !!token,
+          tokenLen: token?.length ?? 0,
+        },
+        timestamp: Date.now(),
+        hypothesisId: 'H-client',
+      }),
+    }).catch(() => {});
+  }
+  // #endregion
+  return res;
 }
 
 export interface MuscleGroupsResponse {
