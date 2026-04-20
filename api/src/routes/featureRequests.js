@@ -1,6 +1,7 @@
 import express from 'express';
 import supabase from '../db.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { sendSlackMessage, featureRequestMessage } from '../utils/slack.js';
 
 const router = express.Router();
 
@@ -127,6 +128,17 @@ router.post('/', requireAuth, async (req, res) => {
     console.error('Feature request error:', error);
     return res.status(500).json({ error: 'Failed to submit request' });
   }
+
+  const memberName = req.member?.name ?? 'Unknown Member';
+  const titleTrim = title.trim();
+  const descriptionTrim = description.trim();
+  sendSlackMessage(
+    featureRequestMessage({
+      memberName,
+      title: titleTrim,
+      description: descriptionTrim,
+    })
+  ).catch((err) => console.error('Slack error:', err));
 
   return res.status(201).json({
     id: data.id,

@@ -16,6 +16,7 @@ import {
   getMuscleGroupsForExercises,
   setExerciseMuscleGroups,
 } from '../utils/exerciseHelpers.js';
+import { sendSlackMessage, exerciseRequestMessage } from '../utils/slack.js';
 
 const router = express.Router();
 
@@ -144,6 +145,18 @@ router.post('/request', requireAuth, async (req, res) => {
     return res.status(500).json({ error: e instanceof Error ? e.message : 'Failed to link muscle groups' });
   }
   const muscleGroups = await getExerciseMuscleGroups(id);
+
+  const memberName = req.member?.name ?? 'Unknown Member';
+  sendSlackMessage(
+    exerciseRequestMessage({
+      memberName,
+      exerciseName: name.trim(),
+      category: categoryVal,
+      type: typeVal,
+      notes: insert.request_notes ?? null,
+    })
+  ).catch((err) => console.error('Slack error:', err));
+
   res.status(201).json(attachMuscleGroups(mapExercise(data), muscleGroups));
 });
 
