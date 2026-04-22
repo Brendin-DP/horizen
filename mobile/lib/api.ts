@@ -1,3 +1,5 @@
+import type { FeatureRequestTag, FeatureRequestStatus } from '../types';
+
 /**
  * API client for GymApp.
  *
@@ -168,6 +170,74 @@ export async function submitFeatureRequest(
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(err.error || 'Failed to submit request');
+  }
+}
+
+export interface RoadmapItem {
+  id: string;
+  title: string;
+  description: string;
+  tag: FeatureRequestTag;
+  status: FeatureRequestStatus;
+  upvotes: number;
+  hasVoted: boolean;
+  createdAt: string;
+}
+
+export async function getRoadmap(memberId: string): Promise<RoadmapItem[]> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(
+      `${BASE_URL}/feature-requests/roadmap?memberId=${encodeURIComponent(memberId)}`,
+      { signal: controller.signal }
+    );
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(err.error || 'Failed to fetch roadmap');
+    }
+    return res.json();
+  } catch (e) {
+    const isAbort = e instanceof Error && e.name === 'AbortError';
+    if (isAbort) {
+      throw new Error(
+        'Connection timeout. Ensure the API is running at ' + BASE_URL
+      );
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function voteOnRequest(
+  featureRequestId: string,
+  memberId: string
+): Promise<{ hasVoted: boolean; upvotes: number }> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${BASE_URL}/feature-requests/${featureRequestId}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memberId }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(err.error || 'Failed to vote');
+    }
+    return res.json();
+  } catch (e) {
+    const isAbort = e instanceof Error && e.name === 'AbortError';
+    if (isAbort) {
+      throw new Error(
+        'Connection timeout. Ensure the API is running at ' + BASE_URL
+      );
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

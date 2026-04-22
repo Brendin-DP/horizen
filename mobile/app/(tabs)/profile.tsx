@@ -42,6 +42,7 @@ const V2_GROUPED_SECTIONS = [
     items: [
       { key: 'help', label: 'Help', icon: 'help-circle-outline' as const },
       { key: 'invite', label: 'Invite a Friend', icon: 'people-outline' as const },
+      { key: 'roadmap', label: 'Product Roadmap', icon: 'map-outline' as const },
       { key: 'request', label: 'Request a feature', icon: 'sparkles-outline' as const },
     ],
   },
@@ -143,6 +144,10 @@ export default function ProfileScreen() {
     }
     if (key === 'account') {
       router.push('/account');
+      return;
+    }
+    if (key === 'roadmap') {
+      router.push('/roadmap');
       return;
     }
     if (key === 'request') {

@@ -66,6 +66,51 @@ router.get('/public', async (req, res) => {
   );
 });
 
+/** Mobile roadmap with per-member vote flags — must be registered before /:id routes */
+router.get('/roadmap', async (req, res) => {
+  const { memberId } = req.query;
+
+  if (!memberId || typeof memberId !== 'string') {
+    return res.status(400).json({ error: 'memberId is required' });
+  }
+
+  const { data: requests, error } = await supabase
+    .from('feature_requests')
+    .select('id, title, description, tag, status, upvotes, created_at')
+    .neq('status', 'Archived')
+    .order('upvotes', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Failed to fetch roadmap' });
+  }
+
+  const { data: votes, error: votesError } = await supabase
+    .from('feature_request_votes')
+    .select('feature_request_id')
+    .eq('member_id', memberId);
+
+  if (votesError) {
+    console.error(votesError);
+    return res.status(500).json({ error: 'Failed to fetch roadmap' });
+  }
+
+  const votedIds = new Set((votes || []).map((v) => v.feature_request_id));
+
+  const result = (requests || []).map((r) => ({
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    tag: r.tag,
+    status: r.status,
+    upvotes: r.upvotes,
+    hasVoted: votedIds.has(r.id),
+    createdAt: r.created_at,
+  }));
+
+  return res.json(result);
+});
+
 router.get('/', requireAuth, requireRole('admin'), async (req, res) => {
   const { status, tag } = req.query;
 
@@ -150,6 +195,82 @@ router.post('/', requireAuth, async (req, res) => {
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   });
+});
+
+/** Toggle vote — static /:id/vote must stay before any ambiguous routes; POST only */
+router.post('/:id/vote', async (req, res) => {
+  const { memberId } = req.body;
+  const featureRequestId = req.params.id;
+
+  if (!memberId || typeof memberId !== 'string') {
+    return res.status(400).json({ error: 'memberId is required' });
+  }
+
+  const { data: existingVote, error: lookupErr } = await supabase
+    .from('feature_request_votes')
+    .select('member_id')
+    .eq('feature_request_id', featureRequestId)
+    .eq('member_id', memberId)
+    .maybeSingle();
+
+  if (lookupErr) {
+    console.error(lookupErr);
+    return res.status(500).json({ error: 'Failed to check vote' });
+  }
+
+  if (existingVote) {
+    const { error: delErr } = await supabase
+      .from('feature_request_votes')
+      .delete()
+      .eq('feature_request_id', featureRequestId)
+      .eq('member_id', memberId);
+
+    if (delErr) {
+      console.error(delErr);
+      return res.status(500).json({ error: 'Failed to remove vote' });
+    }
+
+    const { data: newCount, error: rpcErr } = await supabase.rpc('decrement_upvotes', {
+      request_id: featureRequestId,
+    });
+
+    if (rpcErr) {
+      console.error(rpcErr);
+      await supabase.from('feature_request_votes').insert({
+        feature_request_id: featureRequestId,
+        member_id: memberId,
+      });
+      return res.status(500).json({ error: 'Failed to update vote count' });
+    }
+
+    return res.json({ hasVoted: false, upvotes: newCount ?? 0 });
+  }
+
+  const { error: insErr } = await supabase.from('feature_request_votes').insert({
+    feature_request_id: featureRequestId,
+    member_id: memberId,
+  });
+
+  if (insErr) {
+    console.error(insErr);
+    return res.status(500).json({ error: 'Failed to save vote' });
+  }
+
+  const { data: newCount, error: rpcErr } = await supabase.rpc('increment_upvotes', {
+    request_id: featureRequestId,
+  });
+
+  if (rpcErr) {
+    console.error(rpcErr);
+    await supabase
+      .from('feature_request_votes')
+      .delete()
+      .eq('feature_request_id', featureRequestId)
+      .eq('member_id', memberId);
+    return res.status(500).json({ error: 'Failed to update vote count' });
+  }
+
+  return res.json({ hasVoted: true, upvotes: newCount ?? 0 });
 });
 
 router.patch('/:id', requireAuth, requireRole('admin'), async (req, res) => {
