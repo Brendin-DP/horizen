@@ -523,6 +523,7 @@ export default function LogDetailScreen() {
             sets.map((s) => {
               const showRibbon = firstYourBestSetId != null && s.id === firstYourBestSetId;
               const sub = formatSetSubline(s, exercise);
+              const desc = s.description?.trim();
               return (
                 <Swipeable
                   key={s.id}
@@ -554,6 +555,11 @@ export default function LogDetailScreen() {
                           {formatSetHeadline(s, exercise)}
                         </Text>
                         {sub ? <Text style={styles.setMeta}>{sub}</Text> : null}
+                        {desc ? (
+                          <Text style={styles.setDescription} numberOfLines={3}>
+                            {desc}
+                          </Text>
+                        ) : null}
                       </View>
                       <Pressable
                         style={styles.setEditBtn}
@@ -866,6 +872,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     fontFamily: typography.body,
+  },
+  setDescription: {
+    fontSize: 14,
+    color: colors.textMuted,
+    fontFamily: typography.body,
+    lineHeight: 20,
+    marginTop: 6,
   },
   deleteAction: {
     backgroundColor: '#dc2626',

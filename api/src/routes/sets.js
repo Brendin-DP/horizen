@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import supabase from '../db.js';
 import { mapSet, mapWorkoutExercise, mapExercise, toDbSet } from '../utils/mappers.js';
 import { getExerciseMuscleGroups, attachMuscleGroups } from '../utils/exerciseHelpers.js';
-import { isValidUUID } from '../utils/validation.js';
+import { isValidUUID, normalizeSetDescription } from '../utils/validation.js';
 
 const router = express.Router();
 
@@ -64,7 +64,9 @@ router.post('/:id/sets', async (req, res) => {
     return res.status(404).json({ error: 'Workout exercise not found' });
   }
 
-  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed } = req.body;
+  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed, description } =
+    req.body;
+  const descriptionNorm = normalizeSetDescription(description);
 
   const { data: maxRow } = await supabase
     .from('sets')
@@ -85,6 +87,7 @@ router.post('/:id/sets', async (req, res) => {
     durationSeconds: durationSeconds ?? null,
     distanceMeters: distanceMeters ?? null,
     completed: completed !== undefined ? completed : true,
+    ...(descriptionNorm !== undefined ? { description: descriptionNorm } : {}),
   };
 
   const toDb = toDbSet(set);
@@ -107,13 +110,16 @@ setsIdRouter.patch('/:id', async (req, res) => {
     return res.status(400).json({ error: 'Invalid set id' });
   }
   const updates = {};
-  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed } = req.body;
+  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed, description } =
+    req.body;
   if (setNumber !== undefined) updates.set_number = setNumber;
   if (reps !== undefined) updates.reps = reps;
   if (weightKg !== undefined) updates.weight_kg = weightKg;
   if (durationSeconds !== undefined) updates.duration_seconds = durationSeconds;
   if (distanceMeters !== undefined) updates.distance_meters = distanceMeters;
   if (completed !== undefined) updates.completed = completed;
+  const descriptionNorm = normalizeSetDescription(description);
+  if (descriptionNorm !== undefined) updates.description = descriptionNorm;
 
   if (Object.keys(updates).length === 0) {
     const { data: set } = await supabase.from('sets').select('*').eq('id', req.params.id).single();

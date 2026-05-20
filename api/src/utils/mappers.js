@@ -125,6 +125,7 @@ export function mapSet(row) {
     durationSeconds: row.duration_seconds ?? null,
     distanceMeters: row.distance_meters ?? null,
     completed: row.completed ?? true,
+    description: row.description ?? null,
     createdAt: row.created_at ?? null,
   };
 }
@@ -180,6 +181,7 @@ export function toDbSet(payload) {
   if (payload.durationSeconds !== undefined) out.duration_seconds = payload.durationSeconds;
   if (payload.distanceMeters !== undefined) out.distance_meters = payload.distanceMeters;
   if (payload.completed !== undefined) out.completed = payload.completed;
+  if (payload.description !== undefined) out.description = payload.description;
   return out;
 }
 

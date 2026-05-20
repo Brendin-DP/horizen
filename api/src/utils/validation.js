@@ -56,3 +56,12 @@ export function isValidMuscleGroupIds(ids) {
 
 /** Default category when none supplied (valid enum). */
 export const DEFAULT_EXERCISE_CATEGORY = 'Upper Body';
+
+/** Optional set description: trim; empty string → null. Returns undefined if omitted. */
+export function normalizeSetDescription(description) {
+  if (description === undefined) return undefined;
+  if (description === null) return null;
+  if (typeof description !== 'string') return undefined;
+  const t = description.trim();
+  return t === '' ? null : t;
+}

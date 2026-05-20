@@ -7,8 +7,14 @@ export interface SetEntry {
   weight: string;
   duration: string;
   distance: string;
+  description: string;
   /** For weighted_or_bodyweight: true = loaded/weight mode, false = bodyweight-only */
   addedWeight: boolean;
+}
+
+function descriptionFromEntry(entry: SetEntry): string | null {
+  const t = entry.description.trim();
+  return t === '' ? null : t;
 }
 
 export function createEmptySet(ex: Exercise): SetEntry {
@@ -18,6 +24,7 @@ export function createEmptySet(ex: Exercise): SetEntry {
     weight: '',
     duration: '',
     distance: '',
+    description: '',
     addedWeight: weightOptional(ex.loggingType),
   };
 }
@@ -38,6 +45,7 @@ export function setEntryFromApiSet(s: Set, ex: Exercise): SetEntry {
     weight: s.weightKg != null ? String(s.weightKg) : '',
     duration: s.durationSeconds != null ? String(s.durationSeconds) : '',
     distance: s.distanceMeters != null ? String(s.distanceMeters) : '',
+    description: s.description ?? '',
     addedWeight,
   };
 }
@@ -105,6 +113,7 @@ export function setEntryToPatchBody(entry: SetEntry, exercise: Exercise): Partia
   } else if (exercise.unit === 'distance') {
     out.distanceMeters = parseFloat(entry.distance);
   }
+  out.description = descriptionFromEntry(entry);
   return out;
 }
 
@@ -120,6 +129,7 @@ export function setEntryToAddSessionBody(
   weightKg?: number | null;
   durationSeconds?: number;
   distanceMeters?: number;
+  description?: string | null;
 } {
   const body: {
     setNumber: number;
@@ -128,6 +138,7 @@ export function setEntryToAddSessionBody(
     weightKg?: number | null;
     durationSeconds?: number;
     distanceMeters?: number;
+    description?: string | null;
   } = {
     setNumber,
     completed: true,
@@ -158,5 +169,6 @@ export function setEntryToAddSessionBody(
   } else if (exercise.unit === 'distance') {
     body.distanceMeters = parseFloat(entry.distance);
   }
+  body.description = descriptionFromEntry(entry);
   return body;
 }

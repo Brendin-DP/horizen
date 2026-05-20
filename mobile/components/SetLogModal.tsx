@@ -28,6 +28,33 @@ type Props = {
   saving?: boolean;
 };
 
+const DESCRIPTION_MAX = 500;
+
+function DescriptionField({
+  value,
+  onChangeText,
+}: {
+  value: string;
+  onChangeText: (v: string) => void;
+}) {
+  return (
+    <>
+      <Text style={styles.fieldLabel}>Description (optional)</Text>
+      <TextInput
+        style={styles.descriptionInput}
+        placeholder="e.g. tempo, RPE, form cues"
+        value={value}
+        onChangeText={onChangeText}
+        multiline
+        numberOfLines={3}
+        maxLength={DESCRIPTION_MAX}
+        placeholderTextColor={colors.textMuted}
+        textAlignVertical="top"
+      />
+    </>
+  );
+}
+
 export function SetLogModal({
   visible,
   onRequestClose,
@@ -79,6 +106,10 @@ export function SetLogModal({
                       />
                       <Text style={styles.inputSuffix}>reps</Text>
                     </View>
+                    <DescriptionField
+                      value={draft.description}
+                      onChangeText={(v) => onPatch('description', v)}
+                    />
                     <Text style={styles.bodyweightHint}>
                       Bodyweight only—log your reps. No added weight for this exercise.
                     </Text>
@@ -134,6 +165,10 @@ export function SetLogModal({
                       />
                       <Text style={styles.inputSuffix}>reps</Text>
                     </View>
+                    <DescriptionField
+                      value={draft.description}
+                      onChangeText={(v) => onPatch('description', v)}
+                    />
                   </>
                 ) : (
                   <>
@@ -161,29 +196,45 @@ export function SetLogModal({
                       />
                       <Text style={styles.inputSuffix}>reps</Text>
                     </View>
+                    <DescriptionField
+                      value={draft.description}
+                      onChangeText={(v) => onPatch('description', v)}
+                    />
                   </>
                 )}
               </>
             )}
             {draft && isTime && (
-              <TextInput
-                style={styles.input}
-                placeholder="Duration (seconds)"
-                value={draft.duration}
-                onChangeText={(v) => onPatch('duration', v)}
-                keyboardType="number-pad"
-                placeholderTextColor={colors.textMuted}
-              />
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Duration (seconds)"
+                  value={draft.duration}
+                  onChangeText={(v) => onPatch('duration', v)}
+                  keyboardType="number-pad"
+                  placeholderTextColor={colors.textMuted}
+                />
+                <DescriptionField
+                  value={draft.description}
+                  onChangeText={(v) => onPatch('description', v)}
+                />
+              </>
             )}
             {draft && isDistance && (
-              <TextInput
-                style={styles.input}
-                placeholder="Distance (meters)"
-                value={draft.distance}
-                onChangeText={(v) => onPatch('distance', v)}
-                keyboardType="decimal-pad"
-                placeholderTextColor={colors.textMuted}
-              />
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Distance (meters)"
+                  value={draft.distance}
+                  onChangeText={(v) => onPatch('distance', v)}
+                  keyboardType="decimal-pad"
+                  placeholderTextColor={colors.textMuted}
+                />
+                <DescriptionField
+                  value={draft.description}
+                  onChangeText={(v) => onPatch('description', v)}
+                />
+              </>
             )}
             <View style={styles.actions}>
               <Pressable
@@ -250,6 +301,18 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 16,
     marginBottom: 12,
+  },
+  descriptionInput: {
+    backgroundColor: colors.backgroundDark,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 12,
+    color: colors.textPrimary,
+    fontSize: 15,
+    marginBottom: 12,
+    minHeight: 72,
+    fontFamily: typography.body,
   },
   bodyweightHint: {
     fontSize: 13,

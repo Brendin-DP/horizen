@@ -4,7 +4,7 @@ import supabase from '../db.js';
 import { mapSession, mapExercise, mapSet, toDbSet } from '../utils/mappers.js';
 import { getMuscleGroupsForExercises, getExerciseMuscleGroups, attachMuscleGroups } from '../utils/exerciseHelpers.js';
 import { normalizeIsoLogDate } from '../utils/setCreatedAt.js';
-import { isValidUUID } from '../utils/validation.js';
+import { isValidUUID, normalizeSetDescription } from '../utils/validation.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -253,6 +253,7 @@ router.post('/:id/sets/batch', async (req, res) => {
   for (let idx = 0; idx < setsPayload.length; idx++) {
     const s = setsPayload[idx];
     const setNumber = s.setNumber !== undefined ? s.setNumber : idx + 1;
+    const descriptionNorm = normalizeSetDescription(s.description);
     toInsert.push(
       toDbSet({
         id: randomUUID(),
@@ -263,6 +264,7 @@ router.post('/:id/sets/batch', async (req, res) => {
         durationSeconds: s.durationSeconds ?? null,
         distanceMeters: s.distanceMeters ?? null,
         completed: s.completed !== undefined ? s.completed : true,
+        ...(descriptionNorm !== undefined ? { description: descriptionNorm } : {}),
       })
     );
   }
@@ -281,7 +283,9 @@ router.post('/:id/sets', async (req, res) => {
   if (!isValidUUID(sessionId)) {
     return res.status(400).json({ error: 'Invalid session id' });
   }
-  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed } = req.body;
+  const { setNumber, reps, weightKg, durationSeconds, distanceMeters, completed, description } =
+    req.body;
+  const descriptionNorm = normalizeSetDescription(description);
 
   const { data: sessionRow } = await supabase
     .from('sessions')
@@ -310,6 +314,7 @@ router.post('/:id/sets', async (req, res) => {
     durationSeconds: durationSeconds ?? null,
     distanceMeters: distanceMeters ?? null,
     completed: completed !== undefined ? completed : true,
+    ...(descriptionNorm !== undefined ? { description: descriptionNorm } : {}),
   };
 
   const toDb = toDbSet(set);

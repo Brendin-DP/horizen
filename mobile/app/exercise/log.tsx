@@ -35,7 +35,12 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { DrillDownHeader } from '../../components/DrillDownHeader';
 import { RequestExerciseModal } from '../../components/RequestExerciseModal';
 import { SetLogModal } from '../../components/SetLogModal';
-import { type SetEntry, createEmptySet, validateSetEntry } from '../../lib/setEntryForm';
+import {
+  type SetEntry,
+  createEmptySet,
+  validateSetEntry,
+  setEntryToAddSessionBody,
+} from '../../lib/setEntryForm';
 import { trackLoggedExercise, trackPersonalBest } from '../../lib/analytics';
 
 function formatSetEntrySummary(s: SetEntry, exercise: Exercise): string {
@@ -265,14 +270,7 @@ export default function LogExerciseScreen() {
     setSaving(true);
     setError(null);
     try {
-      const setsPayload: Array<{
-        setNumber: number;
-        reps?: number;
-        weightKg?: number | null;
-        durationSeconds?: number;
-        distanceMeters?: number;
-        completed: boolean;
-      }> = [];
+      const setsPayload = [];
 
       for (let i = 0; i < sets.length; i++) {
         const s = sets[i];
@@ -282,45 +280,7 @@ export default function LogExerciseScreen() {
           setSaving(false);
           return;
         }
-        const body: {
-          setNumber: number;
-          completed: boolean;
-          reps?: number;
-          weightKg?: number | null;
-          durationSeconds?: number;
-          distanceMeters?: number;
-        } = {
-          setNumber: i + 1,
-          completed: true,
-        };
-        if (exercise.unit === 'weight_reps') {
-          const r = parseInt(s.reps, 10);
-          body.reps = r;
-          const lt = exercise.loggingType;
-          if (lt === 'bodyweight') {
-            body.weightKg = null;
-          } else if (weightRequired(lt)) {
-            const w = parseFloat(s.weight);
-            body.weightKg = w;
-          } else if (weightOptional(lt)) {
-            if (!s.addedWeight) {
-              body.weightKg = null;
-            } else {
-              const trimmed = s.weight.trim();
-              if (trimmed === '') {
-                body.weightKg = null;
-              } else {
-                const w = parseFloat(trimmed);
-                body.weightKg = w === 0 ? null : w;
-              }
-            }
-          }
-        } else if (exercise.unit === 'time') {
-          body.durationSeconds = parseInt(s.duration, 10);
-        } else if (exercise.unit === 'distance') {
-          body.distanceMeters = parseFloat(s.distance);
-        }
-        setsPayload.push(body);
+        setsPayload.push(setEntryToAddSessionBody(s, exercise, i + 1));
       }
 
       const log = await createSession(
@@ -664,6 +624,11 @@ export default function LogExerciseScreen() {
                     <View style={styles.setPanelTextBlock}>
                       <Text style={styles.setPanelLabel}>Set {sets.indexOf(s) + 1}</Text>
                       <Text style={styles.setPanelValue}>{formatSetEntrySummary(s, exercise)}</Text>
+                      {s.description.trim() ? (
+                        <Text style={styles.setPanelDescription} numberOfLines={3}>
+                          {s.description.trim()}
+                        </Text>
+                      ) : null}
                     </View>
                     <Pressable
                       style={styles.setPanelEditBtn}
@@ -972,6 +937,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     fontFamily: typography.body,
+  },
+  setPanelDescription: {
+    fontSize: 14,
+    color: colors.textMuted,
+    fontFamily: typography.body,
+    lineHeight: 20,
+    marginTop: 6,
   },
   setDeleteAction: {
     backgroundColor: '#dc2626',
