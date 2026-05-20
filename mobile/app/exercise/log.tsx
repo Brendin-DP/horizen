@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   getExercise,
   getExercises,
+  getRecentExercises,
   createSession,
   addSetsBatchToSession,
   getExerciseMaxWeight,
@@ -133,6 +134,10 @@ async function getPreviousMaxBodyweightReps(
   }
 }
 
+type PickRow =
+  | { type: 'header'; key: string; title: string }
+  | { type: 'exercise'; key: string; exercise: Exercise };
+
 export default function LogExerciseScreen() {
   const insets = useSafeAreaInsets();
   const { exerciseId } = useLocalSearchParams<{ exerciseId?: string }>();
@@ -140,7 +145,8 @@ export default function LogExerciseScreen() {
   const posthog = usePostHog();
   const { member, token } = useAuth();
   const [step, setStep] = useState<'pick' | 'sets'>('pick');
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [recentExercises, setRecentExercises] = useState<Exercise[]>([]);
+  const [allExercises, setAllExercises] = useState<Exercise[]>([]);
   const [search, setSearch] = useState('');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [sets, setSets] = useState<SetEntry[]>([]);
@@ -184,22 +190,61 @@ export default function LogExerciseScreen() {
         .catch(() => setError('Exercise not found'))
         .finally(() => setLoading(false));
     } else {
-      getExercises()
-        .then(setExercises)
+      Promise.all([
+        member?.id ? getRecentExercises(member.id) : Promise.resolve([]),
+        getExercises(),
+      ])
+        .then(([recent, all]) => {
+          setRecentExercises(recent);
+          setAllExercises(all);
+        })
         .catch(() => setError('Failed to load exercises'))
         .finally(() => setLoading(false));
     }
-  }, [exerciseId]);
+  }, [exerciseId, member?.id]);
 
-  const filteredExercises = exercises.filter((e) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      e.name.toLowerCase().includes(q) ||
-      (e.category || '').toLowerCase().includes(q) ||
-      (e.type || '').toLowerCase().includes(q)
+  const searchTrimmed = search.trim();
+
+  const filteredAll = useMemo(() => {
+    if (!searchTrimmed) return allExercises;
+    const q = searchTrimmed.toLowerCase();
+    return allExercises.filter(
+      (e) =>
+        e.name.toLowerCase().includes(q) ||
+        (e.category || '').toLowerCase().includes(q) ||
+        (e.type || '').toLowerCase().includes(q)
     );
-  });
+  }, [allExercises, searchTrimmed]);
+
+  const listData: PickRow[] = useMemo(() => {
+    if (searchTrimmed) {
+      return filteredAll.map((e) => ({ type: 'exercise' as const, key: e.id, exercise: e }));
+    }
+    const recentIds = new Set(recentExercises.map((e) => e.id));
+    const remaining = filteredAll.filter((e) => !recentIds.has(e.id));
+    const rows: PickRow[] = [];
+    if (recentExercises.length > 0) {
+      rows.push({ type: 'header', key: 'header-recent', title: 'Recently Used' });
+      recentExercises.forEach((e) =>
+        rows.push({ type: 'exercise', key: `recent-${e.id}`, exercise: e })
+      );
+      rows.push({ type: 'header', key: 'header-all', title: 'All Exercises' });
+    }
+    remaining.forEach((e) => rows.push({ type: 'exercise', key: e.id, exercise: e }));
+    return rows;
+  }, [searchTrimmed, recentExercises, filteredAll]);
+
+  const reloadExerciseLists = useCallback(() => {
+    Promise.all([
+      member?.id ? getRecentExercises(member.id) : Promise.resolve([]),
+      getExercises(),
+    ])
+      .then(([recent, all]) => {
+        setRecentExercises(recent);
+        setAllExercises(all);
+      })
+      .catch(() => {});
+  }, [member?.id]);
 
   function openAddSetModal() {
     if (!selectedExercise) return;
@@ -439,14 +484,29 @@ export default function LogExerciseScreen() {
   }
 
   function handleRequestSuccess() {
-    getExercises()
-      .then(setExercises)
-      .catch(() => {});
+    reloadExerciseLists();
+  }
+
+  function selectExercise(item: Exercise) {
+    setSelectedExercise(item);
+    setSets([]);
+    setStep('sets');
   }
 
   if (step === 'pick') {
-    const searchTrimmed = search.trim();
-    const showRequestEmpty = searchTrimmed.length > 0 && filteredExercises.length === 0;
+    const showRequestEmpty = searchTrimmed.length > 0 && filteredAll.length === 0;
+    const hasExerciseRows = listData.some((row) => row.type === 'exercise');
+
+    if (loading) {
+      return (
+        <SafeAreaView style={styles.pickContainer} edges={['top']}>
+          <DrillDownHeader title="Add Exercise" onBack={() => router.back()} />
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        </SafeAreaView>
+      );
+    }
 
     return (
       <SafeAreaView style={styles.pickContainer} edges={['top']}>
@@ -465,37 +525,40 @@ export default function LogExerciseScreen() {
         </View>
         <View style={styles.searchDivider} />
         <FlatList
-          data={filteredExercises}
-          keyExtractor={(item) => item.id}
+          data={listData}
+          keyExtractor={(item) => item.key}
           style={styles.pickList}
           contentContainerStyle={
-            filteredExercises.length === 0 ? styles.pickListContentEmpty : styles.pickListContent
+            listData.length === 0 ? styles.pickListContentEmpty : styles.pickListContent
           }
           keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) => (
-            <Pressable
-              style={styles.pickerRow}
-              onPress={() => {
-                setSelectedExercise(item);
-                setSets([]);
-                setStep('sets');
-              }}
-            >
-              <View style={styles.pickerTitleRow}>
-                <Text style={styles.pickerName}>{item.name}</Text>
-                {item.loggingType === 'bodyweight' ? (
-                  <View style={styles.loggingBadge}>
-                    <Text style={styles.loggingBadgeText}>BW</Text>
-                  </View>
-                ) : item.loggingType === 'weighted_or_bodyweight' ? (
-                  <View style={styles.loggingBadge}>
-                    <Text style={styles.loggingBadgeText}>BW+</Text>
-                  </View>
-                ) : null}
-              </View>
-              <Text style={styles.pickerMeta}>{formatExerciseCategoryType(item)}</Text>
-            </Pressable>
-          )}
+          renderItem={({ item }) => {
+            if (item.type === 'header') {
+              return (
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionHeaderText}>{item.title}</Text>
+                </View>
+              );
+            }
+            const ex = item.exercise;
+            return (
+              <Pressable style={styles.pickerRow} onPress={() => selectExercise(ex)}>
+                <View style={styles.pickerTitleRow}>
+                  <Text style={styles.pickerName}>{ex.name}</Text>
+                  {ex.loggingType === 'bodyweight' ? (
+                    <View style={styles.loggingBadge}>
+                      <Text style={styles.loggingBadgeText}>BW</Text>
+                    </View>
+                  ) : ex.loggingType === 'weighted_or_bodyweight' ? (
+                    <View style={styles.loggingBadge}>
+                      <Text style={styles.loggingBadgeText}>BW+</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={styles.pickerMeta}>{formatExerciseCategoryType(ex)}</Text>
+              </Pressable>
+            );
+          }}
           ListEmptyComponent={
             showRequestEmpty ? (
               <View style={styles.requestEmptyState}>
@@ -525,7 +588,7 @@ export default function LogExerciseScreen() {
             )
           }
           ListFooterComponent={
-            member && filteredExercises.length > 0 ? (
+            member && hasExerciseRows ? (
               <Pressable
                 style={styles.requestListFooterBtn}
                 onPress={openRequestModal}
@@ -809,6 +872,18 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     fontFamily: typography.body,
+  },
+  sectionHeader: {
+    paddingTop: 12,
+    paddingBottom: 6,
+    paddingHorizontal: 16,
+  },
+  sectionHeaderText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontFamily: typography.body,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   pickerRow: {
     padding: 16,

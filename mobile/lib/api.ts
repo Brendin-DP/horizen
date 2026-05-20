@@ -387,6 +387,16 @@ export async function getExercises(
   return res.json();
 }
 
+export async function getRecentExercises(
+  memberId: string,
+  limit = 5
+): Promise<import('../types').Exercise[]> {
+  const params = new URLSearchParams({ memberId, limit: String(limit) });
+  const res = await fetch(`${BASE_URL}/exercises/recent?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch recent exercises');
+  return res.json();
+}
+
 export async function getExercise(id: string): Promise<import('../types').Exercise> {
   const res = await fetch(`${BASE_URL}/exercises/${id}`);
   if (!res.ok) throw new Error('Exercise not found');

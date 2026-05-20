@@ -307,6 +307,68 @@ router.get('/logged', async (req, res) => {
   res.json(enriched);
 });
 
+/** Most recently logged exercises for a member; must be registered before GET / and GET /:id */
+router.get('/recent', async (req, res) => {
+  const { memberId, limit: limitParam = '5' } = req.query;
+  if (!memberId) {
+    return res.status(400).json({ error: 'memberId is required' });
+  }
+  if (!isValidUUID(String(memberId))) {
+    return res.status(400).json({ error: 'memberId must be a valid UUID' });
+  }
+
+  const limit = Math.min(Math.max(parseInt(String(limitParam), 10) || 5, 1), 20);
+
+  const { data: recentSessions, error: sessionsError } = await supabase
+    .from('sessions')
+    .select('exercise_id, logged_at')
+    .eq('member_id', memberId)
+    .order('logged_at', { ascending: false });
+
+  if (sessionsError) {
+    console.error(sessionsError);
+    return res.status(500).json({ error: 'Failed to fetch recent exercises' });
+  }
+
+  if (!recentSessions || recentSessions.length === 0) {
+    return res.json([]);
+  }
+
+  const seen = new Set();
+  const recentExerciseIds = [];
+  for (const session of recentSessions) {
+    if (!seen.has(session.exercise_id)) {
+      seen.add(session.exercise_id);
+      recentExerciseIds.push(session.exercise_id);
+    }
+    if (recentExerciseIds.length >= limit) break;
+  }
+
+  if (recentExerciseIds.length === 0) {
+    return res.json([]);
+  }
+
+  const { data: exerciseRows, error: exercisesError } = await supabase
+    .from('exercise_library')
+    .select('*')
+    .in('id', recentExerciseIds)
+    .eq('status', 'active');
+
+  if (exercisesError) {
+    console.error(exercisesError);
+    return res.status(500).json({ error: 'Failed to fetch exercises' });
+  }
+
+  const muscleGroupsMap = await getMuscleGroupsForExercises(recentExerciseIds);
+  const byId = new Map((exerciseRows || []).map((e) => [e.id, e]));
+  const ordered = recentExerciseIds
+    .map((id) => byId.get(id))
+    .filter(Boolean)
+    .map((e) => attachMuscleGroups(mapExercise(e), muscleGroupsMap[e.id]));
+
+  res.json(ordered);
+});
+
 router.get('/', async (req, res) => {
   let query = supabase.from('exercise_library').select('*').eq('status', 'active');
   const category = req.query.category;
