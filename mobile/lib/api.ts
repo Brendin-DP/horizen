@@ -10,7 +10,7 @@ import type { FeatureRequestTag, FeatureRequestStatus } from '../types';
 const API_URL_DEV =
   (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
   'http://localhost:3001';
-const API_URL_PROD = 'https://horizen-production.up.railway.app';
+const API_URL_PROD = 'https://horizen-production-1591.up.railway.app';
 const BASE_URL = typeof __DEV__ !== 'undefined' && __DEV__ ? API_URL_DEV : API_URL_PROD;
 
 const REQUEST_TIMEOUT_MS = 10000;
