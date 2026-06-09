@@ -1,5 +1,9 @@
 // Strip trailing slashes so concatenation never produces // (e.g. base/ + /path)
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
+const API_URL_PROD = 'https://horizen-production-1591.up.railway.app';
+const BASE_URL = (
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? API_URL_PROD : 'http://localhost:3001')
+).replace(/\/+$/, '');
 
 function headersWithAuth(token: string | null): HeadersInit {
   const h: Record<string, string> = { 'Content-Type': 'application/json' };
